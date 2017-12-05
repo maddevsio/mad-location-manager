@@ -1,4 +1,3 @@
-*.pro.user
 *.iml
 .gradle
 /local.properties

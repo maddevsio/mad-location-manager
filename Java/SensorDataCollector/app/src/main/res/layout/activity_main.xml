@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.lezh1k.sensordatacollector.MainActivity">
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="358dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Status"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvAccelerometer"
+        android:layout_width="127dp"
+        android:layout_height="95dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Accelerometer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
+
+    <TextView
+        android:id="@+id/tvAccelerometerData"
+        android:layout_width="218dp"
+        android:layout_height="95dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:autoSizeTextType="none"
+        android:text="SensorData"
+        app:layout_constraintStart_toEndOf="@+id/tvAccelerometer"
+        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
+
+    <TextView
+        android:id="@+id/tvGyroscope"
+        android:layout_width="127dp"
+        android:layout_height="95dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="Gyroscope"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometer" />
+
+    <TextView
+        android:id="@+id/tvGyroscopeData"
+        android:layout_width="218dp"
+        android:layout_height="95dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:autoSizeTextType="none"
+        android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvGyroscope"
+        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometerData" />
+
+    <TextView
+        android:id="@+id/tvMagnetometer"
+        android:layout_width="127dp"
+        android:layout_height="95dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Magnetometer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvGyroscope" />
+
+    <TextView
+        android:id="@+id/tvMagnetometerData"
+        android:layout_width="218dp"
+        android:layout_height="95dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:autoSizeTextType="none"
+        android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvMagnetometer"
+        app:layout_constraintTop_toBottomOf="@+id/tvGyroscopeData" />
+
+    <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="127dp"
+        android:layout_height="95dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Location"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvMagnetometer" />
+
+    <TextView
+        android:id="@+id/tvLocationData"
+        android:layout_width="215dp"
+        android:layout_height="95dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvLocation"
+        app:layout_constraintTop_toBottomOf="@+id/tvMagnetometerData" />
+</android.support.constraint.ConstraintLayout>
