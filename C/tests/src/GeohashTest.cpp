@@ -59,25 +59,24 @@ static void testEncode() {
 //////////////////////////////////////////////////////////////////////////
 
 typedef struct TestDecodeItem {
-  double expactedLat;
+  double expectedLat;
   double expectedLon;
-  uint32_t precision;
   const char *geohash;
 } TestDecodeItem_t;
 
 static void testDecode() {
-  static const double EPS = 1e-04;
+  static const double EPS = 1e-03;
   static TestDecodeItem_t posTests[] = {
-    {44.87529, -64.3059, 8, "dxfr29mc"},
-    {46.76236, -60.63612, 8, "f8kfh0y4"},
-    {50.79211, 61.47966, 8, "v358zn2j"},
-    {-82.214234, 114.257834, 9, "n93k21252"},
-    {-21.453059, 137.021506, 9, "rh1myn84b"},
-    {44.8757, -64.3064, 7, "dxfr29m"},
-    {46.7626, -60.6356, 7, "f8kfh0y"},
-    {50.7919, 61.4802, 7, "v358zn2"},
-    {-82.21421, 114.25798, 8, "n93k2125"},
-    {0.0, 0.0, 0, NULL},
+    {  44.8753 ,  -64.3059 , "dxfr29mc"},
+    {  46.7624 ,  -60.6361 , "f8kfh0y4"},
+    {  50.7921 ,  61.4797 , "v358zn2j"},
+    {  -82.2142 ,  114.258 , "n93k21252"},
+    {  -21.4531 ,  137.022 , "rh1myn84b"},
+    {  44.8757 ,  -64.3064 , "dxfr29m"},
+    {  46.7626 ,  -60.6356 , "f8kfh0y"},
+    {  50.7919 ,  61.4802 , "v358zn2"},
+    {  -82.2142 ,  114.258 , "n93k2125"},
+    {0.0, 0.0, NULL},
   };
   TestDecodeItem_t *tmp;
 
@@ -85,7 +84,7 @@ static void testDecode() {
     double lat, lon;
     double diff;
     GeohashDecode(tmp->geohash, &lon, &lat);
-    diff = abs(lat - tmp->expactedLat);
+    diff = abs(lat - tmp->expectedLat);
     assert(diff < EPS);
     diff = abs(lon - tmp->expectedLon);
     assert(diff < EPS);

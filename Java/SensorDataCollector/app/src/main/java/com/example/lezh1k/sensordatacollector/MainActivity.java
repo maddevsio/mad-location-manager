@@ -14,38 +14,39 @@ import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.style.TtsSpan;
+import android.view.WindowManager;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
+enum InitSensorErrorFlag {
+    SUCCESS(0),
+    SENSOR_MANAGER_ERR(1),
+    MISSED_ACCELEROMETER(1 << 1),
+    MISSED_GYROSCOPE(1<<2),
+    MISSED_MAGNETOMETER(1<<3);
+
+    public final long flag;
+    InitSensorErrorFlag(long statusFlagValue) {
+        this.flag = statusFlagValue;
+    }
+
+    public static String toString(long val) {
+        String res = "";
+        if (val == SUCCESS.flag) return "Success";
+        if ((val & SENSOR_MANAGER_ERR.flag) != 0)
+            res += "Sensor manager error";
+        if ((val & MISSED_ACCELEROMETER.flag) != 0)
+            res += "Missed accelerometer";
+        if ((val & MISSED_GYROSCOPE.flag) != 0)
+            res += "Missed gyroscope";
+        if ((val & MISSED_MAGNETOMETER.flag) != 0)
+            res += "Missed magnetometer";
+        return res;
+    }
+}
+/*****************************************************************/
 
 public class MainActivity extends AppCompatActivity implements LocationListener, SensorEventListener {
-
-    private enum InitSensorErrorFlag {
-        SUCCESS(0),
-        SENSOR_MANAGER_ERR(1),
-        MISSED_ACCELEROMETER(1 << 1),
-        MISSED_GYROSCOPE(1<<2),
-        MISSED_MAGNETOMETER(1<<3);
-
-        private final long flag;
-        InitSensorErrorFlag(long statusFlagValue) {
-            this.flag = statusFlagValue;
-        }
-
-        public static String toString(long val) {
-            String res = "";
-            if (val == SUCCESS.flag) return "Success";
-            if ((val & SENSOR_MANAGER_ERR.flag) != 0)
-                res += "Sensor manager error";
-            if ((val & MISSED_ACCELEROMETER.flag) != 0)
-                res += "Missed accelerometer";
-            if ((val & MISSED_GYROSCOPE.flag) != 0)
-                res += "Missed gyroscope";
-            if ((val & MISSED_MAGNETOMETER.flag) != 0)
-                res += "Missed magnetometer";
-            return res;
-        }
-    }
 
     private LocationManager m_locationManager;
     private SensorManager m_sensorManager;
@@ -54,8 +55,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private Sensor m_magnetometer;
 
     private TextView m_tvStatus;
+    private TextView m_tvAccelerometer;
     private TextView m_tvAccelerometerData;
+    private TextView m_tvGyroscope;
     private TextView m_tvGyroscopeData;
+    private TextView m_tvMagnetometer;
     private TextView m_tvMagnetometerData;
     private TextView m_tvLocationData;
 
@@ -94,8 +98,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         m_tvStatus = (TextView) findViewById(R.id.tvStatus);
+        m_tvAccelerometer = (TextView) findViewById(R.id.tvAccelerometer);
         m_tvAccelerometerData = (TextView) findViewById(R.id.tvAccelerometerData);
+        m_tvGyroscope = (TextView) findViewById(R.id.tvGyroscope);
         m_tvGyroscopeData = (TextView) findViewById(R.id.tvGyroscopeData);
+        m_tvMagnetometer = (TextView) findViewById(R.id.tvMagnetometer);
         m_tvMagnetometerData = (TextView) findViewById(R.id.tvMagnetometerData);
         m_tvLocationData = (TextView) findViewById(R.id.tvLocationData);
 
@@ -105,9 +112,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             return;
         }
 
-        m_tvAccelerometerData.setText(sensorDesctiption(m_accelerometer));
-        m_tvGyroscopeData.setText(sensorDesctiption(m_gyroscope));
-        m_tvMagnetometerData.setText(sensorDesctiption(m_magnetometer));
         m_tvLocationData.setText("Don't know where we are");
 
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -123,21 +127,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             m_tvStatus.setText("Have no ACCESS_FINE_LOCATION permission.");
             return;
         } else {
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 5, this);
-            GeomagneticField gf = new GeomagneticField(m_locationManager.getLastKnownLocation())
+            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
         }
+        m_tvAccelerometer.setText("Accelerometer :\n" + sensorDesctiption(m_accelerometer));
+        m_tvMagnetometer.setText("Magnetometer :\n" + sensorDesctiption(m_magnetometer));
+        m_tvGyroscope.setText("Gyroscope :\n" + sensorDesctiption(m_gyroscope));
 
-        m_sensorManager.registerListener(this, m_accelerometer, 20000);
-        m_sensorManager.registerListener(this, m_gyroscope, 20000);
-        m_sensorManager.registerListener(this, m_magnetometer, 2000);
-
+        m_sensorManager.registerListener(this, m_accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     /*********************************************************/
 
     @Override
-    public void onLocationChanged(Location location) {
-        m_tvLocationData.setText(location.toString());
+    public void onLocationChanged(Location lkl) {
+        GeomagneticField gf = new GeomagneticField((float)lkl.getLatitude(),
+                (float)lkl.getLongitude(), (float)lkl.getAltitude(), System.currentTimeMillis());
+        m_tvLocationData.setText(String.format("Declimation = %f\n%s", gf.getDeclination(), lkl.toString()));
     }
 
     @Override
@@ -152,28 +160,87 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onProviderDisabled(String s) {
-
     }
 
     /*********************************************************/
+    class Calibration {
+        static final int MeasurementCalibrationCount = 1000;
+        static final double SigmaNotInitialized = -999999.0;
+
+        double sigmaX = SigmaNotInitialized;
+        double sigmaY = SigmaNotInitialized;
+        double sigmaZ = SigmaNotInitialized;
+        double measurementsX[] = new double[MeasurementCalibrationCount];
+        double measurementsY[] = new double[MeasurementCalibrationCount];
+        double measurementsZ[] = new double[MeasurementCalibrationCount];
+        private int count = 0;
+
+        private double calculateSigma(double sigma, double[] calibrations) {
+            if (sigma != SigmaNotInitialized) return sigma;
+            double sum;
+            sum = sigma = 0.0;
+            for (int i = 0; i < MeasurementCalibrationCount; ++i) {
+                sum += calibrations[i];
+            }
+            sum /= MeasurementCalibrationCount;
+
+            for (int i = 0; i < MeasurementCalibrationCount; ++i) {
+                sigma += Math.pow(calibrations[i] - sum, 2.0);
+            }
+
+            sigma /= MeasurementCalibrationCount;
+            return sigma;
+        }
+
+        void Measure(double x, double y, double z) {
+            if (count < MeasurementCalibrationCount) {
+                measurementsX[count] = x;
+                measurementsY[count] = y;
+                measurementsZ[count] = z;
+                ++count;
+            } else {
+                sigmaX = calculateSigma(sigmaX, measurementsX);
+                sigmaY = calculateSigma(sigmaY, measurementsY);
+                sigmaZ = calculateSigma(sigmaZ, measurementsZ);
+            }
+        }
+    }
+
+    Calibration accCalibration = new Calibration();
+    Calibration gyrCalibration = new Calibration();
+    Calibration magCalibration = new Calibration();
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         TextView tv = null;
         String format = null;
-        if (sensorEvent.sensor == m_magnetometer) {
-            format = "Acc = %d\nMx = %f, My = %f, Mz = %f\n";
-            tv = m_tvAccelerometerData;
-        } else if (sensorEvent.sensor == m_accelerometer) {
-            format = "Acc = %d\nAx = %f, Ay = %f, Az = %f\n";
-            tv = m_tvAccelerometerData;
-        } else if (sensorEvent.sensor == m_gyroscope) {
-            format = "Acc = %d\nAx = %f, Ay = %f, Az = %f\n";
-            tv = m_tvGyroscopeData;
+        Calibration cl = new Calibration();
+
+        switch (sensorEvent.sensor.getType()) {
+            case Sensor.TYPE_MAGNETIC_FIELD :
+                magCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
+                format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
+                tv = m_tvMagnetometerData;
+                cl = magCalibration;
+                break;
+            case Sensor.TYPE_ACCELEROMETER:
+                accCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
+                format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
+                tv = m_tvAccelerometerData;
+                cl = accCalibration;
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+                gyrCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
+                format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
+                tv = m_tvGyroscopeData;
+                cl = gyrCalibration;
+                break;
         }
+
         if (tv == null) return;
         tv.setText(String.format(format, sensorEvent.accuracy,
-                sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]));
+                sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]) +
+                String.format("Sx : %f, Sy = %f, Sz = %f", cl.sigmaX, cl.sigmaY, cl.sigmaZ));
     }
 
     @Override

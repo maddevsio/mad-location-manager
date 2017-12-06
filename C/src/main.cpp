@@ -72,7 +72,6 @@ int main(int argc, char *argv[])
 {  
   //todo use some parameter in args.
   launchTests();
-
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
   QString pathToCoordFile = argc > 1 ? argv[1] : "/home/lezh1k/gps_test_data/log1";

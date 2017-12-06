@@ -217,8 +217,8 @@ void MatrixTranspose(matrix_t *mtxin,
                      matrix_t *mtxout) {
   assert(mtxin);
   assert(mtxout);
-  assert(mtxin->rows = mtxout->cols);
-  assert(mtxin->cols = mtxout->rows);
+  assert(mtxin->rows == mtxout->cols);
+  assert(mtxin->cols == mtxout->rows);
   uint32_t r, c;
   for (r = 0; r < mtxin->rows; ++r) {
     for (c = 0; c < mtxin->cols; ++c) {
@@ -265,7 +265,9 @@ void swapRows(matrix_t *m,
   assert(m);
   assert(r1 != r2);
   assert(r1 < m->rows && r2 < m->rows);
-  SwapPtrs((void**)&m->data[r1], (void**)&m->data[r2]);
+  double *tmp = m->data[r1];
+  m->data[r1] = m->data[r2];
+  m->data[r2] = tmp;
 }
 //////////////////////////////////////////////////////////////////////////
 
