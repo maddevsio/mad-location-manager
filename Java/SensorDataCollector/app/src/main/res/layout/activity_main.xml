@@ -21,7 +21,7 @@
     <TextView
         android:id="@+id/tvAccelerometer"
         android:layout_width="127dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Accelerometer"
@@ -31,7 +31,7 @@
     <TextView
         android:id="@+id/tvAccelerometerData"
         android:layout_width="218dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:autoSizeTextType="none"
@@ -42,7 +42,7 @@
     <TextView
         android:id="@+id/tvGyroscope"
         android:layout_width="127dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:text="Gyroscope"
@@ -52,7 +52,7 @@
     <TextView
         android:id="@+id/tvGyroscopeData"
         android:layout_width="218dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
@@ -65,7 +65,7 @@
     <TextView
         android:id="@+id/tvMagnetometer"
         android:layout_width="127dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Magnetometer"
@@ -75,7 +75,7 @@
     <TextView
         android:id="@+id/tvMagnetometerData"
         android:layout_width="218dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -88,7 +88,7 @@
     <TextView
         android:id="@+id/tvLocation"
         android:layout_width="127dp"
-        android:layout_height="95dp"
+        android:layout_height="70dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Location"
@@ -97,13 +97,11 @@
 
     <TextView
         android:id="@+id/tvLocationData"
-        android:layout_width="215dp"
-        android:layout_height="118dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="219dp"
+        android:layout_height="196dp"
+        android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:text="SensorData"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLocation"
         app:layout_constraintTop_toBottomOf="@+id/tvMagnetometerData" />
 </android.support.constraint.ConstraintLayout>

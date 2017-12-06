@@ -114,7 +114,7 @@ void MatrixPrint(matrix_t *m) {
       //printf("%6.2f ", m->data[r][c]);
       str += QString::number(m->data[r][c], 'g', 20) + "   ";
     }
-//    printf("\n");
+    //    printf("\n");
     qDebug() << str;
   }
   qDebug() << "****";
@@ -139,9 +139,9 @@ void MatrixAdd(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSubstract(matrix_t *ma,
-                     matrix_t *mb,
-                     matrix_t *mc) {
+void MatrixSubtract(matrix_t *ma,
+                    matrix_t *mb,
+                    matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);
@@ -157,7 +157,7 @@ void MatrixSubstract(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSubstractFromIdentity(matrix_t *m) {
+void MatrixSubtractFromIdentity(matrix_t *m) {
   assert(m);
   uint32_t r, c;
   for (r = 0; r < m->rows; ++r) {

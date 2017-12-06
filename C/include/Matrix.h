@@ -32,12 +32,12 @@ void MatrixAdd(matrix_t *ma,
                matrix_t *mc);
 
 /* Subtract matrices a and b and put the result in c. */
-void MatrixSubstract(matrix_t *ma,
-                     matrix_t *mb,
-                     matrix_t *mc);
+void MatrixSubtract(matrix_t *ma,
+                    matrix_t *mb,
+                    matrix_t *mc);
 
 /* Subtract from the identity matrix in place. */
-void MatrixSubstractFromIdentity(matrix_t *m);
+void MatrixSubtractFromIdentity(matrix_t *m);
 
 /* Multiply matrices a and b and put the result in c. */
 void MatrixMultiply(restrict matrix_t *ma,

@@ -4,7 +4,7 @@ package com.example.lezh1k.sensordatacollector;
  * Created by lezh1k on 12/6/17.
  */
 
-public class Geohash {
+public class GeoHash {
 
     static final char base32Table[] = {
             '0', '1', '2', '3', '4', '5', '6', '7',

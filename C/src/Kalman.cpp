@@ -2,16 +2,19 @@
 #include "Kalman.h"
 #include "Matrix.h"
 
-static void allocateMemoryForKalman(KalmanGpsAccFilter_t *f);
+static void allocateMemoryForKalman(KalmanFilter_t *f,
+                                    int stateDimension,
+                                    int measureDimension,
+                                    int controlDimension);
 
-KalmanGpsAccFilter_t *KalmanAlloc(double initPos,
+KalmanFilter_t *GPSAccKalmanAlloc(double initPos,
                             double initVel,
                             double positionDeviation,
                             double accelerometerDeviation,
                             double currentTimeStamp) {
-  KalmanGpsAccFilter_t *f = (KalmanGpsAccFilter_t*) malloc(sizeof(KalmanGpsAccFilter_t));
+  KalmanFilter_t *f = (KalmanFilter_t*) malloc(sizeof(KalmanFilter_t));
   assert(f);
-  allocateMemoryForKalman(f);
+  allocateMemoryForKalman(f, 2, 2, 1);
 
   /*initialization*/
   f->timeStamp = currentTimeStamp;
@@ -40,35 +43,39 @@ KalmanGpsAccFilter_t *KalmanAlloc(double initPos,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void allocateMemoryForKalman(KalmanGpsAccFilter_t *f) {
-  f->stateTransitionMatrix = MatrixAlloc(2, 2);
-  f->measurementModel = MatrixAlloc(2, 2);
-  f->controlMatrix = MatrixAlloc(2, 1);
-  f->processVariance = MatrixAlloc(2, 2);
-  f->measureVariance = MatrixAlloc(2, 2);
+void allocateMemoryForKalman(KalmanFilter_t *f,
+                             int stateDimension,
+                             int measureDimension,
+                             int controlDimension) {
 
-  f->controlVector = MatrixAlloc(1, 1);
-  f->actualMeasurement = MatrixAlloc(2, 1);
+  f->stateTransitionMatrix = MatrixAlloc(stateDimension, stateDimension);
+  f->measurementModel = MatrixAlloc(measureDimension, measureDimension);
+  f->controlMatrix = MatrixAlloc(stateDimension, 1);
+  f->processVariance = MatrixAlloc(stateDimension, stateDimension);
+  f->measureVariance = MatrixAlloc(measureDimension, measureDimension);
 
-  f->predictedState = MatrixAlloc(2, 1);
-  f->predictedCovariance = MatrixAlloc(2, 2);
+  f->controlVector = MatrixAlloc(controlDimension, 1);
+  f->actualMeasurement = MatrixAlloc(stateDimension, 1);
 
-  f->measurementInnovation = MatrixAlloc(2, 1);
-  f->measurementInnovationCovariance = MatrixAlloc(2, 2);
-  f->measurementInnovationCovarianceInverse = MatrixAlloc(2, 2);
+  f->predictedState = MatrixAlloc(stateDimension, 1);
+  f->predictedCovariance = MatrixAlloc(stateDimension, stateDimension);
 
-  f->optimalKalmanGain = MatrixAlloc(2, 2);
+  f->measurementInnovation = MatrixAlloc(measureDimension, 1);
+  f->measurementInnovationCovariance = MatrixAlloc(measureDimension, measureDimension);
+  f->measurementInnovationCovarianceInverse = MatrixAlloc(measureDimension, measureDimension);
 
-  f->currentState = MatrixAlloc(2, 1);
-  f->updatedCovariance = MatrixAlloc(2, 2);
-  f->measurementPostfitResidual = MatrixAlloc(2, 1);
+  f->optimalKalmanGain = MatrixAlloc(stateDimension, measureDimension);
 
-  f->auxMx1 = MatrixAlloc(2, 1);
-  f->auxMxM = MatrixAlloc(2, 2);
+  f->currentState = MatrixAlloc(stateDimension, 1);
+  f->updatedCovariance = MatrixAlloc(stateDimension, stateDimension);
+  f->measurementPostfitResidual = MatrixAlloc(measureDimension, 1);
+
+  f->auxMx1 = MatrixAlloc(stateDimension, 1);
+  f->auxMxM = MatrixAlloc(stateDimension, stateDimension);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFree(KalmanGpsAccFilter_t *k) {
+void GPSAccKalmanFree(KalmanFilter_t *k) {
   MatrixFree(k->stateTransitionMatrix); //Fk
   MatrixFree(k->measurementModel); //Hk
   MatrixFree(k->controlMatrix); //Bk
@@ -95,7 +102,7 @@ void KalmanFree(KalmanGpsAccFilter_t *k) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildStateTransitions(KalmanGpsAccFilter_t *k, double deltaT) {
+static void rebuildStateTransitions(KalmanFilter_t *k, double deltaT) {
   MatrixSet(k->stateTransitionMatrix,
             1.0, deltaT,
             0.0, 1.0);
@@ -103,23 +110,14 @@ static void rebuildStateTransitions(KalmanGpsAccFilter_t *k, double deltaT) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildControlMatrix(KalmanGpsAccFilter_t *k, double deltaT) {
+static void rebuildControlMatrix(KalmanFilter_t *k, double deltaT) {
   MatrixSet(k->controlMatrix,
             0.5 * deltaT * deltaT,
             deltaT);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanPredict(KalmanGpsAccFilter_t *k,
-                   double timeNow,
-                   double accelerationProection) {
-  /*these 5 operations should be out of kalman filter*/
-  double deltaT = timeNow - k->timeStamp;
-  rebuildControlMatrix(k, deltaT);
-  rebuildStateTransitions(k, deltaT);
-  MatrixSet(k->controlVector, accelerationProection);
-  k->timeStamp = timeNow;
-
+static void kalmanPredict(KalmanFilter_t *k) {
   //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
   MatrixMultiply(k->stateTransitionMatrix, k->currentState, k->predictedState);
   MatrixMultiply(k->controlMatrix, k->controlVector, k->auxMx1);
@@ -132,21 +130,23 @@ void KalmanPredict(KalmanGpsAccFilter_t *k,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanUpdate(KalmanGpsAccFilter_t *k,
-                  double position,
-                  double velocityAxis,
-                  double *positionError,
-                  double velocityError) {
-  /*prepare to kalman update*/
-  MatrixSet(k->actualMeasurement, position, velocityAxis);
-  if (positionError)
-    k->measureVariance->data[0][0] = *positionError * *positionError;
-  k->measureVariance->data[1][1] = velocityError*velocityError;
+void GPSAccKalmanPredict(KalmanFilter_t *k,
+                   double timeNow,
+                   double accelerationProection) {
+  /*these 5 operations should be out of kalman filter*/
+  double deltaT = timeNow - k->timeStamp;
+  rebuildControlMatrix(k, deltaT);
+  rebuildStateTransitions(k, deltaT);
+  MatrixSet(k->controlVector, accelerationProection);
+  k->timeStamp = timeNow;
+  kalmanPredict(k);
+}
+//////////////////////////////////////////////////////////////////////////
 
-  /*kalman update*/
+static void kalmanUpdate(KalmanFilter_t *k) {
   //Yk = Zk - Hk*Xk|k-1
   MatrixMultiply(k->measurementModel, k->predictedState, k->measurementInnovation);
-  MatrixSubstract(k->actualMeasurement, k->measurementInnovation, k->measurementInnovation);
+  MatrixSubtract(k->actualMeasurement, k->measurementInnovation, k->measurementInnovation);
 
   //Sk = Rk + Hk*Pk|k-1*Hk(t)
   MatrixMultiplyByTranspose(k->predictedCovariance, k->measurementModel, k->auxMxM);
@@ -164,11 +164,25 @@ void KalmanUpdate(KalmanGpsAccFilter_t *k,
 
   //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
   MatrixMultiply(k->optimalKalmanGain, k->measurementModel, k->auxMxM);
-  MatrixSubstractFromIdentity(k->auxMxM);
+  MatrixSubtractFromIdentity(k->auxMxM);
   MatrixMultiply(k->auxMxM, k->predictedCovariance, k->updatedCovariance);
 
   //Yk|k = Zk - Hk*Xk|k
   MatrixMultiply(k->measurementModel, k->currentState, k->measurementPostfitResidual);
-  MatrixSubstract(k->actualMeasurement, k->measurementPostfitResidual, k->measurementPostfitResidual);
+  MatrixSubtract(k->actualMeasurement, k->measurementPostfitResidual, k->measurementPostfitResidual);
+}
+//////////////////////////////////////////////////////////////////////////
+
+void GPSAccKalmanUpdate(KalmanFilter_t *k,
+                  double position,
+                  double velocityAxis,
+                  double *positionError,
+                  double velocityError) {
+  /*prepare to kalman update*/
+  MatrixSet(k->actualMeasurement, position, velocityAxis);
+  if (positionError)
+    k->measureVariance->data[0][0] = *positionError * *positionError;
+  k->measureVariance->data[1][1] = velocityError*velocityError;
+  kalmanUpdate(k);
 }
 //////////////////////////////////////////////////////////////////////////

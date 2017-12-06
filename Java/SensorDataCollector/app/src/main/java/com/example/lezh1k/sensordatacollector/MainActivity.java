@@ -14,7 +14,6 @@ import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.style.TtsSpan;
 import android.view.WindowManager;
 import android.widget.TextView;
 
@@ -63,6 +62,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private TextView m_tvMagnetometerData;
     private TextView m_tvLocationData;
 
+    private float m_accData[] = new float[3];
+    private float m_gyrData[] = new float[3];
+    private float m_magData[] = new float[3];
+
     private long initSensors() {
         m_sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (m_sensorManager == null) {
@@ -86,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         return result;
     }
 
-    String sensorDesctiption(Sensor s) {
+    String sensorDescription(Sensor s) {
         String res = "";
         res += "Res : " + s.getResolution() + "\n";
         res += "Min Del : " + s.getMinDelay() + "\n";
@@ -129,9 +132,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         } else {
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
         }
-        m_tvAccelerometer.setText("Accelerometer :\n" + sensorDesctiption(m_accelerometer));
-        m_tvMagnetometer.setText("Magnetometer :\n" + sensorDesctiption(m_magnetometer));
-        m_tvGyroscope.setText("Gyroscope :\n" + sensorDesctiption(m_gyroscope));
+        m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_accelerometer));
+        m_tvMagnetometer.setText("Magnetometer :\n" + sensorDescription(m_magnetometer));
+        m_tvGyroscope.setText("Gyroscope :\n" + sensorDescription(m_gyroscope));
 
         m_sensorManager.registerListener(this, m_accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
@@ -145,7 +148,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onLocationChanged(Location lkl) {
         GeomagneticField gf = new GeomagneticField((float)lkl.getLatitude(),
                 (float)lkl.getLongitude(), (float)lkl.getAltitude(), System.currentTimeMillis());
-        m_tvLocationData.setText(String.format("Declimation = %f\n%s", gf.getDeclination(), lkl.toString()));
+        m_tvLocationData.setText(String.format("MDecl:%f\nLat:%f,Lon:%f,Alt:%f",
+                gf.getDeclination(),
+                lkl.getLatitude(),
+                lkl.getLongitude(),
+                lkl.getAltitude()));
     }
 
     @Override
@@ -214,23 +221,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onSensorChanged(SensorEvent sensorEvent) {
         TextView tv = null;
         String format = null;
-        Calibration cl = new Calibration();
+        Calibration cl = null;
 
         switch (sensorEvent.sensor.getType()) {
             case Sensor.TYPE_MAGNETIC_FIELD :
-                magCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
                 format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
                 tv = m_tvMagnetometerData;
                 cl = magCalibration;
                 break;
             case Sensor.TYPE_ACCELEROMETER:
-                accCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvAccelerometerData;
                 cl = accCalibration;
                 break;
             case Sensor.TYPE_GYROSCOPE:
-                gyrCalibration.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvGyroscopeData;
                 cl = gyrCalibration;
@@ -238,6 +242,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         }
 
         if (tv == null) return;
+        if (cl == null) return;
+        cl.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
         tv.setText(String.format(format, sensorEvent.accuracy,
                 sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]) +
                 String.format("Sx : %f, Sy = %f, Sz = %f", cl.sigmaX, cl.sigmaY, cl.sigmaZ));

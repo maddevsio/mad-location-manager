@@ -127,7 +127,7 @@ static void matrixSubstractTest() {
             1.0, 2.0, 3.0,
             4.0, 5.0, 6.0);
 
-  MatrixSubstract(ma, mb, mc);
+  MatrixSubtract(ma, mb, mc);
   assert(mc->data[0][0] == 11.0);
   assert(mc->data[0][1] == 9.0);
   assert(mc->data[0][2] == 7.0);
@@ -135,7 +135,7 @@ static void matrixSubstractTest() {
   assert(mc->data[1][1] == 3.0);
   assert(mc->data[1][2] == 1.0);
 
-  MatrixSubstract(ma, mc, ma); //inplace test
+  MatrixSubtract(ma, mc, ma); //inplace test
   assert(ma->data[0][0] == 1.0);
   assert(ma->data[0][1] == 2.0);
   assert(ma->data[0][2] == 3.0);
@@ -156,7 +156,7 @@ void matrixSubstractFromIdentityTest() {
             1.0, 2.0, 3.0,
             4.0, 5.0, 6.0,
             7.0, 8.0, 9.0);
-  MatrixSubstractFromIdentity(m);
+  MatrixSubtractFromIdentity(m);
 
   assert(m->data[0][0] == 0.0);
   assert(m->data[0][1] == -2.0);

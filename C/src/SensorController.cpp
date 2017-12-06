@@ -107,7 +107,7 @@ FilterInputFile(const char *inputFile,
   double accelerometerNorthStandardDeviation = ACTUAL_GRAVITY * 0.05355371135598354;
   double accelerometerUpStandardDeviation = ACTUAL_GRAVITY * 0.2088683796078286;
 
-  KalmanGpsAccFilter_t *kfLat, *kfLon, *kfAlt;
+  KalmanFilter_t *kfLat, *kfLon, *kfAlt;
   bool initialData = false;
   bool result = false;
   geopoint_t predictedPoint;
@@ -140,19 +140,19 @@ FilterInputFile(const char *inputFile,
     if (!initialData)
       break;
 
-    kfLon = KalmanAlloc(LongitudeToMeters(sd.gpsLon),
+    kfLon = GPSAccKalmanAlloc(LongitudeToMeters(sd.gpsLon),
                         sd.velEast,
                         latLonStandardDeviation,
                         accelerometerEastStandardDeviation,
                         sd.timestamp);
 
-    kfLat = KalmanAlloc(LatitudeToMeters(sd.gpsLat),
+    kfLat = GPSAccKalmanAlloc(LatitudeToMeters(sd.gpsLat),
                         sd.velNorth,
                         latLonStandardDeviation,
                         accelerometerNorthStandardDeviation,
                         sd.timestamp);
 
-    kfAlt = KalmanAlloc(sd.gpsAlt,
+    kfAlt = GPSAccKalmanAlloc(sd.gpsAlt,
                         -sd.velDown,
                         altitudeStandardDeviation,
                         accelerometerUpStandardDeviation,
@@ -168,22 +168,22 @@ FilterInputFile(const char *inputFile,
         continue;
       }
 
-      KalmanPredict(kfLon, sd.timestamp, sd.absEastAcc*ACTUAL_GRAVITY);
-      KalmanPredict(kfLat, sd.timestamp, sd.absNorthAcc*ACTUAL_GRAVITY);
-      KalmanPredict(kfAlt, sd.timestamp, sd.absUpAcc*ACTUAL_GRAVITY);
+      GPSAccKalmanPredict(kfLon, sd.timestamp, sd.absEastAcc*ACTUAL_GRAVITY);
+      GPSAccKalmanPredict(kfLat, sd.timestamp, sd.absNorthAcc*ACTUAL_GRAVITY);
+      GPSAccKalmanPredict(kfAlt, sd.timestamp, sd.absUpAcc*ACTUAL_GRAVITY);
 
       if (sd.gpsLat != 0.0) {
-        KalmanUpdate(kfLon,
+        GPSAccKalmanUpdate(kfLon,
                      LongitudeToMeters(sd.gpsLon),
                      sd.velEast,
                      NULL,
                      sd.velError);
-        KalmanUpdate(kfLat,
+        GPSAccKalmanUpdate(kfLat,
                      LatitudeToMeters(sd.gpsLat),
                      sd.velNorth,
                      NULL,
                      sd.velError);
-        KalmanUpdate(kfAlt,
+        GPSAccKalmanUpdate(kfAlt,
                      sd.gpsAlt,
                      sd.velDown * -1.0,
                      &sd.altitudeError,

@@ -10,7 +10,7 @@ import static junit.framework.Assert.assertTrue;
  * Created by lezh1k on 12/6/17.
  */
 
-public class GeohashUnitTest {
+public class GeoHashUnitTest {
 
     class EncodeTestItem {
         double lat;
@@ -56,11 +56,11 @@ public class GeohashUnitTest {
         };
 
         for (EncodeTestItem ti : posTests) {
-            assertEquals(ti.expected, Geohash.Encode(ti.lat, ti.lon, ti.precision));
+            assertEquals(ti.expected, GeoHash.Encode(ti.lat, ti.lon, ti.precision));
         }
 
         for (EncodeTestItem ti : negTests) {
-            assertNotSame(ti.expected, Geohash.Encode(ti.lat, ti.lon, ti.precision));
+            assertNotSame(ti.expected, GeoHash.Encode(ti.lat, ti.lon, ti.precision));
         }
     }
 }

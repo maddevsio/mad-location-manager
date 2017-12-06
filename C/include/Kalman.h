@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "Matrix.h"
 
-typedef struct KalmanGpsAccFilter {
+typedef struct KalmanFilter {
   /* k */
   double timeStamp;
 
@@ -63,15 +63,16 @@ typedef struct KalmanGpsAccFilter {
   matrix_t *auxMx1;
   matrix_t *auxMxM;
 
-} KalmanGpsAccFilter_t;
+} KalmanFilter_t;
 
-KalmanGpsAccFilter_t* KalmanAlloc(double initPos, double initVel,
+
+KalmanFilter_t* GPSAccKalmanAlloc(double initPos, double initVel,
                                   double positionDeviation, double accelerometerDeviation,
                                   double currentTimeStamp);
-void KalmanFree(KalmanGpsAccFilter_t *k);
+void GPSAccKalmanFree(KalmanFilter_t *k);
 
-void KalmanPredict(KalmanGpsAccFilter_t *k, double timeNow, double accelerationProection);
-void KalmanUpdate(KalmanGpsAccFilter_t *k, double position, double velocityAxis,
+void GPSAccKalmanPredict(KalmanFilter_t *k, double timeNow, double accelerationProection);
+void GPSAccKalmanUpdate(KalmanFilter_t *k, double position, double velocityAxis,
                   double *positionError, double velocityError);
 
 #endif // KALMAN_H

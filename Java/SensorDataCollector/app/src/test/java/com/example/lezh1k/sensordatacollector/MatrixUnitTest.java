@@ -103,7 +103,7 @@ public class MatrixUnitTest {
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0,
                 7.0, 8.0, 9.0);
-        m.SubstractFromIdentity();
+        m.SubtractFromIdentity();
 
         assertEquals(m.data[0][0] , 0.0);
         assertEquals(m.data[0][1] , -2.0);
