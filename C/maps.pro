@@ -10,25 +10,27 @@ HEADERS += \
     include/Coordinates.h \
     include/Commons.h \
     include/Matrix.h \
-    include/Kalman.h \
     include/Geohash.h \
     tests/include/GeohashTest.h \
     tests/include/MatrixTest.h \
     include/SensorController.h \
     tests/include/SensorControllerTest.h \
-    tests/include/CoordinatesTest.h
+    tests/include/CoordinatesTest.h \
+    include/GPSAccKalman.h \
+    include/Kalman.h
 
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
     src/Coordinates.cpp \
     src/Matrix.cpp \
-    src/Kalman.cpp \
     src/Geohash.cpp \
     tests/src/GeohashTest.cpp \
     tests/src/MatrixTest.cpp \
     src/SensorController.cpp \
     tests/src/SensorControllerTest.cpp \
-    tests/src/CoordinatesTest.cpp
+    tests/src/CoordinatesTest.cpp \
+    src/GPSAccKalman.cpp \
+    src/Kalman.cpp
 
 target.path = $$[QT_INSTALL_EXAMPLES]/webenginewidgets/maps
 INSTALLS += target

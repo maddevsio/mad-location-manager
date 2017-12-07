@@ -218,12 +218,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     Calibration magCalibration = new Calibration();
 
     @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
+    public void onSensorChanged(SensorEvent event) {
         TextView tv = null;
         String format = null;
         Calibration cl = null;
 
-        switch (sensorEvent.sensor.getType()) {
+        switch (event.sensor.getType()) {
             case Sensor.TYPE_MAGNETIC_FIELD :
                 format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
                 tv = m_tvMagnetometerData;
@@ -243,9 +243,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         if (tv == null) return;
         if (cl == null) return;
-        cl.Measure(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
-        tv.setText(String.format(format, sensorEvent.accuracy,
-                sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]) +
+        cl.Measure(event.values[0], event.values[1], event.values[2]);
+        tv.setText(String.format(format, event.accuracy,
+                event.values[0], event.values[1], event.values[2]) +
                 String.format("Sx : %f, Sy = %f, Sz = %f", cl.sigmaX, cl.sigmaY, cl.sigmaZ));
     }
 

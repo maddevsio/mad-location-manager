@@ -1,52 +1,19 @@
 #ifndef KALMAN_H
 #define KALMAN_H
 
-#include <stdint.h>
-#include "Matrix.h"
+typedef struct matrix matrix_t;
 
 typedef struct KalmanFilter {
-  /* k */
-  double timeStamp;
-
   /*these matrices should be provided by user*/
-  /*
-  [1, dt
-   0, 1  ]*/
   matrix_t *stateTransitionMatrix; //Fk
-  /*[ 1, 0
-      0, 1 ]*/
   matrix_t *measurementModel; //Hk --> converts somehow measured data to model data. in our case Identity
-  /*
-    [0.5 * dt^2 ,
-     dt ]
-  */
   matrix_t *controlMatrix; //Bk
-  /*
-    [sigma^2, 0
-     0      , sigma^2]
-  */
   matrix_t *processVariance; //Q
-  /*
-    [sigma^2, 0
-     0      , sigma^2]
-  */
   matrix_t *measureVariance; //R
 
   /*these matrices will be updated by user*/
-  /* [a] from accelerometer*/
-  matrix_t *controlVector; //Uk (Accelerometer)
-  /* GPS
-   [ pos,
-     vel ]
-  */
-  matrix_t *actualMeasurement; //Zk (GPS)
-
-  /*
-   [ pos,
-     vel ]
-     pos = pos0 + v*dt + a*dt^2*0.5
-     vel = v0 + a*dt
-  */
+  matrix_t *controlVector; //Uk
+  matrix_t *actualMeasurement; //Zk
   matrix_t *predictedState; //Xk|k-1
   matrix_t *predictedCovariance; //Pk|k-1
   matrix_t *measurementInnovation; //Yk
@@ -60,19 +27,17 @@ typedef struct KalmanFilter {
   matrix_t *measurementPostfitResidual; //Yk|k
 
   /*auxiliary matrices*/
-  matrix_t *auxMx1;
-  matrix_t *auxMxM;
+  matrix_t *auxBxU;
+  matrix_t *auxSDxMD;
 
 } KalmanFilter_t;
 
+KalmanFilter_t *KalmanFilterCreate(int stateDimension,
+                                   int measureDimension,
+                                   int controlDimension);
+void KalmanFilterFree(KalmanFilter_t *k);
 
-KalmanFilter_t* GPSAccKalmanAlloc(double initPos, double initVel,
-                                  double positionDeviation, double accelerometerDeviation,
-                                  double currentTimeStamp);
-void GPSAccKalmanFree(KalmanFilter_t *k);
-
-void GPSAccKalmanPredict(KalmanFilter_t *k, double timeNow, double accelerationProection);
-void GPSAccKalmanUpdate(KalmanFilter_t *k, double position, double velocityAxis,
-                  double *positionError, double velocityError);
+void KalmanFilterPredict(KalmanFilter_t *k);
+void KalmanFilterUpdate(KalmanFilter_t *k);
 
 #endif // KALMAN_H

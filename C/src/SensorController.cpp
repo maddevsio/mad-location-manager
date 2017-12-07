@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "SensorController.h"
-#include "Kalman.h"
+#include "GPSAccKalman.h"
 #include "Coordinates.h"
 #include <QDebug>
 
@@ -107,7 +107,7 @@ FilterInputFile(const char *inputFile,
   double accelerometerNorthStandardDeviation = ACTUAL_GRAVITY * 0.05355371135598354;
   double accelerometerUpStandardDeviation = ACTUAL_GRAVITY * 0.2088683796078286;
 
-  KalmanFilter_t *kfLat, *kfLon, *kfAlt;
+  GPSAccKalmanFilter_t *kfLat, *kfLon, *kfAlt;
   bool initialData = false;
   bool result = false;
   geopoint_t predictedPoint;
@@ -190,16 +190,16 @@ FilterInputFile(const char *inputFile,
                      sd.velError);
       }
       predictedPoint = MetersToGeopoint(
-                         kfLon->currentState->data[0][0],
-          kfLat->currentState->data[0][0]);
+                         kfLon->kf->currentState->data[0][0],
+          kfLat->kf->currentState->data[0][0]);
 
-      predictedVE = kfLon->currentState->data[1][0];
-      predictedVN = kfLat->currentState->data[1][0];
+      predictedVE = kfLon->kf->currentState->data[1][0];
+      predictedVN = kfLat->kf->currentState->data[1][0];
       resultantV = sqrt(pow(predictedVE, 2.0) + pow(predictedVN, 2.0));
 
       sensorDataToFile( fout,
                         &sd,
-                        kfAlt->currentState->data[0][0],
+                        kfAlt->kf->currentState->data[0][0],
                         predictedPoint.Longitude,
                         predictedPoint.Latitude,
                         MilesPerHour2MeterPerSecond(resultantV));
