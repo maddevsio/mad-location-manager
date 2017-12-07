@@ -24,6 +24,15 @@ public class Matrix {
         }
     }
 
+    public void Set(float... args) {
+        assert(args.length == rows * cols);
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                data[r][c] = (double)args[r*cols + c];
+            }
+        }
+    }
+
     private void setIdentity() {
         assert(rows == cols);
         for (int r = 0; r < rows; ++r) {
