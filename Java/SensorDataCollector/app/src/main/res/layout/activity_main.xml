@@ -9,7 +9,7 @@
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="358dp"
-        android:layout_height="44dp"
+        android:layout_height="82dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -98,7 +98,7 @@
     <TextView
         android:id="@+id/tvLocationData"
         android:layout_width="219dp"
-        android:layout_height="196dp"
+        android:layout_height="161dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:text="SensorData"

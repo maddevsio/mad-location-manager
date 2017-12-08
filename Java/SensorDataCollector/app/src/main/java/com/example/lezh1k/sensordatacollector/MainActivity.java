@@ -8,17 +8,19 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.OnNmeaMessageListener;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.TextView;
-
-import java.util.Date;
 
 enum InitSensorErrorFlag {
     SUCCESS(0),
@@ -48,7 +50,13 @@ enum InitSensorErrorFlag {
 }
 /*****************************************************************/
 
-public class MainActivity extends AppCompatActivity implements LocationListener, SensorEventListener {
+public class MainActivity extends AppCompatActivity implements LocationListener, SensorEventListener, GpsStatus.NmeaListener {
+
+
+    @Override
+    public void onNmeaReceived(long l, String s) {
+        m_tvStatus.setText(String.format("%d\n%s", l, s));
+    }
 
     class Calibration {
         final int measurementCalibrationCount;
@@ -116,61 +124,51 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             return null;
         }
 
-        float[] m_rotationM = new float[9];
-        float[] m_inclinationM = new float[9];
-        float[] m_orientation = new float[3];
-
+        float[] m_rotationArr = new float[9];
+        float[] m_inclinationArr = new float[9];
         float[] m_currAcc = new float[3];
         float[] m_currMag = new float[3];
+
+        Matrix m_rotationMatrix = new Matrix(3, 3);
+        Matrix m_currAccMatrix = new Matrix(3, 1);
+        Matrix m_currAccMatrix2 = new Matrix(3,1);
 
         @Override
         protected void onProgressUpdate(Object... values) {
             if (m_accData == null || m_magData == null) return;
             System.arraycopy(m_accData, 0, m_currAcc, 0, 3);
             System.arraycopy(m_magData, 0, m_currMag, 0, 3);
-            if (!SensorManager.getRotationMatrix(m_rotationM, m_inclinationM, m_currAcc, m_currMag)) {
+            if (!SensorManager.getRotationMatrix(m_rotationArr, m_inclinationArr, m_currAcc, m_currMag)) {
                 //todo something
                 return;
             }
 
-            Matrix m1 = new Matrix(3, 3);
-            Matrix m1T = new Matrix(3, 3);
-            m1.Set(m_rotationM);
-            Matrix m2 = new Matrix(3, 1);
-            m2.Set(m_currAcc);
+            m_rotationMatrix.Set(m_rotationArr);
+            m_currAccMatrix.Set(m_currAcc);
 
-            /*remove g component from acceleration*/
-            m2.data[0][0] -= SensorManager.GRAVITY_EARTH*m_rotationM[6];
-            m2.data[1][0] -= SensorManager.GRAVITY_EARTH*m_rotationM[7];
-            m2.data[2][0] -= SensorManager.GRAVITY_EARTH*m_rotationM[8];
-
-            Matrix m3 = new Matrix (3, 1);
-            Matrix.MatrixTranspose(m1, m1T); //we got inverse matrix here
-            Matrix.MatrixMultiply(m1T, m2, m3);
-
-            double nn = m3.data[0][0] * Math.cos(m_currentMagneticDeclimation) +
-                    m3.data[1][0] * Math.sin(m_currentMagneticDeclimation);
-            double ne = m3.data[1][0] * Math.cos(m_currentMagneticDeclimation) -
-                    m3.data[0][0] * Math.sin(m_currentMagneticDeclimation);
-            m3.data[0][0] = nn;
-            m3.data[1][0] = ne;
+            /*we have inverted matrix here because of openGL. so WE DON'T NEED TO INVERT IT AGAIN!!!!!!*/
+            Matrix.MatrixMultiply(m_rotationMatrix, m_currAccMatrix, m_currAccMatrix2);
 
             String str = String.format("" +
                     "MDecl:%f, Lat:%f, Lon:%f, Alt:%f\n" +
-                    "AccX=%f, AccY=%f, AccZ=%f\n" +
-                    "AccN=%f, AccE=%f, AccU=%f",
-                    m_currentMagneticDeclimation, m_currentLat, m_currentLon, m_currentAlt,
-                    m_currAcc[0], m_currAcc[1], m_currAcc[2],
-                    m3.data[0][0], m3.data[1][0], m3.data[2][0]);
+                    "AccN=%f\nAccE=%f\nAccU=%f\n" +
+                            "Speed=%f\n",
+                    m_currentMagneticDeclination, m_currentLat, m_currentLon, m_currentAlt,
+                    m_currAccMatrix2.data[0][0], m_currAccMatrix2.data[1][0], m_currAccMatrix2.data[2][0],
+                    m_currentSpeed);
             m_tvLocationData.setText(str);
         }
     }
     /*********************************************************/
 
-    static void lowPassFilter(float alpha, float[] prev, float[] measured) {
+    static void lowPassFilterArr(float alpha, float[] prev, float[] measured) {
         for (int i = 0; i < prev.length; ++i) {
-            prev[i] += alpha * (measured[i] - prev[i]);
+            prev[i] = lowPassFilter(alpha, prev[i], measured[i]);
         }
+    }
+
+    static float lowPassFilter(float alpha, float prev, float measured) {
+        return prev + alpha * (measured - prev);
     }
 
     private LocationManager m_locationManager;
@@ -192,15 +190,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private float m_gyrData[] = new float[3];
     private float m_magData[] = new float[3];
 
-    private float m_currentMagneticDeclimation = 0.0f;
+    private float m_currentMagneticDeclination = 0.0f;
     private float m_currentLat = 0.0f;
     private float m_currentLon = 0.0f;
     private float m_currentAlt = 0.0f;
-    private float m_currentSpeed;
-    private float m_currentPitch = 0.0f;
-    private float m_currentYaw = 0.0f;
-    private float m_currentRoll = 0.0f;
-
+    private float m_currentSpeed = 0.0f;
 
     static String sensorDescription(Sensor s) {
         String res = "";
@@ -264,6 +258,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
         } else {
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
+            m_locationManager.addNmeaListener(this);
         }
         m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_accelerometer));
         m_tvMagnetometer.setText("Magnetometer :\n" + sensorDescription(m_magnetometer));
@@ -272,6 +267,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         m_sensorManager.registerListener(this, m_accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
         m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+
         AsyncTask at = new RefreshTask();
         at.execute();
     }
@@ -286,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         m_currentSpeed = lkl.getSpeed();
         GeomagneticField gf = new GeomagneticField(m_currentLat, m_currentLon,
                 m_currentAlt, System.currentTimeMillis());
-        m_currentMagneticDeclimation = gf.getDeclination();
+        m_currentMagneticDeclination = gf.getDeclination();
     }
 
     @Override
@@ -307,8 +303,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     Calibration gyrCalibration = new Calibration(150);
     Calibration magCalibration = new Calibration(300);
 
-    long accTimeStamp = System.currentTimeMillis();
-
     @Override
     public void onSensorChanged(SensorEvent event) {
         TextView tv = null;
@@ -327,13 +321,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvAccelerometerData;
                 cl = accCalibration;
-                lowPassFilter(0.2f,m_accData, event.values);
+                lowPassFilterArr(0.8f, m_accData, event.values);
                 values = m_accData;
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvGyroscopeData;
                 cl = gyrCalibration;
+                System.arraycopy(event.values, 0, m_gyrData, 0, 3);
                 break;
         }
 

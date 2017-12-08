@@ -78,7 +78,7 @@ public class MatrixUnitTest {
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0);
 
-        Matrix.MatrixSubstract(ma, mb, mc);
+        Matrix.MatrixSubtract(ma, mb, mc);
         assertEquals(mc.data[0][0] , 11.0);
         assertEquals(mc.data[0][1] , 9.0);
         assertEquals(mc.data[0][2] , 7.0);
@@ -86,7 +86,7 @@ public class MatrixUnitTest {
         assertEquals(mc.data[1][1] , 3.0);
         assertEquals(mc.data[1][2] , 1.0);
 
-        Matrix.MatrixSubstract(ma, mc, ma); //inplace test
+        Matrix.MatrixSubtract(ma, mc, ma); //inplace test
         assertEquals(ma.data[0][0] , 1.0);
         assertEquals(ma.data[0][1] , 2.0);
         assertEquals(ma.data[0][2] , 3.0);

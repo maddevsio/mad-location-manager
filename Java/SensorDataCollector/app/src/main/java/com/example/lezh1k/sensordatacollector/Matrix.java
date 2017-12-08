@@ -59,9 +59,9 @@ public class Matrix {
         }
     }
 
-    static void MatrixSubstract(Matrix ma,
-                                Matrix mb,
-                                Matrix mc) {
+    static void MatrixSubtract(Matrix ma,
+                               Matrix mb,
+                               Matrix mc) {
         assert(ma != null);
         assert(mb != null);
         assert(mc != null);
