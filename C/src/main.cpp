@@ -48,6 +48,8 @@
 **
 ****************************************************************************/
 
+#include <assert.h>
+
 #include "mainwindow.h"
 #include <QApplication>
 
@@ -56,7 +58,8 @@
 #include "SensorControllerTest.h"
 #include "CoordinatesTest.h"
 #include "SensorController.h"
-#include <assert.h>
+#include "MadgwickAHRS.h"
+
 static void launchTests() {
   TestGeohash();
   TestMatrices();
@@ -67,10 +70,39 @@ static void launchTests() {
                   "/home/lezh1k/gps_test_data/test.json"));
 }
 //////////////////////////////////////////////////////////////////////////
-
+#include "Matrix.h"
 int main(int argc, char *argv[])
-{  
-  //todo use some parameter in args.
+{
+  for (int i = 0; i < 4; ++i)
+    MadgwickAHRSupdate(0.0f, 0.0f, 0.0f, //g
+                     0.0f, 9.809999f, 0.0f, //a
+                     30.2493f, 10.3607f, 36.7975f); //m
+
+  float w, x, y, z;
+  w = q0; x = q1; y = q2; z = q3;
+
+  matrix_t *rotMatrix = MatrixAlloc(3, 3);
+  matrix_t *currAcc = MatrixAlloc(3, 1);
+  matrix_t *rotMatrixI = MatrixAlloc(3, 3);
+
+  rotMatrix->data[0][0] = 1.0f - 2.0f*y*y - 2.0f*z*z;
+  rotMatrix->data[0][1] = 2.0f*x*y - 2.0f*z*w;
+  rotMatrix->data[0][2] = 2.0f*x*z + 2.0f*y*w;
+  rotMatrix->data[1][0] = 2.0f*x*y + 2.0f*z*w;
+  rotMatrix->data[1][1] = 1.0f - 2.0f*x*x - 2.0f*z*z;
+  rotMatrix->data[1][2] = 2.0f*y*z - 2.0f*x*w;
+  rotMatrix->data[2][0] = 2.0f*x*z - 2.0f*y*w;
+  rotMatrix->data[2][1] = 2.0f*y*z + 2.0f*x*w;
+  rotMatrix->data[2][2] = 1.0f - 2.0f*x*x - 2.0f*y*y;
+
+  MatrixTranspose(rotMatrix, rotMatrixI);
+  matrix_t *neuAcc = MatrixAlloc(3, 1);
+  MatrixSet(currAcc, 0.0, 0.0, 9.809999);
+  MatrixPrint(rotMatrix);
+  MatrixPrint(currAcc);
+  MatrixMultiply(rotMatrix, currAcc, neuAcc);
+  MatrixPrint(neuAcc);
+
   launchTests();
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);

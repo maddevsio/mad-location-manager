@@ -111,10 +111,8 @@ void MatrixPrint(matrix_t *m) {
   for (r = 0; r < m->rows; ++r) {
     QString str = "";
     for (c = 0; c < m->cols; ++c) {
-      //printf("%6.2f ", m->data[r][c]);
-      str += QString::number(m->data[r][c], 'g', 20) + "   ";
+      str += QString::number(m->data[r][c], 'g', 6) + "   ";
     }
-    //    printf("\n");
     qDebug() << str;
   }
   qDebug() << "****";

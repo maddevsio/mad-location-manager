@@ -46,10 +46,12 @@ static void matrixSetTest() {
   assert(m1->data[2][0] == 7.0);
   assert(m1->data[2][1] == 8.0);
   assert(m1->data[2][2] == 9.0);
-  m2 = MatrixAlloc(2, 1);
-  MatrixSet(m2, 4.2, 3.3);
-  assert(m2->data[0][0] == 4.2);
-  assert(m2->data[1][0] == 3.3);
+
+  m2 = MatrixAlloc(3, 1);
+  MatrixSet(m2, 0.0, 1.1, 2.2);
+  assert(m2->data[0][0] == 0.0);
+  assert(m2->data[1][0] == 1.1);
+  assert(m2->data[2][0] == 2.2);
 
   MatrixFree(m1);
   MatrixFree(m2);
