@@ -9,7 +9,7 @@
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="358dp"
-        android:layout_height="82dp"
+        android:layout_height="27dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -21,7 +21,7 @@
     <TextView
         android:id="@+id/tvAccelerometer"
         android:layout_width="127dp"
-        android:layout_height="70dp"
+        android:layout_height="65dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Accelerometer"
@@ -31,41 +31,43 @@
     <TextView
         android:id="@+id/tvAccelerometerData"
         android:layout_width="218dp"
-        android:layout_height="70dp"
-        android:layout_marginStart="12dp"
+        android:layout_height="65dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:autoSizeTextType="none"
         android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvAccelerometer"
         app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
 
     <TextView
         android:id="@+id/tvGyroscope"
         android:layout_width="127dp"
-        android:layout_height="70dp"
+        android:layout_height="65dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="Gyroscope"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometer" />
+        app:layout_constraintTop_toBottomOf="@+id/tvLinAccelerometer" />
 
     <TextView
         android:id="@+id/tvGyroscopeData"
         android:layout_width="218dp"
-        android:layout_height="70dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="65dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:autoSizeTextType="none"
         android:text="SensorData"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvGyroscope"
-        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometerData" />
+        app:layout_constraintTop_toBottomOf="@+id/tvLinAccelerometerData" />
 
     <TextView
         android:id="@+id/tvMagnetometer"
         android:layout_width="127dp"
-        android:layout_height="70dp"
+        android:layout_height="65dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Magnetometer"
@@ -75,8 +77,8 @@
     <TextView
         android:id="@+id/tvMagnetometerData"
         android:layout_width="218dp"
-        android:layout_height="70dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="65dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:autoSizeTextType="none"
@@ -88,7 +90,7 @@
     <TextView
         android:id="@+id/tvLocation"
         android:layout_width="127dp"
-        android:layout_height="70dp"
+        android:layout_height="65dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Location"
@@ -97,11 +99,35 @@
 
     <TextView
         android:id="@+id/tvLocationData"
-        android:layout_width="219dp"
-        android:layout_height="161dp"
-        android:layout_marginStart="12dp"
+        android:layout_width="218dp"
+        android:layout_height="160dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLocation"
         app:layout_constraintTop_toBottomOf="@+id/tvMagnetometerData" />
+
+    <TextView
+        android:id="@+id/tvLinAccelerometer"
+        android:layout_width="127dp"
+        android:layout_height="65dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Linear accelerometer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometer" />
+
+    <TextView
+        android:id="@+id/tvLinAccelerometerData"
+        android:layout_width="218dp"
+        android:layout_height="65dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="SensorData"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvLinAccelerometer"
+        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometerData" />
 </android.support.constraint.ConstraintLayout>
