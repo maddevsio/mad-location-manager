@@ -1,18 +1,23 @@
 package com.example.lezh1k.sensordatacollector;
 
+import android.util.Log;
+
 /**
  * Created by lezh1k on 12/12/17.
  */
 
 public class DeviationCalculator {
-    static final double SigmaNotInitialized = -1.0;
-    final int measurementCalibrationCount;
-    int m_count = 0;
-    int m_valuesCount;
-    double m_sigmas[];
-    double m_measurements[][];
+    private static final double SigmaNotInitialized = -1.0;
+    private final int measurementCalibrationCount;
+    private int m_count = 0;
+    private int m_valuesCount;
+    private double m_sigmas[];
+    private double m_measurements[][];
+    private boolean m_calculated = false;
+    private String id;
 
-    public DeviationCalculator(int measurementCalibrationCount, int valuesCount) {
+    public DeviationCalculator(int measurementCalibrationCount, int valuesCount, String id) {
+        this.id  = id;
         this.measurementCalibrationCount = measurementCalibrationCount;
         m_valuesCount = valuesCount;
         m_measurements = new double[valuesCount][measurementCalibrationCount];
@@ -48,7 +53,16 @@ public class DeviationCalculator {
             for (int i = 0; i < m_valuesCount; ++i) {
                 m_sigmas[i] = calculateSigma(m_sigmas[i], m_measurements[i]);
             }
+            m_calculated = true;
         }
+    }
+
+    public double[] getSigmas() {
+        return m_sigmas;
+    }
+
+    public boolean isM_calculated() {
+        return m_calculated;
     }
 
     public String sigmasToStr() {

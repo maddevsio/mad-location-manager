@@ -18,4 +18,10 @@ public class Commons {
     public static double MilesPerHour2MeterPerSecond(double mph) {
         return 2.23694 * mph;
     }
+
+    public static double KnotsPerHour2MeterPerSecond(double kph) {
+        return 0.5144444 * kph;
+    }
+
+    public static final String AppName = "SensorDataCollector";
 }
