@@ -83,141 +83,9 @@ public class MainActivity extends AppCompatActivity
             return null;
         }
 
-        //We can use MadgwickAHRS here. But we need gyroscope data in this case.
-        //If we need - we will use it. Now use openGL matrices
-        float[] R  = new float[16];
-        float[] RI = new float[16]; //inverse
-        float[] I  = new float[16]; //inclinations
-
-        float[] gravity     = new float[4];
-        float[] geomagnetic = new float[4];
-        float[] linAcc      = new float[4];
-
-        float[] accAxis = new float[4];
-        float[] velAxis = new float[4];
-
-        GPSAccKalmanFilter kfLon = null;
-        GPSAccKalmanFilter kfLat = null;
-        GPSAccKalmanFilter kfAlt = null;
-
-        double filteredLon = 0.0;
-        double filteredLat = 0.0;
-        double filteredAlt = 0.0;
-        double filteredSpeed = 0.0;
-        float[] filteredSpeedAxis = new float[4];
-
-        static final int east = 0;
-        static final int north = 1;
-        static final int up = 2;
-
-        static final double latLonStandardDeviation = 2.0; // +/- 1m, increased for safety
-        static final double altitudeStandardDeviation = 3.518522417151836;
-
-        float llat = 0.0f, llon = 0.0f, lalt= 0.0f;
         @Override
         protected void onProgressUpdate(Object... values) {
-            long timeStamp = System.currentTimeMillis();
-            System.arraycopy(m_accelerometerValues, 0, gravity, 0, 3);
-            System.arraycopy(m_magnetometerValues, 0, geomagnetic, 0, 3);
-            System.arraycopy(m_linearAccelerometerValues, 0, linAcc, 0, 3);
-
-            if (!SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
-                //todo log
-                return;
-            }
-
-            //we have to invert matrix here because of using openGL.
-            android.opengl.Matrix.invertM(RI, 0, R, 0);
-            android.opengl.Matrix.multiplyMV(accAxis, 0, RI, 0, linAcc, 0);
-
-            //correct using magnetic declination
-            /*  new_north = N * cos(mag_offset) + E * sin(mag_offset)
-                new_east = E * cos(mag_offset) - N * sin(mag_offset)*/
-            accAxis[north] = (float) (accAxis[north] * Math.cos(m_declination) + accAxis[east] * Math.sin(m_declination));
-            accAxis[east] = (float) (accAxis[east] * Math.cos(m_declination) - accAxis[north] * Math.sin(m_declination));
-            for (int i = 0; i < accAxis.length; ++i)
-                accAxis[i] = Math.round(accAxis[i] / 1e-2) * 1e-2f; //2 digits after point - santimeter/sec^2
-
-            velAxis[east] = (float) (m_gpsSpeed*Math.cos(m_gpsCourse));
-            velAxis[north] = (float) (m_gpsSpeed*Math.sin(m_gpsCourse));
-
-            if (kfLon == null && kfLat == null && kfAlt == null) {
-                if (m_linAccDeviationCalculator.isM_calculated()) {
-                    if (m_gpsLat != 0.0f && m_gpsLon != 0.0f && m_gpsAlt != 0.0) {
-                        kfLon = new GPSAccKalmanFilter(Coordinates.LongitudeToMeters(m_gpsLon),
-                                velAxis[east],
-                                latLonStandardDeviation,
-                                m_linAccDeviationCalculator.getSigmas()[east],
-                                timeStamp);
-                        kfLat = new GPSAccKalmanFilter(Coordinates.LatitudeToMeters(m_gpsLat),
-                                velAxis[north],
-                                latLonStandardDeviation,
-                                m_linAccDeviationCalculator.getSigmas()[north],
-                                timeStamp);
-                        kfAlt = new GPSAccKalmanFilter(m_gpsAlt,
-                                velAxis[up],
-                                altitudeStandardDeviation,
-                                m_linAccDeviationCalculator.getSigmas()[up],
-                                timeStamp);
-                    }
-                }
-            } else {
-                kfLon.Predict(timeStamp, accAxis[east]);
-                kfLat.Predict(timeStamp, accAxis[north]);
-                kfAlt.Predict(timeStamp, accAxis[up]);
-
-                if (m_gpsLat != 0.0f && m_gpsLon != 0.0f && m_gpsAlt != 0.0f) {
-                    kfLon.Update(Coordinates.LongitudeToMeters(m_gpsLon),
-                            velAxis[east],
-                            0.0,
-                            m_gpsHorizontalDOP * 0.01);
-                    kfLat.Update(Coordinates.LatitudeToMeters(m_gpsLat),
-                            velAxis[north],
-                            0.0,
-                            m_gpsHorizontalDOP * 0.01);
-                    kfAlt.Update(m_gpsAlt,
-                            velAxis[up],
-                            0.0,
-                            m_gpsVerticalDOP * 0.01);
-                    llat = m_gpsLat;
-                    llon = m_gpsLon;
-                    lalt = m_gpsAlt;
-                    m_gpsLat = m_gpsLon = m_gpsAlt = 0.0f;
-                }
-
-                GeoPoint predictedPoint = Coordinates.MetersToGeoPoint(kfLon.getCurrentPosition(),
-                        kfLat.getCurrentPosition());
-
-                double predictedVE, predictedVN;
-                predictedVE = kfLon.getCurrentVelocity();
-                predictedVN = kfLat.getCurrentVelocity();
-                double resultantV = Math.sqrt(Math.pow(predictedVE, 2.0) + Math.pow(predictedVN, 2.0));
-
-                filteredLat = predictedPoint.Latitude;
-                filteredLon = predictedPoint.Longitude;
-                filteredAlt = kfAlt.getCurrentPosition();
-                filteredSpeed = resultantV;
-                filteredSpeedAxis[east] = (float) predictedVE;
-                filteredSpeedAxis[north] = (float) predictedVN;
-                filteredSpeedAxis[up] = (float) kfAlt.getCurrentVelocity();
-            }
-
-            String str = String.format("" +
-                            "MDecl:%f\n" +
-                            "Lat:%f\nLon:%f\nAlt:%f\n" +
-                            "Acc: E%.2f,N=%.2f,U=%.2f\n" +
-                            "LAcc: X%.2f,N=%.2f,U=%.2f\n" +
-                            "Vel: E=%.2f,N=%.2f,U:%.2f\n" +
-                            "FLat:%f\nFLon:%f\nFAlt:%f\n" +
-                            "FSpeed: E:%f,N:%f,ТU:%f",
-                    m_declination,
-                    llat, llon, lalt,
-                    accAxis[east], accAxis[north], accAxis[up],
-                    linAcc[0], linAcc[1], linAcc[2],
-                    velAxis[east], velAxis[north], velAxis[up],
-                    filteredLat, filteredLon, filteredAlt,
-                    filteredSpeedAxis[east], filteredSpeedAxis[north], filteredSpeedAxis[up]);
-            m_tvLocationData.setText(str);
+            m_tvLocationData.setText(m_gma.debugString());
         }
     }
     /*********************************************************/
@@ -226,6 +94,7 @@ public class MainActivity extends AppCompatActivity
     private SensorManager m_sensorManager = null;
     private RefreshTask m_refreshTask = null;
 
+    private FilterGMA m_gma = new FilterGMA();
     private Sensor m_grAccelerometer = null;
     private Sensor m_linAccelerometer = null;
     private Sensor m_gyroscope = null;
@@ -250,21 +119,6 @@ public class MainActivity extends AppCompatActivity
     private TextView m_tvMagnetometer = null;
     private TextView m_tvMagnetometerData = null;
     private TextView m_tvLocationData = null;
-
-    private float m_accelerometerValues[] = new float[3];
-    private float m_linearAccelerometerValues[] = new float[3];
-    private float m_gyroscopeValues[] = new float[3];
-    private float m_magnetometerValues[] = new float[3];
-
-    private float m_declination = 0.0f;
-    private float m_gpsLat = 0.0f;
-    private float m_gpsLon = 0.0f;
-    private float m_gpsAlt = 0.0f;
-    private float m_gpsSpeed = 0.0f;
-    private float m_gpsCourse = 0.0f;
-    private float m_gpsPositionDOP = 100.0f; //max
-    private float m_gpsVerticalDOP = 100.0f; //max
-    private float m_gpsHorizontalDOP = 100.0f; //max
 
     static String sensorDescription(Sensor s) {
         String res = "";
@@ -332,10 +186,10 @@ public class MainActivity extends AppCompatActivity
             m_locationManager.addNmeaListener(this);
         }
 
-        m_sensorManager.registerListener(this, m_grAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        m_sensorManager.registerListener(this, m_linAccelerometer, SensorManager.SENSOR_DELAY_GAME);
-//        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        m_sensorManager.registerListener(this, m_grAccelerometer, SensorManager.SENSOR_DELAY_UI);
+        m_sensorManager.registerListener(this, m_linAccelerometer, SensorManager.SENSOR_DELAY_UI);
+        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_UI);
 
         m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
         m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
@@ -374,7 +228,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (m_refreshTask == null)
-            m_refreshTask = new RefreshTask(5);
+            m_refreshTask = new RefreshTask(30);
     }
     /*********************************************************/
 
@@ -400,13 +254,13 @@ public class MainActivity extends AppCompatActivity
             switch (s.getSentenceId().toLowerCase()) {
                 case "gsa":
                     GSASentence gsa = (GSASentence) s;
-                    m_gpsPositionDOP = (float) gsa.getPositionDOP();
-                    m_gpsVerticalDOP = (float) gsa.getVerticalDOP();
-                    m_gpsHorizontalDOP = (float) gsa.getHorizontalDOP();
+                    m_gma.setGpsHorizontalDop(gsa.getHorizontalDOP());
+                    m_gma.setGpsVerticalDop(gsa.getVerticalDOP());
+//                    m_gpsPositionDOP = (float) gsa.getPositionDOP();
                 case "gga":
                     GGASentence gga = (GGASentence) s;
                     pos = gga.getPosition();
-                    m_gpsHorizontalDOP = (float) gga.getHorizontalDOP();
+                    m_gma.setGpsHorizontalDop(gga.getHorizontalDOP());
                     break;
                 case "gll":
                     GLLSentence gll = (GLLSentence) s;
@@ -437,44 +291,15 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (pos != null) {
-            m_gpsLat = (float) pos.getLatitude();
-            m_gpsLon = (float) pos.getLongitude();
-            m_gpsAlt = (float) pos.getAltitude();
-            GeomagneticField gf = new GeomagneticField(m_gpsLat, m_gpsLon,
-                    m_gpsAlt, System.currentTimeMillis());
-            m_declination = gf.getDeclination();
+            m_gma.setGpsPosition(pos.getLatitude(), pos.getLongitude(), pos.getAltitude());
         }
 
         if (speed != null && course != null) {
-            m_gpsCourse = course.floatValue();
-            m_gpsSpeed = (float) Commons.KnotsPerHour2MeterPerSecond(speed.floatValue());
+            m_gma.setGpsCourse(course.doubleValue());
+            m_gma.setGpsSpeed(course.doubleValue());
         }
     }
     /*********************************************************/
-
-    class Integrator {
-        float[][] data;
-        int m, n, k;
-        long dt;
-
-        public Integrator(int m, int n) {
-            this.m = m;
-            this.n = n;
-            data = new float[n][m];
-            k = 0;
-        }
-
-        public boolean iterate(float[] mes) {
-            if (k < n) {
-                System.arraycopy(mes, 0, data[k++], 0, m);
-                return false;
-            } else {
-                dt = System.currentTimeMillis();
-                k = 0;
-                return true;
-            }
-        }
-    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -488,32 +313,33 @@ public class MainActivity extends AppCompatActivity
                 format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
                 tv = m_tvMagnetometerData;
                 dc = m_magDeviationCalculator;
-                System.arraycopy(event.values, 0, m_magnetometerValues, 0, 3);
+                m_gma.setGeomagnetic(event.values);
                 break;
             case Sensor.TYPE_ACCELEROMETER:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvAccelerometerData;
                 dc = m_accDeviationCalculator;
-                Commons.LowPassFilterArr(0.3f, m_accelerometerValues, event.values);
-//                System.arraycopy(event.values, 0, m_accelerometerValues, 0, 3);
-                values = m_accelerometerValues;
+                m_gma.setGravity(event.values);
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvGyroscopeData;
                 dc = m_gyrDeviationCalculator;
-                System.arraycopy(event.values, 0, m_gyroscopeValues, 0, 3);
+                m_gma.setGyroscope(event.values);
                 break;
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 format = "Acc = %d, Afb = %f, Alr = %f, Aud = %f\n";
                 dc = m_linAccDeviationCalculator;
                 tv = m_tvLinAccelerometerData;
-                System.arraycopy(event.values, 0, m_linearAccelerometerValues, 0, 3);
+                m_gma.setLinAcc(event.values);
+                if (dc.isM_calculated()) {
+                    m_gma.init(dc.getSigmas());
+                }
                 break;
         }
 
         if (dc != null) {
-            dc.Measure(event.values[0], event.values[1], event.values[2]);
+            dc.Measure(event.values);
         }
 
         if (tv != null) {

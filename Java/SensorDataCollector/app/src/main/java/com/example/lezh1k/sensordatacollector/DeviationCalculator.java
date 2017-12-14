@@ -57,6 +57,21 @@ public class DeviationCalculator {
         }
     }
 
+    public void Measure(float[] args) {
+        if (args.length < m_valuesCount) return;
+        if (m_count < measurementCalibrationCount) {
+            for (int i = 0; i < m_valuesCount; ++i) {
+                m_measurements[i][m_count] = args[i];
+            }
+            ++m_count;
+        } else {
+            for (int i = 0; i < m_valuesCount; ++i) {
+                m_sigmas[i] = calculateSigma(m_sigmas[i], m_measurements[i]);
+            }
+            m_calculated = true;
+        }
+    }
+
     public double[] getSigmas() {
         return m_sigmas;
     }

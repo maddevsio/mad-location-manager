@@ -111,7 +111,7 @@ void MatrixPrint(matrix_t *m) {
   for (r = 0; r < m->rows; ++r) {
     QString str = "";
     for (c = 0; c < m->cols; ++c) {
-      str += QString::number(m->data[r][c], 'g', 6) + "   ";
+      str += QString::number(m->data[r][c], 'g', 18) + "   ";
     }
     qDebug() << str;
   }

@@ -74,11 +74,11 @@ static void launchTests() {
 int main(int argc, char *argv[])
 {
   qDebug() << 1e-6f;
-  MadgwickFilter_t *f = MadgwickFilter(0.05, 512);
-  for (int i = 0; i < 2; ++i)
+  MadgwickFilter_t *f = MadgwickFilter(0.03, 512);
+  for (int i = 0; i < 512; ++i)
     MadgwickAHRSupdate(f,
-                       0.0f, 0.0f, 0.0f, //g
-                       0.0f, 9.809999f, 0.0f, //a
+                       0.0f, 0.0f, 0.1f, //g
+                       0.0f, 9.809999f, i*0.0001*9.809999f, //a
                        30.2493f, 10.3607f, 36.7975f); //m
 
   float w, x, y, z;
