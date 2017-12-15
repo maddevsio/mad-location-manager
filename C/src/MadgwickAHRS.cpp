@@ -39,7 +39,7 @@ static float invSqrt(float x);
 // Functions
 
 
-MadgwickFilter_t *MadgwickFilter(float beta, float sampleFreqHZ) {
+MadgwickFilter_t *MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
   MadgwickFilter_t *f = (MadgwickFilter_t*) malloc(sizeof(MadgwickFilter_t));
   assert(f);
   f->beta = beta;
@@ -129,9 +129,9 @@ void MadgwickAHRSupdate(MadgwickFilter_t *f,
 
     // Gradient decent algorithm corrective step
     s0= -_2q2*(2.0f*(q1q3 - q0q2) - ax) + _2q1*(2.0f*(q0q1 + q2q3) - ay) + -_4bz*f->q2*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)   +   (-_4bx*f->q3+_4bz*f->q1)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)    +   _4bx*f->q2*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
-                s1= _2q3*(2.0f*(q1q3 - q0q2) - ax) + _2q0*(2.0f*(q0q1 + q2q3) - ay) + -4.0f*f->q1*(2.0f*(0.5f - q1q1 - q2q2) - az)    +   _4bz*f->q3*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)   + (_4bx*f->q2+_4bz*f->q0)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)   +   (_4bx*f->q3-_8bz*f->q1)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
-                s2= -_2q0*(2.0f*(q1q3 - q0q2) - ax)    +     _2q3*(2.0f*(q0q1 + q2q3) - ay)   +   (-4.0f*f->q2)*(2.0f*(0.5f - q1q1 - q2q2) - az) +   (-_8bx*f->q2-_4bz*f->q0)*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)+(_4bx*f->q1+_4bz*f->q3)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)+(_4bx*f->q0-_8bz*f->q2)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
-                s3= _2q1*(2.0f*(q1q3 - q0q2) - ax) +   _2q2*(2.0f*(q0q1 + q2q3) - ay)+(-_8bx*f->q3+_4bz*f->q1)*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)+(-_4bx*f->q0+_4bz*f->q2)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)+(_4bx*f->q1)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
+    s1= _2q3*(2.0f*(q1q3 - q0q2) - ax) + _2q0*(2.0f*(q0q1 + q2q3) - ay) + -4.0f*f->q1*(2.0f*(0.5f - q1q1 - q2q2) - az)    +   _4bz*f->q3*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)   + (_4bx*f->q2+_4bz*f->q0)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)   +   (_4bx*f->q3-_8bz*f->q1)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
+    s2= -_2q0*(2.0f*(q1q3 - q0q2) - ax)    +     _2q3*(2.0f*(q0q1 + q2q3) - ay)   +   (-4.0f*f->q2)*(2.0f*(0.5f - q1q1 - q2q2) - az) +   (-_8bx*f->q2-_4bz*f->q0)*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)+(_4bx*f->q1+_4bz*f->q3)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)+(_4bx*f->q0-_8bz*f->q2)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
+    s3= _2q1*(2.0f*(q1q3 - q0q2) - ax) +   _2q2*(2.0f*(q0q1 + q2q3) - ay)+(-_8bx*f->q3+_4bz*f->q1)*(_4bx*(0.5f - q2q2 - q3q3) + _4bz*(q1q3 - q0q2) - mx)+(-_4bx*f->q0+_4bz*f->q2)*(_4bx*(q1q2 - q0q3) + _4bz*(q0q1 + q2q3) - my)+(_4bx*f->q1)*(_4bx*(q0q2 + q1q3) + _4bz*(0.5f - q1q1 - q2q2) - mz);
 
     recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
 		s0 *= recipNorm;
@@ -238,6 +238,7 @@ void MadgwickAHRSupdateIMU(MadgwickFilter_t *f,
 // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
 
 float invSqrt(float x) {
+  //DOESN'T WORK ON 64-bit MACHINE
 //  float halfx = 0.5f * x;
 //  float y = x;
 //  int32_t i = *((int32_t*)&y);
@@ -245,8 +246,20 @@ float invSqrt(float x) {
 //  y = *(int32_t*)&i;
 //  y = y * (1.5f - (halfx * y * y));
 //  return y;
-  //DOESN'T WORK HERE. so
   return 1.0f / sqrt(x);
+}
+
+void
+MadgwickRotationMatrix(MadgwickFilter_t *mf, float *mtx) {
+  mtx[0] = 1.0f - 2.0f*mf->q2*mf->q2 - 2.0f*mf->q3*mf->q3;
+  mtx[1] = 2.0f*mf->q1*mf->q2 - 2.0f*mf->q3*mf->q0;
+  mtx[2] = 2.0f*mf->q1*mf->q3 + 2.0f*mf->q2*mf->q0;
+  mtx[3] = 2.0f*mf->q1*mf->q2 + 2.0f*mf->q3*mf->q0;
+  mtx[4] = 1.0f - 2.0f*mf->q1*mf->q1 - 2.0f*mf->q3*mf->q3;
+  mtx[5] = 2.0f*mf->q2*mf->q3 - 2.0f*mf->q1*mf->q0;
+  mtx[6] = 2.0f*mf->q1*mf->q3 - 2.0f*mf->q2*mf->q0;
+  mtx[7] = 2.0f*mf->q2*mf->q3 + 2.0f*mf->q1*mf->q0;
+  mtx[8] = 1.0f - 2.0f*mf->q1*mf->q1 - 2.0f*mf->q2*mf->q2;
 }
 
 //====================================================================================================

@@ -50,26 +50,26 @@ bool sensorDataToFile(FILE *fout,
                       double resultantMph) {
 
   static const char* outFormat = "{\n"
-                                 "    \"timestamp\":%.18lf,\n"
-                                 "    \"gps_alt\":%.18lf,\n"
-                                 "    \"pitch\":%.18lf,\n"
-                                 "    \"yaw\":%.18lf,\n"
-                                 "    \"roll\":%.18lf,\n"
-                                 "    \"abs_north_acc\":%.18lf,\n"
-                                 "    \"abs_east_acc\":%.18lf,\n"
-                                 "    \"abs_up_acc\":%.18lf,\n"
-                                 "    \"vel_north\":%.18lf,\n"
-                                 "    \"vel_east\":%.18lf,\n"
-                                 "    \"vel_down\":%.18lf,\n"
-                                 "    \"vel_error\":%.18lf,\n"
-                                 "    \"altitude_error\":%.18lf,\n"
-                                 "    \"predicted_lat\":%.18lf,\n"
-                                 "    \"predicted_lon\":%.18lf,\n"
-                                 "    \"predicted_alt\":%.18lf,\n"
-                                 "    \"resultant_mph\":%.18lf,\n"
-                                 "    \"gps_lat\":%.18lf,\n"
-                                 "    \"gps_lon\":%.18lf\n"
-                                 "}\n";
+                                 "    \"timestamp\": %.16f,\n"
+                                 "    \"gps_alt\": %.16f,\n"
+                                 "    \"pitch\": %.16f,\n"
+                                 "    \"yaw\": %.16f,\n"
+                                 "    \"roll\": %.16f,\n"
+                                 "    \"abs_north_acc\": %.16f,\n"
+                                 "    \"abs_east_acc\": %.16f,\n"
+                                 "    \"abs_up_acc\": %.16f,\n"
+                                 "    \"vel_north\": %.16f,\n"
+                                 "    \"vel_east\": %.16f,\n"
+                                 "    \"vel_down\": %.16f,\n"
+                                 "    \"vel_error\": %.16f,\n"
+                                 "    \"altitude_error\": %.16f,\n"
+                                 "    \"predicted_lat\": %.16f,\n"
+                                 "    \"predicted_lon\": %.16f,\n"
+                                 "    \"predicted_alt\": %.16f,\n"
+                                 "    \"resultant_mph\": %.16f,\n"
+                                 "    \"gps_lat\": %.16f,\n"
+                                 "    \"gps_lon\": %.16f\n"
+                                 "},\n";
   return fprintf(fout, outFormat,
                  sd->timestamp,
                  sd->gpsAlt,
@@ -114,6 +114,7 @@ FilterInputFile(const char *inputFile,
   double predictedVE, predictedVN; //velocity east, north
   double resultantV;
   matrix_t *currentStateLat, *currentStateLon, *currentStateAlt;
+  int predictCount = 0;
 
   fin= fopen(inputFile, "r");
   if (fin == NULL)
@@ -177,7 +178,9 @@ FilterInputFile(const char *inputFile,
       currentStateLat = kfLat->kf->predictedState;
       currentStateLon = kfLon->kf->predictedState;
 
+
       if (sd.gpsLat != 0.0) {
+        ++predictCount;
         GPSAccKalmanUpdate(kfLon,
                            LongitudeToMeters(sd.gpsLon),
                            sd.velEast,
@@ -190,7 +193,7 @@ FilterInputFile(const char *inputFile,
                            sd.velError);
         GPSAccKalmanUpdate(kfAlt,
                            sd.gpsAlt,
-                           sd.velDown * -1.0,
+                           -sd.velDown,
                            &sd.altitudeError,
                            sd.velError);
 

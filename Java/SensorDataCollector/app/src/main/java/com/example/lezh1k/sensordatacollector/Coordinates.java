@@ -11,7 +11,7 @@ public class Coordinates {
     private static final double EARTH_RADIUS = 6371.0 * 1000.0; // meters
     private static final double ACTUAL_GRAVITY = SensorManager.GRAVITY_EARTH;
 
-    private static double geoDistanceMeters(double lon1, double lat1, double lon2, double lat2) {
+    public static double geoDistanceMeters(double lon1, double lat1, double lon2, double lat2) {
         double deltaLon = Math.toRadians(lon2 - lon1);
         double deltaLat = Math.toRadians(lat2 - lat1);
         double a = Math.pow(Math.sin(deltaLat / 2.0), 2.0) +

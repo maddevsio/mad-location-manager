@@ -20,6 +20,7 @@ std::vector<geopoint_t> FilterByGeoHash(std::vector<geopoint_t> &lstSrc, int pre
 #define ACTUAL_GRAVITY 9.80665
 
 /*todo write tests*/
+double CoordDistanceBetweenPointsMeters(double lat1, double lon1, double lat2, double lon2);
 double LongitudeToMeters(double lon);
 double LatitudeToMeters(double lat);
 geopoint_t MetersToGeopoint(double lonMeters,

@@ -1,91 +1,100 @@
 package com.example.lezh1k.sensordatacollector;
 
-import android.util.Log;
-
 /**
  * Created by lezh1k on 12/12/17.
  */
 
 public class DeviationCalculator {
     private static final double SigmaNotInitialized = -1.0;
-    private final int measurementCalibrationCount;
+    private final int m_measurementCalibrationCount;
     private int m_count = 0;
     private int m_valuesCount;
     private double m_sigmas[];
     private double m_measurements[][];
     private boolean m_calculated = false;
     private String id;
+    private double m_means[];
+
+    private long m_lastTimeStamp;
+    private long m_freqMeanAux;
+    private double m_freqMean;
 
     public DeviationCalculator(int measurementCalibrationCount, int valuesCount, String id) {
         this.id  = id;
-        this.measurementCalibrationCount = measurementCalibrationCount;
+        this.m_measurementCalibrationCount = measurementCalibrationCount;
         m_valuesCount = valuesCount;
         m_measurements = new double[valuesCount][measurementCalibrationCount];
         m_sigmas = new double[valuesCount];
+        m_means = new double[valuesCount];
         for (int i = 0; i < valuesCount; ++i)
             m_sigmas[i] = SigmaNotInitialized;
+        m_lastTimeStamp = System.nanoTime();
     }
 
-    private double calculateSigma(double sigma, double[] calibrations) {
+    private double calculateSigma(double sigma, double mean, double[] calibrations) {
         if (sigma != SigmaNotInitialized) return sigma;
-        double sum = sigma = 0.0;
-        for (int i = 0; i < measurementCalibrationCount; ++i) {
-            sum += calibrations[i];
-        }
-        sum /= measurementCalibrationCount;
-
-        for (int i = 0; i < measurementCalibrationCount; ++i) {
-            sigma += Math.pow(calibrations[i] - sum, 2.0);
+        for (int i = 0; i < m_measurementCalibrationCount; ++i) {
+            sigma += Math.pow(calibrations[i] - mean, 2.0);
         }
 
-        sigma /= measurementCalibrationCount;
+        sigma /= m_measurementCalibrationCount;
         return sigma;
     }
 
     public void Measure(double... args) {
         if (args.length < m_valuesCount) return;
-        if (m_count < measurementCalibrationCount) {
+        if (m_count < m_measurementCalibrationCount) {
             for (int i = 0; i < m_valuesCount; ++i) {
                 m_measurements[i][m_count] = args[i];
+                m_means[i] += args[i] / m_measurementCalibrationCount;
             }
+            long now = System.nanoTime();
+            m_freqMeanAux += (now - m_lastTimeStamp) / m_measurementCalibrationCount;
+            m_lastTimeStamp = now;
             ++m_count;
         } else {
             for (int i = 0; i < m_valuesCount; ++i) {
-                m_sigmas[i] = calculateSigma(m_sigmas[i], m_measurements[i]);
+                m_sigmas[i] = calculateSigma(m_sigmas[i], m_means[i], m_measurements[i]);
             }
             m_calculated = true;
+            m_freqMean = 1.0 / (m_freqMeanAux * 1e-9);
         }
     }
 
     public void Measure(float[] args) {
         if (args.length < m_valuesCount) return;
-        if (m_count < measurementCalibrationCount) {
+        if (m_count > m_measurementCalibrationCount) return;
+        if (m_count < m_measurementCalibrationCount) {
             for (int i = 0; i < m_valuesCount; ++i) {
                 m_measurements[i][m_count] = args[i];
+                m_means[i] += args[i] / m_measurementCalibrationCount;
             }
-            ++m_count;
+            long now = System.nanoTime();
+            m_freqMeanAux += (now - m_lastTimeStamp) / m_measurementCalibrationCount;
+            m_lastTimeStamp = now;
         } else {
             for (int i = 0; i < m_valuesCount; ++i) {
-                m_sigmas[i] = calculateSigma(m_sigmas[i], m_measurements[i]);
+                m_sigmas[i] = calculateSigma(m_sigmas[i], m_means[i], m_measurements[i]);
             }
             m_calculated = true;
+            m_freqMean = 1.0 / (m_freqMeanAux * 1e-9);
         }
+        ++m_count;
     }
 
     public double[] getSigmas() {
         return m_sigmas;
     }
-
     public boolean isM_calculated() {
         return m_calculated;
     }
+    public double getFrequencyMean() { return m_freqMean; }
 
-    public String sigmasToStr() {
+    public String deviationInfoString() {
         String res = "";
-        for (int i = 0; i < m_sigmas.length-1; ++i) {
-            res += String.format("S%d=%f, ", i, m_sigmas[i]);
-        }
-        res += String.format("S%d=%f", m_sigmas.length-1, m_sigmas[m_sigmas.length-1]);
+        for (int i = 0; i < m_valuesCount; ++i)
+            res += String.format("%d:%f,", i, m_sigmas[i]);
+        res += String.format("Freq:%f", m_freqMean);
         return res;
     }
 }

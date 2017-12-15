@@ -59,13 +59,12 @@ public class GPSAccKalmanFilter {
         return m_kf.currentState.data[1][0];
     }
 
-    public double getPredictedPosition() {
-        return m_kf.predictedState.data[0][0];
-    }
+    public double getPredictedPosition() { return m_kf.predictedState.data[0][0]; }
 
     public double getPredictedVelocity() {
         return m_kf.predictedState.data[1][0];
     }
+
 
     public void Predict(double timeNow, double accAxis) {
         double deltaT = timeNow - m_timeStamp;

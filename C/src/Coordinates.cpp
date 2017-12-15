@@ -135,3 +135,8 @@ geopoint_t MetersToGeopoint(double lonMeters,
   return pointNorthEast;
 }
 //////////////////////////////////////////////////////////////////////////
+
+double CoordDistanceBetweenPointsMeters(double lat1, double lon1,
+                                  double lat2, double lon2) {
+  return geoDistanceMeters(lon1, lat1, lon2, lat2);
+}

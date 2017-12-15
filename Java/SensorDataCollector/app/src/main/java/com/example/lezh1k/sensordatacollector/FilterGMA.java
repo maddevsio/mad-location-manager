@@ -3,7 +3,7 @@ package com.example.lezh1k.sensordatacollector;
 import android.annotation.SuppressLint;
 import android.hardware.GeomagneticField;
 import android.hardware.SensorManager;
-import android.util.Log;
+import android.opengl.*;
 
 /**
  * Created by lezh1k on 12/14/17.
@@ -12,7 +12,7 @@ import android.util.Log;
 public class FilterGMA {
     public static int east = 0;
     public static int north = 1;
-    public static int up = 1;
+    public static int up = 2;
 
     private GPSAccKalmanFilter kfLat;
     private GPSAccKalmanFilter kfLon;
@@ -52,10 +52,11 @@ public class FilterGMA {
 
     public void init(double[] linAccDeviations) {
         if (kfLon != null || kfLat != null || kfAlt != null)
-            return;
+            return; //already initalized
         if (gpsAlt == 0.0 && gpsLat == 0.0 && gpsLon == 0.0)
             return;
 
+        timeStamp = System.currentTimeMillis();
         kfLon = new GPSAccKalmanFilter(Coordinates.LongitudeToMeters(gpsLon),
                 velAxis[east],
                 2.0,
@@ -73,23 +74,44 @@ public class FilterGMA {
                 timeStamp);
     }
 
-    private void rebuildR() {
-        //todo use Madgwick here later
-        if (!SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
-            //todo log
-            return;
-        }
+    private MadgwickAHRS m_ahrs = new MadgwickAHRS(50, 0.1f);
+
+    private void rebuildR(DeviationCalculator dc) {
+//        //todo use Madgwick here later
+//        if (!SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
+//            //todo log
+//            return;
+//        }
+//        android.opengl.Matrix.invertM(RI, 0, R, 0);
+
+        m_ahrs.MadgwickAHRSupdate(gyroscope[0], gyroscope[1], gyroscope[2],
+                gravity[0], gravity[1], gravity[2],
+                geomagnetic[0], geomagnetic[1], geomagnetic[2]);
+        R = m_ahrs.getRotationMatrix();
         android.opengl.Matrix.invertM(RI, 0, R, 0);
+
     }
 
-    public void setGravity(float[] gravity) {
-        Commons.LowPassFilterArr(0.3f, this.gravity, gravity);
-        rebuildR();
+    private void rebuildAccAxis() {
+        android.opengl.Matrix.multiplyMV(accAxis, 0, RI, 0, this.linAcc, 0);
     }
 
-    public void setGeomagnetic(float[] geomagnetic) {
-        Commons.LowPassFilterArr(0.3f, this.geomagnetic, geomagnetic);
-        rebuildR();
+    public void setGyroscope(float[] gyroscope, DeviationCalculator dc) {
+        if (dc.getFrequencyMean() == 0.0) return;
+        System.arraycopy(gyroscope, 0, this.gyroscope, 0, 3);
+        rebuildR(dc);
+    }
+
+    public void setGravity(float[] gravity, DeviationCalculator dc) {
+        if (dc.getFrequencyMean() == 0.0) return;
+        System.arraycopy(gravity, 0, this.gravity, 0, 3);
+        rebuildR(dc);
+    }
+
+    public void setGeomagnetic(float[] geomagnetic, DeviationCalculator dc) {
+        if (dc.getFrequencyMean() == 0.0) return;
+        System.arraycopy(geomagnetic, 0, this.geomagnetic, 0, 3);
+        rebuildR(dc);
     }
 
     public void setGpsHorizontalDop(double gpsHorizontalDop) {
@@ -101,10 +123,10 @@ public class FilterGMA {
     }
 
     private void refreshFilteredValues(double predictedPosLon,
-                                       double predictedPosLat,
-                                       double predictedPosAlt,
                                        double predictedVelLon,
+                                       double predictedPosLat,
                                        double predictedVelLat,
+                                       double predictedPosAlt,
                                        double predictedVelAlt) {
         GeoPoint predictedPoint = Coordinates.MetersToGeoPoint(predictedPosLon,
                 predictedPosLat);
@@ -118,12 +140,6 @@ public class FilterGMA {
         filteredLon = predictedPoint.Longitude;
         filteredAlt = predictedPosAlt;
 
-        if (predictedVE != 0.0 || predictedVN != 0.0) {
-            double i3 = predictedVE; //debug break;
-            double i4 = predictedVN;
-            Log.d(Commons.AppName, String.format("Ve : %f, Vn : %f", predictedVE, predictedVN));
-            i3 += i4;
-        }
 //        filteredSpeed = resultantV;
         filteredVel[east] = (float) predictedVE;
         filteredVel[north] = (float) predictedVN;
@@ -131,7 +147,7 @@ public class FilterGMA {
     }
 
     public void setLinAcc(float[] linAcc) {
-        System.arraycopy(linAcc, 0, this.linAcc, 0, linAcc.length);
+        Commons.LowPassFilterArr(0.1f, this.linAcc, linAcc);
         double predictedPosLat, predictedPosLon, predictedPosAlt;
         double predictedVelLat, predictedVelLon, predictedVelAlt;
 
@@ -139,20 +155,23 @@ public class FilterGMA {
             return; //wait for initialization
         }
 
-        android.opengl.Matrix.multiplyMV(accAxis, 0, RI, 0, this.linAcc, 0);
+        timeStamp = System.currentTimeMillis();
+        rebuildAccAxis();
         kfLon.Predict(timeStamp, accAxis[east]);
         kfLat.Predict(timeStamp, accAxis[north]);
         kfAlt.Predict(timeStamp, accAxis[up]);
 
         predictedPosLat = kfLat.getPredictedPosition();
-        predictedPosLon = kfLon.getPredictedPosition();
-        predictedPosAlt = kfAlt.getPredictedPosition();
         predictedVelLat = kfLat.getPredictedVelocity();
+
+        predictedPosLon = kfLon.getPredictedPosition();
         predictedVelLon = kfLon.getPredictedVelocity();
+
+        predictedPosAlt = kfAlt.getPredictedPosition();
         predictedVelAlt = kfAlt.getPredictedVelocity();
 
-        refreshFilteredValues(predictedPosLon, predictedPosLat, predictedPosAlt,
-                predictedVelLon, predictedVelLat, predictedVelAlt);
+        refreshFilteredValues(predictedPosLon, predictedVelLon, predictedPosLat, predictedVelLat,
+                predictedPosAlt, predictedVelAlt);
     }
 
     public void setGpsPosition(double gpsLat, double gpsLon, double gpsAlt) {
@@ -169,25 +188,28 @@ public class FilterGMA {
 
         kfLon.Update(Coordinates.LongitudeToMeters(gpsLon),
                 velAxis[east],
-                0.0,
-                gpsHorizontalDop * 0.01);
+                gpsHorizontalDop * 0.01,
+                0.0);
         kfLat.Update(Coordinates.LatitudeToMeters(gpsLat),
                 velAxis[north],
-                0.0,
-                gpsHorizontalDop * 0.01);
+                gpsHorizontalDop * 0.01,
+                0.0);
         kfAlt.Update(gpsAlt,
-                velAxis[up],
-                0.0,
-                gpsVerticalDop * 0.01);
+                -velAxis[up],
+                gpsVerticalDop,
+                0.0);
 
         double predictedPosLat = kfLat.getCurrentPosition();
-        double predictedPosLon = kfLon.getCurrentPosition();
-        double predictedPosAlt = kfAlt.getCurrentPosition();
         double predictedVelLat = kfLat.getCurrentVelocity();
+
+        double predictedPosLon = kfLon.getCurrentPosition();
         double predictedVelLon = kfLon.getCurrentVelocity();
+
+        double predictedPosAlt = kfAlt.getCurrentPosition();
         double predictedVelAlt = kfAlt.getCurrentVelocity();
-        refreshFilteredValues(predictedPosLon, predictedPosLat, predictedPosAlt,
-                predictedVelLon, predictedVelLat, predictedVelAlt);
+
+//        refreshFilteredValues(predictedPosLon, predictedVelLon, predictedPosLat, predictedVelLat,
+//                predictedPosAlt, predictedVelAlt);
     }
 
     public void setGpsSpeed(double gpsSpeed) {
@@ -226,24 +248,22 @@ public class FilterGMA {
     public String debugString() {
         return String.format("" +
                         "declination:%f\n" +
-                        "Lat:%f\n" +
-                        "Lon:%f\n" +
-                        "Alt:%f\n" +
+                        "Lat:%f\nLon:%f\nAlt:%f\n" +
                         "Acc: E%.2f,N=%.2f,U=%.2f\n" +
-                        "LAcc: X%.2f,N=%.2f,U=%.2f\n" +
+                        "LAcc: E%.2f,N=%.2f,U=%.2f\n" +
                         "Vel: E=%.2f,N=%.2f,U:%.2f\n" +
                         "FLat:%f\nFLon:%f\nFAlt:%f\n" +
-                        "FSpeed: E:%f,N:%f,ТU:%f",
+                        "FSE:%f\nFSN:%f\nFSU:%f\n" +
+                        "Distance: %f",
                 declination,
                 gpsLat, gpsLon, gpsAlt,
                 accAxis[east], accAxis[north], accAxis[up],
                 linAcc[0], linAcc[1], linAcc[2],
                 velAxis[east], velAxis[north], velAxis[up],
                 filteredLat, filteredLon, filteredAlt,
-                filteredVel[east], filteredVel[north], filteredVel[up]);
+                filteredVel[east], filteredVel[north], filteredVel[up],
+                Coordinates.geoDistanceMeters(gpsLon, gpsLat, filteredLon, filteredLat));
     }
 
-    public void setGyroscope(float[] gyroscope) {
-        this.gyroscope = gyroscope;
-    }
+
 }

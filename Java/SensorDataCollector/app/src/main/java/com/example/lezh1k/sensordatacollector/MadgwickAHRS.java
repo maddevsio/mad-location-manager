@@ -17,7 +17,9 @@ public class MadgwickAHRS {
     public MadgwickAHRS(float sampleFreq, float beta) {
         this.beta = beta;
         this.sampleFreq = sampleFreq;
-        m_rotationMatrix = new float[9];
+        q0 = 1.0f;
+        q1 = q2 = q3 = 0.0f;
+        m_rotationMatrix = new float[16]; //for using with openGL
     }
 
     private float invSqrt(float x) {
@@ -124,9 +126,10 @@ public class MadgwickAHRS {
         q1 *= recipNorm;
         q2 *= recipNorm;
         q3 *= recipNorm;
+        buildRotationMatrix();
     }
 
-    void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
+    public void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
         float recipNorm;
         float s0, s1, s2, s3;
         float qDot1, qDot2, qDot3, qDot4;
@@ -192,18 +195,26 @@ public class MadgwickAHRS {
         q1 *= recipNorm;
         q2 *= recipNorm;
         q3 *= recipNorm;
+        buildRotationMatrix();
     }
 
-    public void buildRotationMatrix() {
+    private void buildRotationMatrix() {
         m_rotationMatrix[0] = 1.0f - 2.0f*q2*q2 - 2.0f*q3*q3;
         m_rotationMatrix[1] = 2.0f*q1*q2 - 2.0f*q3*q0;
         m_rotationMatrix[2] = 2.0f*q1*q3 + 2.0f*q2*q0;
-        m_rotationMatrix[3] = 2.0f*q1*q2 + 2.0f*q3*q0;
-        m_rotationMatrix[4] = 1.0f - 2.0f*q1*q1 - 2.0f*q3*q3;
-        m_rotationMatrix[5] = 2.0f*q2*q3 - 2.0f*q1*q0;
-        m_rotationMatrix[6] = 2.0f*q1*q3 - 2.0f*q2*q0;
-        m_rotationMatrix[7] = 2.0f*q2*q3 + 2.0f*q1*q0;
-        m_rotationMatrix[8] = 1.0f - 2.0f*q1*q1 - 2.0f*q2*q2;
+        m_rotationMatrix[3] = 0.0f;
+        m_rotationMatrix[4] = 2.0f*q1*q2 + 2.0f*q3*q0;
+        m_rotationMatrix[5] = 1.0f - 2.0f*q1*q1 - 2.0f*q3*q3;
+        m_rotationMatrix[6] = 2.0f*q2*q3 - 2.0f*q1*q0;
+        m_rotationMatrix[7] = 0.0f;
+        m_rotationMatrix[8] = 2.0f*q1*q3 - 2.0f*q2*q0;
+        m_rotationMatrix[9] = 2.0f*q2*q3 + 2.0f*q1*q0;
+        m_rotationMatrix[10] = 1.0f - 2.0f*q1*q1 - 2.0f*q2*q2;
+        m_rotationMatrix[11] = 0.0f;
+        m_rotationMatrix[12] = 0.0f;
+        m_rotationMatrix[13] = 0.0f;
+        m_rotationMatrix[14] = 0.0f;
+        m_rotationMatrix[15] = 1.0f;
     }
 
     public float[] getRotationMatrix() {

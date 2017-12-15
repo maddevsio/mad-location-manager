@@ -3,12 +3,13 @@ package com.example.lezh1k.sensordatacollector;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.GpsStatus;
+import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -61,7 +62,7 @@ enum InitSensorErrorFlag {
 /*****************************************************************/
 
 public class MainActivity extends AppCompatActivity
-        implements SensorEventListener, GpsStatus.NmeaListener {
+        implements SensorEventListener, LocationListener, GpsStatus.NmeaListener {
 
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
@@ -86,6 +87,11 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onProgressUpdate(Object... values) {
             m_tvLocationData.setText(m_gma.debugString());
+            m_tvStatus.setText(String.format("mf:%f,af:%f,laf:%f,gf:%f",
+                    m_magDeviationCalculator.getFrequencyMean(),
+                    m_accDeviationCalculator.getFrequencyMean(),
+                    m_linAccDeviationCalculator.getFrequencyMean(),
+                    m_gyrDeviationCalculator.getFrequencyMean()));
         }
     }
     /*********************************************************/
@@ -100,14 +106,10 @@ public class MainActivity extends AppCompatActivity
     private Sensor m_gyroscope = null;
     private Sensor m_magnetometer = null;
 
-    private DeviationCalculator m_accDeviationCalculator =
-            new DeviationCalculator(120, 3, "acc");
-    private DeviationCalculator m_linAccDeviationCalculator =
-            new DeviationCalculator(120, 3, "linAcc");
-    private DeviationCalculator m_gyrDeviationCalculator =
-            new DeviationCalculator(120, 3, "gyr");
-    private DeviationCalculator m_magDeviationCalculator =
-            new DeviationCalculator(60, 3, "mag");
+    private DeviationCalculator m_accDeviationCalculator = null;
+    private DeviationCalculator m_linAccDeviationCalculator = null;
+    private DeviationCalculator m_gyrDeviationCalculator = null;
+    private DeviationCalculator m_magDeviationCalculator = null;
 
     private TextView m_tvStatus = null;
     private TextView m_tvAccelerometer = null;
@@ -153,10 +155,14 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
+    private static final int GpsMinTime = 3000;
+    private static final int GpsMinDistance = 2;
+
     protected void onPause() {
         super.onPause();
         m_sensorManager.unregisterListener(this);
         m_locationManager.removeNmeaListener(this);
+        m_locationManager.removeUpdates(this);
         m_refreshTask.needTerminate = true;
     }
 
@@ -167,6 +173,9 @@ public class MainActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
+            m_locationManager.removeUpdates(this);
+            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    GpsMinTime, GpsMinDistance, this);
         }
     }
 
@@ -184,17 +193,31 @@ public class MainActivity extends AppCompatActivity
         } else {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
+            m_locationManager.removeUpdates(this);
+            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    GpsMinTime, GpsMinDistance, this);
+
+            Location lkl = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
+            m_gma.setGpsSpeed(lkl.getSpeed());
         }
 
-        m_sensorManager.registerListener(this, m_grAccelerometer, SensorManager.SENSOR_DELAY_UI);
-        m_sensorManager.registerListener(this, m_linAccelerometer, SensorManager.SENSOR_DELAY_UI);
-        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_UI);
+        m_accDeviationCalculator =
+                new DeviationCalculator(400, 3, "acc");
+        m_linAccDeviationCalculator =
+                new DeviationCalculator(400, 3, "linAcc");
+        m_gyrDeviationCalculator =
+                new DeviationCalculator(400, 3, "gyr");
+        m_magDeviationCalculator =
+                new DeviationCalculator(30, 3, "mag");
+
+        m_sensorManager.registerListener(this, m_grAccelerometer, SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_linAccelerometer, SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
 
         m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
         m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
-        m_tvMagnetometer.setText("Magnetometer :\n" + sensorDescription(m_magnetometer));
-//        m_tvGyroscope.setText("Gyroscope :\n" + sensorDescription(m_gyroscope));
         m_refreshTask.needTerminate = false;
         m_refreshTask.execute();
     }
@@ -208,10 +231,6 @@ public class MainActivity extends AppCompatActivity
         m_tvAccelerometerData = (TextView) findViewById(R.id.tvAccelerometerData);
         m_tvLinAccelerometer = (TextView) findViewById(R.id.tvLinAccelerometer);
         m_tvLinAccelerometerData = (TextView) findViewById(R.id.tvLinAccelerometerData);
-//        m_tvGyroscope = (TextView) findViewById(R.id.tvGyroscope);
-//        m_tvGyroscopeData = (TextView) findViewById(R.id.tvGyroscopeData);
-        m_tvMagnetometer = (TextView) findViewById(R.id.tvMagnetometer);
-        m_tvMagnetometerData = (TextView) findViewById(R.id.tvMagnetometerData);
         m_tvLocationData = (TextView) findViewById(R.id.tvLocationData);
 
         long ir = initSensors();
@@ -233,12 +252,33 @@ public class MainActivity extends AppCompatActivity
     /*********************************************************/
 
     @Override
+    public void onLocationChanged(Location loc) {
+        Log.d(Commons.AppName, String.format("lon:%f, lat:%f, alt:%f, speed:%f, accuracy:%f",
+                loc.getLongitude(), loc.getLatitude(),
+                loc.getAltitude(), loc.getSpeed(), loc.getAccuracy()));
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+    /*********************************************************/
+
+    @Override
     public void onNmeaReceived(long timestamp, String msg) {
         handleNMEAReceived(timestamp, msg);
     }
-
     private void handleNMEAReceived(long timeStamp, String msg) {
-
         for (int i = 0; i < 2; ++i) {
             char lc = msg.charAt(msg.length()-1);
             if (lc == '\r' || lc == '\n') //do we need to check '\r' ?
@@ -256,7 +296,6 @@ public class MainActivity extends AppCompatActivity
                     GSASentence gsa = (GSASentence) s;
                     m_gma.setGpsHorizontalDop(gsa.getHorizontalDOP());
                     m_gma.setGpsVerticalDop(gsa.getVerticalDOP());
-//                    m_gpsPositionDOP = (float) gsa.getPositionDOP();
                 case "gga":
                     GGASentence gga = (GGASentence) s;
                     pos = gga.getPosition();
@@ -313,28 +352,28 @@ public class MainActivity extends AppCompatActivity
                 format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
                 tv = m_tvMagnetometerData;
                 dc = m_magDeviationCalculator;
-                m_gma.setGeomagnetic(event.values);
+                m_gma.setGeomagnetic(event.values, dc);
                 break;
             case Sensor.TYPE_ACCELEROMETER:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvAccelerometerData;
                 dc = m_accDeviationCalculator;
-                m_gma.setGravity(event.values);
+                m_gma.setGravity(event.values, dc);
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvGyroscopeData;
                 dc = m_gyrDeviationCalculator;
-                m_gma.setGyroscope(event.values);
+                m_gma.setGyroscope(event.values, dc);
                 break;
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 format = "Acc = %d, Afb = %f, Alr = %f, Aud = %f\n";
                 dc = m_linAccDeviationCalculator;
                 tv = m_tvLinAccelerometerData;
-                m_gma.setLinAcc(event.values);
                 if (dc.isM_calculated()) {
                     m_gma.init(dc.getSigmas());
                 }
+                m_gma.setLinAcc(event.values);
                 break;
         }
 
@@ -345,7 +384,7 @@ public class MainActivity extends AppCompatActivity
         if (tv != null) {
             tv.setText(String.format(format, event.accuracy,
                     values[0], values[1], values[2]) + //todo change this
-                    dc.sigmasToStr());
+                    dc.deviationInfoString());
         }
     }
 

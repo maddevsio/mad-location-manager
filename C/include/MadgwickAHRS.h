@@ -16,7 +16,7 @@
 //----------------------------------------------------------------------------------------------------
 // Variable declaration
 
-typedef struct MadgwickFilter {
+typedef struct MadgwickFilterAlloc {
   float beta;             //algorithm gain
   float sampleFreq;
   float q0, q1, q2, q3;   //quaternion of sensor frame relative to auxiliary frame
@@ -25,7 +25,7 @@ typedef struct MadgwickFilter {
 //---------------------------------------------------------------------------------------------------
 // Function declarations
 
-MadgwickFilter_t* MadgwickFilter(float beta, float sampleFreqHZ);
+MadgwickFilter_t* MadgwickFilterAlloc(float beta, float sampleFreqHZ);
 void MadgwickFilterFree(MadgwickFilter_t *f);
 void MadgwickAHRSupdate(MadgwickFilter_t *f,
                         float gx, float gy, float gz,
@@ -35,6 +35,9 @@ void MadgwickAHRSupdate(MadgwickFilter_t *f,
 void MadgwickAHRSupdateIMU( MadgwickFilter_t *f,
                             float gx, float gy, float gz,
                             float ax, float ay, float az);
+
+void MadgwickRotationMatrix (MadgwickFilter_t *mf,
+                              float *mtx);
 
 #endif
 //=====================================================================================================
