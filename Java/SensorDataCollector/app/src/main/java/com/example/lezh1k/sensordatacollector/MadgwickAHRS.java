@@ -13,13 +13,23 @@ public class MadgwickAHRS {
 
     private float q0, q1, q2, q3; //quaternion
     private float[] m_rotationMatrix;
+    private float yaw, roll, pitch;
 
     public MadgwickAHRS(float sampleFreq, float beta) {
         this.beta = beta;
         this.sampleFreq = sampleFreq;
         q0 = 1.0f;
         q1 = q2 = q3 = 0.0f;
+        yaw = roll = pitch = 0.0f;
         m_rotationMatrix = new float[16]; //for using with openGL
+    }
+
+    public float getYaw() { return yaw; }
+    public float getRoll() {
+        return roll;
+    }
+    public float getPitch() {
+        return pitch;
     }
 
     private float invSqrt(float x) {
@@ -127,6 +137,7 @@ public class MadgwickAHRS {
         q2 *= recipNorm;
         q3 *= recipNorm;
         buildRotationMatrix();
+        buildEuler();
     }
 
     public void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
@@ -196,6 +207,17 @@ public class MadgwickAHRS {
         q2 *= recipNorm;
         q3 *= recipNorm;
         buildRotationMatrix();
+        buildEuler();
+    }
+
+    private void buildEuler() {
+        float sqw = q0 * q0;
+        float sqx = q1 * q1;
+        float sqy = q2 * q2;
+        float sqz = q3 * q3;
+        yaw = (float) (Math.atan2(2.0f * (q1 * q2 + q3 * q0), sqx - sqy - sqz + sqw) * 180 / Math.PI);
+        roll = (float) (Math.asin(-2.0f * (q1 * q3 - q2 * q0)) * 180 / Math.PI);
+        pitch = (float) (Math.atan2(2.0f * (q2 * q3 + q1 * q0), -sqx - sqy + sqz + sqw) * 180 / Math.PI);
     }
 
     private void buildRotationMatrix() {

@@ -70,44 +70,26 @@ static void launchTests() {
                   "/home/lezh1k/gps_test_data/test.json"));
 }
 //////////////////////////////////////////////////////////////////////////
-#include "Matrix.h"
-#include "Coordinates.h"
-int main(int argc, char *argv[])
-{
-//  qDebug() << 1e-6f;
-//  MadgwickFilter_t *f = MadgwickFilterAlloc(0.03, 512);
-//  for (int i = 0; i < 512; ++i)
-//    MadgwickAHRSupdate(f,
-//                       0.0f, 0.0f, 0.1f, //g
-//                       0.0f, 9.809999f, i*0.0001*9.809999f, //a
-//                       30.2493f, 10.3607f, 36.7975f); //m
 
-//  float w, x, y, z;
-//  w = f->q0; x = f->q1; y = f->q2; z = f->q3;
+static quaternion_t quaternionMul(const quaternion_t *a,
+                                  const quaternion_t *b) {
+  quaternion_t r;
+  r.w = a->w*b->w - a->x*b->x - a->y*b->y - a->z*b->z;
+  r.x = a->w*b->x + a->x*b->w + a->y*b->z - a->z*b->y;
+  r.y = a->w*b->y - a->x*b->z + a->y*b->w + a->z*b->x;
+  r.z = a->w*b->z + a->x*b->y - a->y*b->x + a->z*b->w;
+  return r;
+}
+//////////////////////////////////////////////////////////////////////////
+#include <math.h>
+int main(int argc, char *argv[]) {
 
-//  matrix_t *rotMatrix = MatrixAlloc(3, 3);
-//  matrix_t *currAcc = MatrixAlloc(3, 1);
-//  matrix_t *rotMatrixI = MatrixAlloc(3, 3);
+  quaternion_t a = {1.0f, 1.0f, 1.0f, 1.0f};
+  quaternion_t b = {0.0f, -0.001f, -0.002f, -0.002f};
+  quaternion_t c = quaternionMul(&a, &b);
 
-//  rotMatrix->data[0][0] = 1.0f - 2.0f*y*y - 2.0f*z*z;
-//  rotMatrix->data[0][1] = 2.0f*x*y - 2.0f*z*w;
-//  rotMatrix->data[0][2] = 2.0f*x*z + 2.0f*y*w;
-//  rotMatrix->data[1][0] = 2.0f*x*y + 2.0f*z*w;
-//  rotMatrix->data[1][1] = 1.0f - 2.0f*x*x - 2.0f*z*z;
-//  rotMatrix->data[1][2] = 2.0f*y*z - 2.0f*x*w;
-//  rotMatrix->data[2][0] = 2.0f*x*z - 2.0f*y*w;
-//  rotMatrix->data[2][1] = 2.0f*y*z + 2.0f*x*w;
-//  rotMatrix->data[2][2] = 1.0f - 2.0f*x*x - 2.0f*y*y;
-
-//  MatrixTranspose(rotMatrix, rotMatrixI);
-//  matrix_t *neuAcc = MatrixAlloc(3, 1);
-//  MatrixSet(currAcc, 0.0, 0.0, 9.809999);
-//  MatrixPrint(rotMatrix);
-//  MatrixPrint(currAcc);
-//  MatrixMultiply(rotMatrix, currAcc, neuAcc);
-//  MatrixPrint(neuAcc);
-
-  qDebug() << CoordDistanceBetweenPointsMeters(42.879034, 74.617670, 42.878190, 74.618740);
+  qDebug() << c.w << " " << c.x << " " << c.y << " " << c.z;
+  qDebug() << sqrt(3.0 / 4.0) * -0.005;
 
   launchTests();
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

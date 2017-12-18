@@ -16,6 +16,10 @@
 //----------------------------------------------------------------------------------------------------
 // Variable declaration
 
+typedef struct quaternion {
+  float w, x, y, z;
+} quaternion_t;
+
 typedef struct MadgwickFilterAlloc {
   float beta;             //algorithm gain
   float sampleFreq;

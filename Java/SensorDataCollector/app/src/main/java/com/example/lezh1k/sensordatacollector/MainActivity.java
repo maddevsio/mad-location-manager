@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity
     private SensorManager m_sensorManager = null;
     private RefreshTask m_refreshTask = null;
 
-    private FilterGMA m_gma = new FilterGMA();
+    private FilterGMA m_gma = null;
     private Sensor m_grAccelerometer = null;
     private Sensor m_linAccelerometer = null;
     private Sensor m_gyroscope = null;
@@ -188,8 +188,31 @@ public class MainActivity extends AppCompatActivity
         if (m_sensorManager == null) return;
         if (m_refreshTask == null) return;
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        m_accDeviationCalculator =
+                new DeviationCalculator(400, 3, "acc");
+        m_linAccDeviationCalculator =
+                new DeviationCalculator(3000, 3, "linAcc");
+        m_gyrDeviationCalculator =
+                new DeviationCalculator(400, 3, "gyr");
+        m_magDeviationCalculator =
+                new DeviationCalculator(30, 3, "mag");
+
+        m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
+                m_gyrDeviationCalculator, m_magDeviationCalculator);
+
+        m_sensorManager.registerListener(this, m_grAccelerometer,
+                SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_linAccelerometer,
+                SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_gyroscope,
+                SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_magnetometer,
+                SensorManager.SENSOR_DELAY_NORMAL);
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION}, 100);
         } else {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
@@ -198,23 +221,13 @@ public class MainActivity extends AppCompatActivity
                     GpsMinTime, GpsMinDistance, this);
 
             Location lkl = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
-            m_gma.setGpsSpeed(lkl.getSpeed());
+            if (lkl != null) {
+                m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
+                m_gma.setGpsSpeed(lkl.getSpeed());
+            }
         }
 
-        m_accDeviationCalculator =
-                new DeviationCalculator(400, 3, "acc");
-        m_linAccDeviationCalculator =
-                new DeviationCalculator(400, 3, "linAcc");
-        m_gyrDeviationCalculator =
-                new DeviationCalculator(400, 3, "gyr");
-        m_magDeviationCalculator =
-                new DeviationCalculator(30, 3, "mag");
 
-        m_sensorManager.registerListener(this, m_grAccelerometer, SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_linAccelerometer, SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_gyroscope, SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
 
         m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
         m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));

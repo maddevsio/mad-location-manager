@@ -46,7 +46,7 @@ public class DeviationCalculator {
         if (m_count < m_measurementCalibrationCount) {
             for (int i = 0; i < m_valuesCount; ++i) {
                 m_measurements[i][m_count] = args[i];
-                m_means[i] += args[i] / m_measurementCalibrationCount;
+                m_means[i] += args[i] /*/ m_measurementCalibrationCount*/;
             }
             long now = System.nanoTime();
             m_freqMeanAux += (now - m_lastTimeStamp) / m_measurementCalibrationCount;
@@ -54,6 +54,7 @@ public class DeviationCalculator {
             ++m_count;
         } else {
             for (int i = 0; i < m_valuesCount; ++i) {
+                m_means[i] /= m_measurementCalibrationCount;
                 m_sigmas[i] = calculateSigma(m_sigmas[i], m_means[i], m_measurements[i]);
             }
             m_calculated = true;
@@ -92,8 +93,10 @@ public class DeviationCalculator {
 
     public String deviationInfoString() {
         String res = "";
-        for (int i = 0; i < m_valuesCount; ++i)
-            res += String.format("%d:%f,", i, m_sigmas[i]);
+        for (int i = 0; i < m_valuesCount; ++i) {
+//            res += String.format("%d:%f%f,", i, m_sigmas[i], m_means[i]);
+            res += String.format("%d:%f,", i, m_means[i]);
+        }
         res += String.format("Freq:%f", m_freqMean);
         return res;
     }
