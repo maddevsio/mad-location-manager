@@ -36,7 +36,8 @@ enum InitSensorErrorFlag {
     MISSED_ACCELEROMETER(1 << 1),
     MISSED_GYROSCOPE(1<<2),
     MISSED_MAGNETOMETER(1<<3),
-    MISSED_LIN_ACCELEROMETER(1 << 4);
+    MISSED_ROTATION_SENSOR(1<<4),
+    MISSED_LIN_ACCELEROMETER(1 << 5);
 
     public final long flag;
     InitSensorErrorFlag(long statusFlagValue) {
@@ -56,6 +57,8 @@ enum InitSensorErrorFlag {
             res += "Missed gyroscope";
         if ((val & MISSED_MAGNETOMETER.flag) != 0)
             res += "Missed magnetometer";
+        if ((val & MISSED_ROTATION_SENSOR.flag) != 0)
+            res += "Missed rotation sensor";
         return res;
     }
 }
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity
     private Sensor m_linAccelerometer = null;
     private Sensor m_gyroscope = null;
     private Sensor m_magnetometer = null;
+    private Sensor m_rotationSensor = null;
 
     private DeviationCalculator m_accDeviationCalculator = null;
     private DeviationCalculator m_linAccDeviationCalculator = null;
@@ -135,12 +139,15 @@ public class MainActivity extends AppCompatActivity
             return InitSensorErrorFlag.SENSOR_MANAGER_ERR.flag;
         }
 
-        m_grAccelerometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        m_grAccelerometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         m_linAccelerometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        m_rotationSensor = m_sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
         m_gyroscope = m_sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         m_magnetometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        Sensor toCheck[] = {m_grAccelerometer, m_linAccelerometer, m_gyroscope, m_magnetometer};
+        Sensor toCheck[] = {m_grAccelerometer, m_linAccelerometer, m_rotationSensor,
+                m_gyroscope, m_magnetometer};
         InitSensorErrorFlag toCheckRes[] = {
                 InitSensorErrorFlag.MISSED_ACCELEROMETER,
                 InitSensorErrorFlag.MISSED_LIN_ACCELEROMETER,
@@ -191,11 +198,11 @@ public class MainActivity extends AppCompatActivity
         m_accDeviationCalculator =
                 new DeviationCalculator(400, 3, "acc");
         m_linAccDeviationCalculator =
-                new DeviationCalculator(3000, 3, "linAcc");
+                new DeviationCalculator(400, 3, "linAcc");
         m_gyrDeviationCalculator =
                 new DeviationCalculator(400, 3, "gyr");
         m_magDeviationCalculator =
-                new DeviationCalculator(30, 3, "mag");
+                new DeviationCalculator(100, 3, "mag");
 
         m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
                 m_gyrDeviationCalculator, m_magDeviationCalculator);
@@ -203,6 +210,8 @@ public class MainActivity extends AppCompatActivity
         m_sensorManager.registerListener(this, m_grAccelerometer,
                 SensorManager.SENSOR_DELAY_GAME);
         m_sensorManager.registerListener(this, m_linAccelerometer,
+                SensorManager.SENSOR_DELAY_GAME);
+        m_sensorManager.registerListener(this, m_rotationSensor,
                 SensorManager.SENSOR_DELAY_GAME);
         m_sensorManager.registerListener(this, m_gyroscope,
                 SensorManager.SENSOR_DELAY_GAME);
@@ -226,8 +235,6 @@ public class MainActivity extends AppCompatActivity
                 m_gma.setGpsSpeed(lkl.getSpeed());
             }
         }
-
-
 
         m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
         m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
@@ -367,7 +374,7 @@ public class MainActivity extends AppCompatActivity
                 dc = m_magDeviationCalculator;
                 m_gma.setGeomagnetic(event.values, dc);
                 break;
-            case Sensor.TYPE_ACCELEROMETER:
+            case Sensor.TYPE_GRAVITY:
                 format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
                 tv = m_tvAccelerometerData;
                 dc = m_accDeviationCalculator;
@@ -383,10 +390,13 @@ public class MainActivity extends AppCompatActivity
                 format = "Acc = %d, Afb = %f, Alr = %f, Aud = %f\n";
                 dc = m_linAccDeviationCalculator;
                 tv = m_tvLinAccelerometerData;
-                if (dc.isM_calculated()) {
+                if (dc.is_calculated()) {
                     m_gma.init(dc.getSigmas());
                 }
                 m_gma.setLinAcc(event.values);
+                break;
+            case Sensor.TYPE_ROTATION_VECTOR:
+                m_gma.setRotation(event.values);
                 break;
         }
 

@@ -33,6 +33,7 @@ public class DeviationCalculator {
 
     private double calculateSigma(double sigma, double mean, double[] calibrations) {
         if (sigma != SigmaNotInitialized) return sigma;
+        sigma = 0.0;
         for (int i = 0; i < m_measurementCalibrationCount; ++i) {
             sigma += Math.pow(calibrations[i] - mean, 2.0);
         }
@@ -86,7 +87,12 @@ public class DeviationCalculator {
     public double[] getSigmas() {
         return m_sigmas;
     }
-    public boolean isM_calculated() {
+
+    public double[] getMeans() {
+        return m_means;
+    }
+
+    public boolean is_calculated() {
         return m_calculated;
     }
     public double getFrequencyMean() { return m_freqMean; }

@@ -6,6 +6,7 @@ import android.hardware.SensorManager;
 import android.opengl.*;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.util.Log;
 
 /**
  * Created by lezh1k on 12/14/17.
@@ -24,10 +25,12 @@ public class FilterGMA {
     float[] RI = new float[16]; //inverse
     float[] I = new float[16]; //inclinations
 
-    float[] gravity = new float[4];
     float[] geomagnetic = new float[4];
     float[] gyroscope = new float[4];
+
+    float[] gravity = new float[4];
     float[] linAcc = new float[4];
+    float[] rotation = new float[5];
 
     float[] accAxis = new float[4];
     float[] velAxis = new float[4];
@@ -54,6 +57,7 @@ public class FilterGMA {
     private DeviationCalculator m_gyrDeviationCalculator = null;
     private DeviationCalculator m_magDeviationCalculator = null;
 
+
     public FilterGMA(DeviationCalculator accDeviationCalculator,
                      DeviationCalculator linAccDeviationCalculator,
                      DeviationCalculator gyrDeviationCalculator,
@@ -77,34 +81,30 @@ public class FilterGMA {
                 try {
                     Thread.sleep(deltaT);
 //                    //todo use Madgwick here later
-//                    if (!SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
-//                        //todo log
-//                        return;
-//                    }
-//                    android.opengl.Matrix.invertM(RI, 0, R, 0);
-//                    SensorManager.getOrientation(R, auxYPR);
-//                    yaw = (float) Math.toDegrees(auxYPR[0]) + declination;
-//                    pitch = (float) Math.toDegrees(auxYPR[1]);
-//                    roll = (float) Math.toDegrees(auxYPR[2]);
-                    m_ahrs.MadgwickAHRSupdate(gyroscope[0], gyroscope[1], gyroscope[2],
-                            gravity[0], gravity[1], gravity[2],
-                            geomagnetic[0], geomagnetic[1], geomagnetic[2]);
-                    R = m_ahrs.getRotationMatrix();
+                    if (!SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
+                        //todo log
+                        continue;
+                    }
                     android.opengl.Matrix.invertM(RI, 0, R, 0);
-                    yaw = m_ahrs.getYaw() + declination;
-                    pitch = m_ahrs.getPitch();
-                    roll = m_ahrs.getRoll();
+                    SensorManager.getOrientation(R, auxYPR);
+                    yaw = (float) Math.toDegrees(auxYPR[0]) + declination;
+                    pitch = (float) Math.toDegrees(auxYPR[1]);
+                    roll = (float) Math.toDegrees(auxYPR[2]);
+
+//                    m_ahrs.MadgwickAHRSupdate(gyroscope[0], gyroscope[1], gyroscope[2],
+//                            gravity[0], gravity[1], gravity[2],
+//                            geomagnetic[0], geomagnetic[1], geomagnetic[2]);
+//                    R = m_ahrs.getRotationMatrix();
+//                    android.opengl.Matrix.invertM(RI, 0, R, 0);
+//                    yaw = m_ahrs.getYaw() + declination;
+//                    pitch = m_ahrs.getPitch();
+//                    roll = m_ahrs.getRoll();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
             return null;
         }
-
-//        @Override
-//        protected void onProgressUpdate(Object... values) {
-//           super.onProgressUpdate(values);
-//        }
     }
     /*********************************************************/
 
@@ -131,12 +131,21 @@ public class FilterGMA {
                 linAccDeviations[up],
                 timeStamp);
 
-        double[] fs = {m_accDeviationCalculator.getFrequencyMean(),
-                m_gyrDeviationCalculator.getFrequencyMean(),
-                m_magDeviationCalculator.getFrequencyMean()};
-        float mf = (float) fs[0];
-        for (double f : fs)
-            mf = (float) Math.max(mf, f);
+        float[] fs = {(float) m_accDeviationCalculator.getFrequencyMean(),
+                (float) m_gyrDeviationCalculator.getFrequencyMean(),
+                (float) m_magDeviationCalculator.getFrequencyMean()};
+        float mf = fs[0];
+        for (float f : fs)
+            mf = Math.max(mf, f);
+
+        float[] gs = {(float) m_gyrDeviationCalculator.getSigmas()[0],
+                (float) m_gyrDeviationCalculator.getSigmas()[1],
+                (float) m_gyrDeviationCalculator.getSigmas()[2]};
+        float gm = Math.abs(gs[0]);
+        for (float g : gs)
+            gm = Math.max(gm, Math.abs(g));
+
+//        m_ahrs = new MadgwickAHRS(mf, (float) Math.sqrt(gm)); //todo use quaternion fot this
         m_ahrs = new MadgwickAHRS(mf, 0.3f);
         m_madgwickTask = new MadgwickTask((long) (100.0 / mf));
         m_madgwickTask.needTerminate = false;
@@ -155,18 +164,19 @@ public class FilterGMA {
         android.opengl.Matrix.multiplyMV(accAxis, 0, RI, 0, this.linAcc, 0);
     }
 
+    public void setRotation(float[] rotation) {
+        System.arraycopy(rotation, 0, this.rotation, 0, rotation.length);
+    }
+
     public void setGyroscope(float[] gyroscope, DeviationCalculator dc) {
-        if (dc.getFrequencyMean() == 0.0) return;
         System.arraycopy(gyroscope, 0, this.gyroscope, 0, 3);
     }
 
     public void setGravity(float[] gravity, DeviationCalculator dc) {
-        if (dc.getFrequencyMean() == 0.0) return;
         System.arraycopy(gravity, 0, this.gravity, 0, 3);
     }
 
     public void setGeomagnetic(float[] geomagnetic, DeviationCalculator dc) {
-        if (dc.getFrequencyMean() == 0.0) return;
         System.arraycopy(geomagnetic, 0, this.geomagnetic, 0, 3);
     }
 
@@ -203,7 +213,7 @@ public class FilterGMA {
     }
 
     public void setLinAcc(float[] linAcc) {
-        Commons.LowPassFilterArr(0.1f, this.linAcc, linAcc);
+        System.arraycopy(linAcc, 0, this.linAcc, 0, linAcc.length);
         double predictedPosLat, predictedPosLon, predictedPosAlt;
         double predictedVelLat, predictedVelLon, predictedVelAlt;
 
@@ -305,23 +315,24 @@ public class FilterGMA {
         return String.format("" +
                         "declination:%f\n" +
                         "Lat:%f\nLon:%f\nAlt:%f\n" +
-                        "Acc: E%.2f,N=%.2f,U=%.2f\n" +
+                        "Grav: E%.2f,N=%.2f,U=%.2f\n" +
                         "LAcc: E%.2f,N=%.2f,U=%.2f\n" +
                         "Vel: E=%.2f,N=%.2f,U:%.2f\n" +
                         "FLat:%f\nFLon:%f\nFAlt:%f\n" +
                         "FSE:%f\nFSN:%f\nFSU:%f\n" +
                         "Distance: %f\n" +
-                        "yaw: %f\n" +
-                        "pitch: %f\n" +
-                        "roll: %f",
+                        "yaw:%.3f--%.3f\n" +
+                        "pitch:%.3f--%.3f\n" +
+                        "roll:%.3f--%.3f",
                 declination,
                 gpsLat, gpsLon, gpsAlt,
                 accAxis[east], accAxis[north], accAxis[up],
+                gravity[0], gravity[1], gravity[2],
                 linAcc[0], linAcc[1], linAcc[2],
                 velAxis[east], velAxis[north], velAxis[up],
                 filteredLat, filteredLon, filteredAlt,
                 filteredVel[east], filteredVel[north], filteredVel[up],
                 Coordinates.geoDistanceMeters(gpsLon, gpsLat, filteredLon, filteredLat),
-                yaw, pitch, roll);
+                yaw, pitch, roll, rotation[0], rotation[1], rotation[2]);
     }
 }
