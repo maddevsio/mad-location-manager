@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.Filters;
 
 import android.hardware.SensorManager;
 

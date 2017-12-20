@@ -1,5 +1,7 @@
 package com.example.lezh1k.sensordatacollector;
 
+import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
+
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;

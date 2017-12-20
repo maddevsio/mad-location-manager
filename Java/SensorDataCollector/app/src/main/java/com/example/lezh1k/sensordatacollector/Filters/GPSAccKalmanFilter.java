@@ -1,11 +1,15 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.Filters;
+
+import android.util.Log;
+
+import com.example.lezh1k.sensordatacollector.Commons;
 
 /**
  * Created by lezh1k on 12/11/17.
  */
 
 public class GPSAccKalmanFilter {
-    private double m_timeStamp;
+    private double m_timeStampMs;
     private KalmanFilter m_kf;
 
     public GPSAccKalmanFilter(double initPos,
@@ -15,7 +19,7 @@ public class GPSAccKalmanFilter {
                               double currentTimeStamp) {
         m_kf = new KalmanFilter(2, 2, 1);
   /*initialization*/
-        m_timeStamp = currentTimeStamp;
+        m_timeStampMs = currentTimeStamp;
         m_kf.currentState.Set(
                 initPos,
                 initVel);
@@ -66,12 +70,12 @@ public class GPSAccKalmanFilter {
     }
 
 
-    public void Predict(double timeNow, double accAxis) {
-        double deltaT = timeNow - m_timeStamp;
-        rebuildControlMatrix(deltaT);
-        rebuildStateTransitions(deltaT);
+    public void Predict(double timeNowMs, double accAxis) {
+        double deltaTInSeconds = (timeNowMs - m_timeStampMs) / 1000.0;
+        rebuildControlMatrix(deltaTInSeconds);
+        rebuildStateTransitions(deltaTInSeconds);
         m_kf.controlVector.Set(accAxis);
-        m_timeStamp = timeNow;
+        m_timeStampMs = timeNowMs;
         m_kf.Predict();
     }
 

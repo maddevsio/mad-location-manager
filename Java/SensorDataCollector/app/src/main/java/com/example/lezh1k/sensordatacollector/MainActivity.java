@@ -20,6 +20,9 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import com.example.lezh1k.sensordatacollector.SensorDataProvider.DeviationCalculator;
+import com.example.lezh1k.sensordatacollector.SensorDataProvider.SensorRawDataLogger;
+
 import net.sf.marineapi.nmea.parser.SentenceFactory;
 import net.sf.marineapi.nmea.sentence.GGASentence;
 import net.sf.marineapi.nmea.sentence.GLLSentence;
@@ -126,6 +129,8 @@ public class MainActivity extends AppCompatActivity
     private TextView m_tvMagnetometerData = null;
     private TextView m_tvLocationData = null;
 
+    private SensorRawDataLogger m_sensorRawDataLogger = null;
+
     static String sensorDescription(Sensor s) {
         String res = "";
         res += "Res : " + s.getResolution() + "\n";
@@ -167,6 +172,8 @@ public class MainActivity extends AppCompatActivity
 
     protected void onPause() {
         super.onPause();
+//        if (m_sensorRawDataLogger != null)
+//            m_sensorRawDataLogger.stop();
         m_sensorManager.unregisterListener(this);
         m_locationManager.removeNmeaListener(this);
         m_locationManager.removeUpdates(this);
@@ -176,7 +183,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
@@ -190,19 +196,20 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
+//        if (m_sensorRawDataLogger != null)
+//            m_sensorRawDataLogger.start();
         if (m_locationManager == null) return;
         if (m_sensorManager == null) return;
         if (m_refreshTask == null) return;
 
         m_accDeviationCalculator =
-                new DeviationCalculator(400, 3, "acc");
+                new DeviationCalculator(400, 3);
         m_linAccDeviationCalculator =
-                new DeviationCalculator(400, 3, "linAcc");
+                new DeviationCalculator(400, 3);
         m_gyrDeviationCalculator =
-                new DeviationCalculator(400, 3, "gyr");
+                new DeviationCalculator(400, 3);
         m_magDeviationCalculator =
-                new DeviationCalculator(100, 3, "mag");
+                new DeviationCalculator(100, 3);
 
         m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
                 m_gyrDeviationCalculator, m_magDeviationCalculator);
@@ -236,7 +243,6 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
         m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
         m_refreshTask.needTerminate = false;
         m_refreshTask.execute();
@@ -247,8 +253,6 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         m_tvStatus = (TextView) findViewById(R.id.tvStatus);
-        m_tvAccelerometer = (TextView) findViewById(R.id.tvAccelerometer);
-        m_tvAccelerometerData = (TextView) findViewById(R.id.tvAccelerometerData);
         m_tvLinAccelerometer = (TextView) findViewById(R.id.tvLinAccelerometer);
         m_tvLinAccelerometerData = (TextView) findViewById(R.id.tvLinAccelerometerData);
         m_tvLocationData = (TextView) findViewById(R.id.tvLocationData);
@@ -268,6 +272,9 @@ public class MainActivity extends AppCompatActivity
 
         if (m_refreshTask == null)
             m_refreshTask = new RefreshTask(30);
+
+        if (m_sensorRawDataLogger == null)
+            m_sensorRawDataLogger = new SensorRawDataLogger(m_sensorManager);
     }
     /*********************************************************/
 

@@ -1,5 +1,8 @@
 package com.example.lezh1k.sensordatacollector;
 
+import com.example.lezh1k.sensordatacollector.Filters.Coordinates;
+import com.example.lezh1k.sensordatacollector.Filters.GeoPoint;
+
 import org.junit.Test;
 
 import static junit.framework.Assert.assertTrue;

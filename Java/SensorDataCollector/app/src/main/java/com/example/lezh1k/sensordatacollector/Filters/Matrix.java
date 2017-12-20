@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.Filters;
 
 /**
  * Created by lezh1k on 12/6/17.
@@ -7,7 +7,7 @@ package com.example.lezh1k.sensordatacollector;
 public class Matrix {
     private int rows;
     private int cols;
-    double data[][];
+    public double data[][];
 
     public Matrix(int rows, int cols) {
         this.rows = rows;

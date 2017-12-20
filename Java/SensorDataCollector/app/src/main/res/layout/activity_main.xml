@@ -19,29 +19,6 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tvAccelerometer"
-        android:layout_width="127dp"
-        android:layout_height="65dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Accelerometer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
-
-    <TextView
-        android:id="@+id/tvAccelerometerData"
-        android:layout_width="218dp"
-        android:layout_height="85dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:autoSizeTextType="none"
-        android:text="SensorData"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/tvAccelerometer"
-        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
-
-    <TextView
         android:id="@+id/tvLocation"
         android:layout_width="127dp"
         android:layout_height="65dp"
@@ -54,11 +31,11 @@
     <TextView
         android:id="@+id/tvLocationData"
         android:layout_width="218dp"
-        android:layout_height="292dp"
+        android:layout_height="340dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="SensorData"
+        android:text="Collecting to Log.d"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLocation"
         app:layout_constraintTop_toBottomOf="@+id/tvLinAccelerometerData" />
@@ -71,7 +48,7 @@
         android:layout_marginTop="8dp"
         android:text="Linear accelerometer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometer" />
+        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
 
     <TextView
         android:id="@+id/tvLinAccelerometerData"
@@ -80,8 +57,8 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="SensorData"
+        android:text="Collecting to Log.d"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLinAccelerometer"
-        app:layout_constraintTop_toBottomOf="@+id/tvAccelerometerData" />
+        app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
 </android.support.constraint.ConstraintLayout>

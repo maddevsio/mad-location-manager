@@ -1,5 +1,7 @@
 package com.example.lezh1k.sensordatacollector;
 
+import com.example.lezh1k.sensordatacollector.Filters.Matrix;
+
 import org.junit.Test;
 
 import java.util.Random;

@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.SensorDataProvider;
 
 /**
  * Created by lezh1k on 12/12/17.
@@ -12,15 +12,13 @@ public class DeviationCalculator {
     private double m_sigmas[];
     private double m_measurements[][];
     private boolean m_calculated = false;
-    private String id;
     private double m_means[];
 
     private long m_lastTimeStamp;
     private long m_freqMeanAux;
     private double m_freqMean;
 
-    public DeviationCalculator(int measurementCalibrationCount, int valuesCount, String id) {
-        this.id  = id;
+    public DeviationCalculator(int measurementCalibrationCount, int valuesCount) {
         this.m_measurementCalibrationCount = measurementCalibrationCount;
         m_valuesCount = valuesCount;
         m_measurements = new double[valuesCount][measurementCalibrationCount];
@@ -87,7 +85,6 @@ public class DeviationCalculator {
     public double[] getSigmas() {
         return m_sigmas;
     }
-
     public double[] getMeans() {
         return m_means;
     }
@@ -100,8 +97,7 @@ public class DeviationCalculator {
     public String deviationInfoString() {
         String res = "";
         for (int i = 0; i < m_valuesCount; ++i) {
-//            res += String.format("%d:%f%f,", i, m_sigmas[i], m_means[i]);
-            res += String.format("%d:%f,", i, m_means[i]);
+            res += String.format("%d:%f%f,", i, m_sigmas[i], m_means[i]);
         }
         res += String.format("Freq:%f", m_freqMean);
         return res;

@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.Filters;
 
 /**
  * Created by lezh1k on 12/11/17.
