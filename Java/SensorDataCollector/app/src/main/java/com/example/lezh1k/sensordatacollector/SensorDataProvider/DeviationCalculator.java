@@ -7,11 +7,11 @@ package com.example.lezh1k.sensordatacollector.SensorDataProvider;
 public class DeviationCalculator {
     private static final double SigmaNotInitialized = -1.0;
     private final int m_measurementCalibrationCount;
-    private int m_count = 0;
+    private int m_count;
     private int m_valuesCount;
     private double m_sigmas[];
     private double m_measurements[][];
-    private boolean m_calculated = false;
+    private boolean m_calculated;
     private double m_means[];
 
     private long m_lastTimeStamp;
@@ -24,9 +24,19 @@ public class DeviationCalculator {
         m_measurements = new double[valuesCount][measurementCalibrationCount];
         m_sigmas = new double[valuesCount];
         m_means = new double[valuesCount];
-        for (int i = 0; i < valuesCount; ++i)
+        reset();
+    }
+
+    public void reset() {
+        for (int i = 0; i < m_valuesCount; ++i) {
             m_sigmas[i] = SigmaNotInitialized;
+            m_means[i] = 0.0;
+        }
         m_lastTimeStamp = System.nanoTime();
+        m_count = 0;
+        m_calculated = false;
+        m_freqMean = 0.0;
+        m_freqMeanAux = 0;
     }
 
     private double calculateSigma(double sigma, double mean, double[] calibrations) {
@@ -35,8 +45,8 @@ public class DeviationCalculator {
         for (int i = 0; i < m_measurementCalibrationCount; ++i) {
             sigma += Math.pow(calibrations[i] - mean, 2.0);
         }
-
-        sigma /= m_measurementCalibrationCount;
+        sigma /= (m_measurementCalibrationCount - 1);
+        sigma = Math.sqrt(sigma);
         return sigma;
     }
 
@@ -85,6 +95,7 @@ public class DeviationCalculator {
     public double[] getSigmas() {
         return m_sigmas;
     }
+
     public double[] getMeans() {
         return m_means;
     }
@@ -97,9 +108,9 @@ public class DeviationCalculator {
     public String deviationInfoString() {
         String res = "";
         for (int i = 0; i < m_valuesCount; ++i) {
-            res += String.format("%d:%f%f,", i, m_sigmas[i], m_means[i]);
+            res += String.format("\n%d : sigma=%f,  mean=%f", i, m_sigmas[i], m_means[i]);
         }
-        res += String.format("Freq:%f", m_freqMean);
+        res += String.format("\nFrequency:%f", m_freqMean);
         return res;
     }
 }

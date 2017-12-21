@@ -43,7 +43,7 @@ public class Matrix {
         }
     }
 
-    static void MatrixAdd(Matrix ma,
+    public static void MatrixAdd(Matrix ma,
                           Matrix mb,
                           Matrix mc) {
         assert(ma != null);
@@ -59,7 +59,7 @@ public class Matrix {
         }
     }
 
-    static void MatrixSubtract(Matrix ma,
+    public static void MatrixSubtract(Matrix ma,
                                Matrix mb,
                                Matrix mc) {
         assert(ma != null);
@@ -75,7 +75,7 @@ public class Matrix {
         }
     }
 
-    void SubtractFromIdentity() {
+    public void SubtractFromIdentity() {
         int r, c;
         for (r = 0; r < rows; ++r) {
             for (c = 0; c < r; ++c)
@@ -86,7 +86,7 @@ public class Matrix {
         }
     }
 
-    static void MatrixMultiply(Matrix ma,
+    public static void MatrixMultiply(Matrix ma,
                                Matrix mb,
                                Matrix mc) {
         assert(ma != null);
@@ -107,7 +107,7 @@ public class Matrix {
         } //for row
     }
 
-    static void MatrixMultiplyByTranspose(Matrix ma,
+    public static void MatrixMultiplyByTranspose(Matrix ma,
                                           Matrix mb,
                                           Matrix mc) {
         assert(ma != null);
@@ -127,7 +127,7 @@ public class Matrix {
         } //for row
     }
 
-    static void MatrixTranspose(Matrix mtxin,
+    public static void MatrixTranspose(Matrix mtxin,
                          Matrix mtxout) {
         assert(mtxin != null);
         assert(mtxout != null);
@@ -141,9 +141,9 @@ public class Matrix {
         } //for row
     }
 
-    static boolean MatrixEq(Matrix ma,
-                            Matrix mb,
-                            double eps) {
+    public static boolean MatrixEq(Matrix ma,
+                                   Matrix mb,
+                                   double eps) {
         assert(ma != null);
         assert(mb != null);
         int r, c;
@@ -159,7 +159,19 @@ public class Matrix {
         return true;
     }
 
-    void Scale(double scalar) {
+    public static void MatrixClone(Matrix mSrc,
+                            Matrix mDst) {
+        assert(mSrc != null);
+        assert(mDst != null);
+        assert(mSrc.rows == mDst.rows && mSrc.cols == mDst.cols);
+        for (int r = 0; r < mSrc.rows; ++r) {
+            for (int c = 0; c < mSrc.cols; ++c) {
+                mDst.data[r][c] = mSrc.data[r][c];
+            }
+        }
+    }
+
+    public void Scale(double scalar) {
         int r, c;
         for (r = 0; r < rows; ++r) {
             for (c = 0; c < cols; ++c) {
@@ -193,7 +205,7 @@ public class Matrix {
             data[r1][c] += data[r2][c] * scalar;
     }
 
-    static boolean MatrixDestructiveInvert(Matrix mtxin,
+    public static boolean MatrixDestructiveInvert(Matrix mtxin,
                                  Matrix mtxout) {
         assert(mtxin != null);
         assert(mtxout != null);

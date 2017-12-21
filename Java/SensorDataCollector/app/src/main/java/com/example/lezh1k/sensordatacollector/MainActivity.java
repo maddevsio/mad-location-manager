@@ -167,8 +167,8 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
-    private static final int GpsMinTime = 3000;
-    private static final int GpsMinDistance = 2;
+    private static final int GpsMinTime = 1000;
+    private static final int GpsMinDistance = 0;
 
     protected void onPause() {
         super.onPause();
@@ -203,11 +203,11 @@ public class MainActivity extends AppCompatActivity
         if (m_refreshTask == null) return;
 
         m_accDeviationCalculator =
-                new DeviationCalculator(400, 3);
+                new DeviationCalculator(200, 3);
         m_linAccDeviationCalculator =
-                new DeviationCalculator(400, 3);
+                new DeviationCalculator(200, 3);
         m_gyrDeviationCalculator =
-                new DeviationCalculator(400, 3);
+                new DeviationCalculator(200, 3);
         m_magDeviationCalculator =
                 new DeviationCalculator(100, 3);
 
@@ -283,6 +283,9 @@ public class MainActivity extends AppCompatActivity
         Log.d(Commons.AppName, String.format("lon:%f, lat:%f, alt:%f, speed:%f, accuracy:%f",
                 loc.getLongitude(), loc.getLatitude(),
                 loc.getAltitude(), loc.getSpeed(), loc.getAccuracy()));
+        m_gma.setGpsPosition(loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
+        m_gma.setGpsSpeed(loc.getSpeed());
+        m_gma.setGpsHorizontalDop(loc.getAccuracy() / 100.0);
     }
 
     @Override
@@ -397,6 +400,7 @@ public class MainActivity extends AppCompatActivity
                 format = "Acc = %d, Afb = %f, Alr = %f, Aud = %f\n";
                 dc = m_linAccDeviationCalculator;
                 tv = m_tvLinAccelerometerData;
+
                 if (dc.is_calculated()) {
                     m_gma.init(dc.getSigmas());
                 }

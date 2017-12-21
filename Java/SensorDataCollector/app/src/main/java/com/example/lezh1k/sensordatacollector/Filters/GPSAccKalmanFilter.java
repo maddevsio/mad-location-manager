@@ -70,16 +70,21 @@ public class GPSAccKalmanFilter {
     }
 
 
-    public void Predict(double timeNowMs, double accAxis) {
+    public void Predict(double timeNowMs,
+                        double accAxis) {
         double deltaTInSeconds = (timeNowMs - m_timeStampMs) / 1000.0;
         rebuildControlMatrix(deltaTInSeconds);
         rebuildStateTransitions(deltaTInSeconds);
-        m_kf.controlVector.Set(accAxis);
+        m_kf.controlVector.data[0][0] =  accAxis;
         m_timeStampMs = timeNowMs;
         m_kf.Predict();
+
+        //this is not right. but we have something like this :
+        //predict, predict, predict, update, predict, predict, predict, update
+        //so we just integrate predictions.
+        Matrix.MatrixClone(m_kf.predictedState, m_kf.currentState);
     }
 
-    /*ToDo pass position error as REFERENCE!!! and check if it's null*/
     public void Update(double position, double velocityAxis,
                        double positionError, double velocityError) {
         m_kf.actualMeasurement.Set(position, velocityAxis);

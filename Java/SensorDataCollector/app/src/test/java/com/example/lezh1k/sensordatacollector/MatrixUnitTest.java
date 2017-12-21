@@ -234,4 +234,26 @@ public class MatrixUnitTest {
         Matrix.MatrixDestructiveInvert(ma, mb);
         assertTrue(Matrix.MatrixEq(mb, mc, 1e-06));
     }
+
+    @Test
+    public void matrixCloneTest() throws Exception {
+        Matrix ma, mb;
+        final int cols = 3;
+        final int rows = 3;
+        final double eps = 1e-06;
+        ma = new Matrix(rows, cols);
+        mb = new Matrix(rows, cols);
+        Random rnd = new Random();
+
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                ma.data[r][c] = rnd.nextDouble();
+                mb.data[r][c] = ma.data[r][c] + rnd.nextDouble();
+            }
+        }
+
+        assertTrue(!Matrix.MatrixEq(ma, mb, eps));
+        Matrix.MatrixClone(ma, mb);
+        assertTrue(Matrix.MatrixEq(ma, mb, eps));
+    }
 }

@@ -18,7 +18,8 @@ HEADERS += \
     tests/include/CoordinatesTest.h \
     include/GPSAccKalman.h \
     include/Kalman.h \
-    include/MadgwickAHRS.h
+    include/MadgwickAHRS.h \
+    include/GPSAccKalman2.h
 
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
@@ -32,7 +33,8 @@ SOURCES += src/main.cpp \
     tests/src/CoordinatesTest.cpp \
     src/GPSAccKalman.cpp \
     src/Kalman.cpp \
-    src/MadgwickAHRS.cpp
+    src/MadgwickAHRS.cpp \
+    src/GPSAccKalman2.cpp
 
 target.path = $$[QT_INSTALL_EXAMPLES]/webenginewidgets/maps
 INSTALLS += target

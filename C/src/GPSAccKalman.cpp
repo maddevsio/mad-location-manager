@@ -69,6 +69,7 @@ void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
   MatrixSet(k->kf->controlVector, accelerationProection);
   k->timeStamp = timeNow;
   KalmanFilterPredict(k->kf);
+  MatrixCopy(k->kf->predictedState, k->kf->currentState);
 }
 //////////////////////////////////////////////////////////////////////////
 
