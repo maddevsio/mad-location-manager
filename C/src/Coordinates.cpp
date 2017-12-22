@@ -9,6 +9,27 @@
 #include "Commons.h"
 #include "SensorController.h"
 
+
+//QString interested = filtered ? "Filtered" : "Measured";
+//while (!f.atEnd()) {
+//  QString line = f.readLine();
+//  if (line.indexOf(interested) == -1)
+//    continue;
+//  lstResult.push_back(fromString(line, interested));
+//}
+static geopoint_t fromString(const QString& line, const QString& interested) {
+  geopoint_t res(0.0, 0.0);
+  int latIndex, lonIndex;
+  latIndex = line.indexOf(interested);
+  bool ok = false;
+  QString strLat = line.mid(latIndex+interested.length() + 3, 9);
+  res.Latitude = strLat.toDouble(&ok);
+  lonIndex = latIndex+interested.length() + 3 + 11;
+  QString strLon = line.mid(lonIndex, 9);
+  res.Longitude = strLon.toDouble(&ok);
+  return res;
+}
+
 std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
   std::vector<geopoint_t> lstResult;
   QFile f(filePath);
@@ -137,6 +158,6 @@ geopoint_t MetersToGeopoint(double lonMeters,
 //////////////////////////////////////////////////////////////////////////
 
 double CoordDistanceBetweenPointsMeters(double lat1, double lon1,
-                                  double lat2, double lon2) {
+                                        double lat2, double lon2) {
   return geoDistanceMeters(lon1, lat1, lon2, lat2);
 }

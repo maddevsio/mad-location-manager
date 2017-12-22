@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.WindowManager;
 import android.widget.TextView;
 
@@ -32,6 +31,7 @@ import net.sf.marineapi.nmea.sentence.RMCSentence;
 import net.sf.marineapi.nmea.sentence.Sentence;
 import net.sf.marineapi.nmea.sentence.VTGSentence;
 import net.sf.marineapi.nmea.util.Position;
+
 
 enum InitSensorErrorFlag {
     SUCCESS(0),
@@ -65,7 +65,6 @@ enum InitSensorErrorFlag {
         return res;
     }
 }
-/*****************************************************************/
 
 public class MainActivity extends AppCompatActivity
         implements SensorEventListener, LocationListener, GpsStatus.NmeaListener {
@@ -280,9 +279,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLocationChanged(Location loc) {
-        Log.d(Commons.AppName, String.format("lon:%f, lat:%f, alt:%f, speed:%f, accuracy:%f",
-                loc.getLongitude(), loc.getLatitude(),
-                loc.getAltitude(), loc.getSpeed(), loc.getAccuracy()));
         m_gma.setGpsPosition(loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
         m_gma.setGpsSpeed(loc.getSpeed());
         m_gma.setGpsHorizontalDop(loc.getAccuracy() / 100.0);

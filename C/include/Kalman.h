@@ -5,29 +5,30 @@ typedef struct matrix matrix_t;
 
 typedef struct KalmanFilter {
   /*these matrices should be provided by user*/
-  matrix_t *stateTransitionMatrix; //Fk
-  matrix_t *measurementModel; //Hk --> converts somehow measured data to model data. in our case Identity
-  matrix_t *controlMatrix; //Bk
-  matrix_t *processVariance; //Q
-  matrix_t *measureVariance; //R
+  matrix_t *F; //state transition model
+  matrix_t *H; //observation model
+  matrix_t *B; //control matrix
+  matrix_t *Q; //process noise covariance
+  matrix_t *R; //observation noise covariance
 
   /*these matrices will be updated by user*/
-  matrix_t *controlVector; //Uk
-  matrix_t *actualMeasurement; //Zk
-  matrix_t *predictedState; //Xk|k-1
-  matrix_t *predictedCovariance; //Pk|k-1
-  matrix_t *measurementInnovation; //Yk
+  matrix_t *Uk; //control vector
+  matrix_t *Zk; //actual values (measured)
+  matrix_t *Xk_km1; //predicted state estimate
+  matrix_t *Pk_km1; //predicted estimate covariance
+  matrix_t *Yk; //measurement innovation
 
-  matrix_t *measurementInnovationCovariance; //Sk
-  matrix_t *measurementInnovationCovarianceInverse; //Sk(-1)
+  matrix_t *Sk; //innovation covariance
+  matrix_t *SkInv; //innovation covariance inverse
 
-  matrix_t *optimalKalmanGain; //Kk
-  matrix_t *currentState; //Xk|k
-  matrix_t *updatedCovariance; //Pk|k
-  matrix_t *measurementPostfitResidual; //Yk|k
+  matrix_t *K; //Kalman gain (optimal)
+  matrix_t *Xk_k; //updated (current) state
+  matrix_t *Pk_k; //updated estimate covariance
+  matrix_t *Yk_k; //post fit residual
 
   /*auxiliary matrices*/
   matrix_t *auxBxU;
+  matrix_t *auxSDxSD;
   matrix_t *auxSDxMD;
 
 } KalmanFilter_t;

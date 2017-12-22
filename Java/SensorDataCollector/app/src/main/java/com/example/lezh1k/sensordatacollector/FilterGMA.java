@@ -155,8 +155,6 @@ public class FilterGMA {
 
     public void setLinAcc(float[] linAcc) {
         System.arraycopy(linAcc, 0, this.linAcc, 0, linAcc.length);
-        double predictedPosLat, predictedPosLon, predictedPosAlt;
-        double predictedVelLat, predictedVelLon, predictedVelAlt;
 
         if (kfLat == null || kfLon == null || kfAlt == null) {
             return; //wait for initialization
@@ -167,18 +165,9 @@ public class FilterGMA {
         kfLon.Predict(timeStampMs, accAxis[east]);
         kfLat.Predict(timeStampMs, accAxis[north]);
         kfAlt.Predict(timeStampMs, accAxis[up]);
-
-        predictedPosLat = kfLat.getPredictedPosition();
-        predictedVelLat = kfLat.getPredictedVelocity();
-
-        predictedPosLon = kfLon.getPredictedPosition();
-        predictedVelLon = kfLon.getPredictedVelocity();
-
-        predictedPosAlt = kfAlt.getPredictedPosition();
-        predictedVelAlt = kfAlt.getPredictedVelocity();
-
-        refreshFilteredValues(predictedPosLon, predictedVelLon, predictedPosLat, predictedVelLat,
-                predictedPosAlt, predictedVelAlt);
+        refreshFilteredValues(kfLon.getCurrentPosition(), kfLon.getCurrentVelocity(),
+                kfLat.getCurrentPosition(), kfLat.getCurrentVelocity(),
+                kfAlt.getCurrentPosition(), kfAlt.getCurrentVelocity());
     }
 
     public void setGpsPosition(double gpsLat, double gpsLon, double gpsAlt) {
@@ -205,18 +194,12 @@ public class FilterGMA {
                 -velAxis[up],
                 gpsVerticalDop * 0.01,
                 0.0);
+        refreshFilteredValues(kfLon.getCurrentPosition(), kfLon.getCurrentVelocity(),
+                kfLat.getCurrentPosition(), kfLat.getCurrentVelocity(),
+                kfAlt.getCurrentPosition(), kfAlt.getCurrentVelocity());
 
-        double predictedPosLat = kfLat.getCurrentPosition();
-        double predictedVelLat = kfLat.getCurrentVelocity();
-
-        double predictedPosLon = kfLon.getCurrentPosition();
-        double predictedVelLon = kfLon.getCurrentVelocity();
-
-        double predictedPosAlt = kfAlt.getCurrentPosition();
-        double predictedVelAlt = kfAlt.getCurrentVelocity();
-
-        refreshFilteredValues(predictedPosLon, predictedVelLon, predictedPosLat, predictedVelLat,
-                predictedPosAlt, predictedVelAlt);
+        Log.d(Commons.AppName, String.format("Filtered : %f, %f, %f", filteredLat, filteredLon, filteredAlt));
+        Log.d(Commons.AppName, String.format("Measured : %f, %f, %f", gpsLat, gpsLon, gpsAlt));
     }
 
     public void setGpsSpeed(double gpsSpeed) {
@@ -225,6 +208,8 @@ public class FilterGMA {
 
     public void setGpsCourse(double gpsCourse) {
         this.gpsCourse = gpsCourse;
+        velAxis[east] = (float) (gpsSpeed * Math.cos(gpsCourse));
+        velAxis[north] = (float) (gpsSpeed * Math.sin(gpsCourse));
     }
 
     public float[] getAccAxis() {

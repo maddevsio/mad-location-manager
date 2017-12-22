@@ -23,6 +23,6 @@ typedef struct SensorData {
 } SensorData_t;
 
 bool SensorControllerParseDataString(const char *str, SensorData_t *sd);
-bool FilterInputFile(const char *inputFile, const char *outputFile);
+bool FilterInputFile(const char *inputFile, const char *outputFile, const char *outputFile2);
 
 #endif // SENSORCONTROLLER_H

@@ -6,101 +6,104 @@ KalmanFilter_t *KalmanFilterCreate(int stateDimension,
                                    int controlDimension)
 {
   KalmanFilter_t *f = (KalmanFilter_t*) malloc(sizeof(KalmanFilter_t));
-  f->stateTransitionMatrix = MatrixAlloc(stateDimension, stateDimension);
-  f->measurementModel = MatrixAlloc(measureDimension, stateDimension);
-  f->controlMatrix = MatrixAlloc(stateDimension, 1);
-  f->processVariance = MatrixAlloc(stateDimension, stateDimension);
-  f->measureVariance = MatrixAlloc(measureDimension, measureDimension);
+  f->F = MatrixAlloc(stateDimension, stateDimension);
+  f->H = MatrixAlloc(measureDimension, stateDimension);
+  f->Q = MatrixAlloc(stateDimension, stateDimension);
+  f->R = MatrixAlloc(measureDimension, measureDimension);
 
-  f->controlVector = MatrixAlloc(controlDimension, 1);
-  f->actualMeasurement = MatrixAlloc(measureDimension, 1);
+  f->B = MatrixAlloc(stateDimension, 1);
+  f->Uk = MatrixAlloc(controlDimension, 1);
 
-  f->predictedState = MatrixAlloc(stateDimension, 1);
-  f->predictedCovariance = MatrixAlloc(stateDimension, stateDimension);
+  f->Zk = MatrixAlloc(measureDimension, 1);
 
-  f->measurementInnovation = MatrixAlloc(measureDimension, 1);
-  f->measurementInnovationCovariance = MatrixAlloc(measureDimension, measureDimension);
-  f->measurementInnovationCovarianceInverse = MatrixAlloc(measureDimension, measureDimension);
+  f->Xk_km1 = MatrixAlloc(stateDimension, 1);
+  f->Pk_km1 = MatrixAlloc(stateDimension, stateDimension);
 
-  f->optimalKalmanGain = MatrixAlloc(stateDimension, measureDimension);
+  f->Yk = MatrixAlloc(measureDimension, 1);
+  f->Sk = MatrixAlloc(measureDimension, measureDimension);
+  f->SkInv = MatrixAlloc(measureDimension, measureDimension);
 
-  f->currentState = MatrixAlloc(stateDimension, 1);
-  f->updatedCovariance = MatrixAlloc(stateDimension, stateDimension);
-  f->measurementPostfitResidual = MatrixAlloc(measureDimension, 1);
+  f->K = MatrixAlloc(stateDimension, measureDimension);
+
+  f->Xk_k = MatrixAlloc(stateDimension, 1);
+  f->Pk_k = MatrixAlloc(stateDimension, stateDimension);
+  f->Yk_k = MatrixAlloc(measureDimension, 1);
 
   f->auxBxU = MatrixAlloc(stateDimension, controlDimension);
+  f->auxSDxSD = MatrixAlloc(stateDimension, stateDimension);
   f->auxSDxMD = MatrixAlloc(stateDimension, measureDimension);
   return f;
 }
 //////////////////////////////////////////////////////////////////////////
 
 void KalmanFilterFree(KalmanFilter_t *k) {
-  MatrixFree(k->stateTransitionMatrix); //Fk
-  MatrixFree(k->measurementModel); //Hk
-  MatrixFree(k->controlMatrix); //Bk
-  MatrixFree(k->processVariance); //Q
-  MatrixFree(k->measureVariance); //R
+  MatrixFree(k->F);
+  MatrixFree(k->H);
+  MatrixFree(k->B);
+  MatrixFree(k->Q);
+  MatrixFree(k->R);
 
-  MatrixFree(k->controlVector); //Uk (Accelerometer)
-  MatrixFree(k->actualMeasurement); //Zk (GPS)
+  MatrixFree(k->Uk);
+  MatrixFree(k->Zk);
 
-  MatrixFree(k->predictedState); //Xk|k-1
-  MatrixFree(k->predictedCovariance); //Pk|k-1
-  MatrixFree(k->measurementInnovation); //Yk
+  MatrixFree(k->Xk_km1);
+  MatrixFree(k->Pk_km1);
+  MatrixFree(k->Yk);
 
-  MatrixFree(k->measurementInnovationCovariance); //Sk
-  MatrixFree(k->measurementInnovationCovarianceInverse); //Sk(-1)
+  MatrixFree(k->Sk);
+  MatrixFree(k->SkInv);
 
-  MatrixFree(k->optimalKalmanGain); //Kk
-  MatrixFree(k->currentState); //Xk|k
-  MatrixFree(k->updatedCovariance); //Pk|k
-  MatrixFree(k->measurementPostfitResidual); //Yk|k
+  MatrixFree(k->K);
+  MatrixFree(k->Xk_k);
+  MatrixFree(k->Pk_k);
+  MatrixFree(k->Yk_k);
 
   MatrixFree(k->auxBxU);
+  MatrixFree(k->auxSDxSD);
   MatrixFree(k->auxSDxMD);
 }
 //////////////////////////////////////////////////////////////////////////
 
 void KalmanFilterPredict(KalmanFilter_t *k) {
   //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
-  MatrixMultiply(k->stateTransitionMatrix, k->currentState, k->predictedState);
-  MatrixMultiply(k->controlMatrix, k->controlVector, k->auxBxU);
-  MatrixAdd(k->predictedState, k->auxBxU, k->predictedState);
+  MatrixMultiply(k->F, k->Xk_k, k->Xk_km1);
+  MatrixMultiply(k->B, k->Uk, k->auxBxU);
+  MatrixAdd(k->Xk_km1, k->auxBxU, k->Xk_km1);
 
   //Pk|k-1 = Fk*Pk-1|k-1*Fk(t) + Qk
-  MatrixMultiply(k->stateTransitionMatrix, k->updatedCovariance, k->auxSDxMD);
-  MatrixMultiplyByTranspose(k->auxSDxMD, k->stateTransitionMatrix, k->predictedCovariance);
-  MatrixAdd(k->predictedCovariance, k->processVariance, k->predictedCovariance);
+  MatrixMultiply(k->F, k->Pk_k, k->auxSDxSD);
+  MatrixMultiplyByTranspose(k->auxSDxSD, k->F, k->Pk_km1);
+  MatrixAdd(k->Pk_km1, k->Q, k->Pk_km1);
 }
 //////////////////////////////////////////////////////////////////////////
 
 void KalmanFilterUpdate(KalmanFilter_t *k) {
   //Yk = Zk - Hk*Xk|k-1
-  MatrixMultiply(k->measurementModel, k->predictedState, k->measurementInnovation);
-  MatrixSubtract(k->actualMeasurement, k->measurementInnovation, k->measurementInnovation);
+  MatrixMultiply(k->H, k->Xk_km1, k->Yk);
+  MatrixSubtract(k->Zk, k->Yk, k->Yk);
 
   //Sk = Rk + Hk*Pk|k-1*Hk(t)
-  MatrixMultiplyByTranspose(k->predictedCovariance, k->measurementModel, k->auxSDxMD);
-  MatrixMultiply(k->measurementModel, k->auxSDxMD, k->measurementInnovationCovariance);
-  MatrixAdd(k->measureVariance, k->measurementInnovationCovariance, k->measurementInnovationCovariance);
+  MatrixMultiplyByTranspose(k->Pk_km1, k->H, k->auxSDxMD);
+  MatrixMultiply(k->H, k->auxSDxMD, k->Sk);
+  MatrixAdd(k->R, k->Sk, k->Sk);
 
   //Kk = Pk|k-1*Hk(t)*Sk(inv)
-  if (!(MatrixDestructiveInvert(k->measurementInnovationCovariance, k->measurementInnovationCovarianceInverse)))
+  if (!(MatrixDestructiveInvert(k->Sk, k->SkInv)))
     return; //matrix hasn't inversion
-  MatrixMultiply(k->auxSDxMD, k->measurementInnovationCovarianceInverse, k->optimalKalmanGain);
+  MatrixMultiply(k->auxSDxMD, k->SkInv, k->K);
 
   //xk|k = xk|k-1 + Kk*Yk
-  MatrixMultiply(k->optimalKalmanGain, k->measurementInnovation, k->currentState);
-  MatrixAdd(k->predictedState, k->currentState, k->currentState);
+  MatrixMultiply(k->K, k->Yk, k->Xk_k);
+  MatrixAdd(k->Xk_km1, k->Xk_k, k->Xk_k);
 
   //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
-  MatrixMultiply(k->optimalKalmanGain, k->measurementModel, k->auxSDxMD);
-  MatrixSubtractFromIdentity(k->auxSDxMD);
-  MatrixMultiply(k->auxSDxMD, k->predictedCovariance, k->updatedCovariance);
+  MatrixMultiply(k->K, k->H, k->auxSDxSD);
+  MatrixSubtractFromIdentity(k->auxSDxSD);
+  MatrixMultiply(k->auxSDxSD, k->Pk_km1, k->Pk_k);
 
   //Yk|k = Zk - Hk*Xk|k
-  MatrixMultiply(k->measurementModel, k->currentState, k->measurementPostfitResidual);
-  MatrixSubtract(k->actualMeasurement, k->measurementPostfitResidual, k->measurementPostfitResidual);
+  MatrixMultiply(k->H, k->Xk_k, k->Yk_k);
+  MatrixSubtract(k->Zk, k->Yk_k, k->Yk_k);
 }
 //////////////////////////////////////////////////////////////////////////
 
