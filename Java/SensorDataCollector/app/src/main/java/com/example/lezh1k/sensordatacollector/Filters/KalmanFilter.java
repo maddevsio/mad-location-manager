@@ -5,6 +5,7 @@ package com.example.lezh1k.sensordatacollector.Filters;
  */
 
 public class KalmanFilter {
+
     /*these matrices should be provided by user*/
     public Matrix stateTransitionMatrix; //Fk
     public Matrix measurementModel; //Hk --> converts somehow measured data to model data.
@@ -30,16 +31,17 @@ public class KalmanFilter {
     /*auxiliary matrices*/
     private Matrix auxBxU;
     private Matrix auxSDxSD;
+    private Matrix auxSDxMD;
 
     public KalmanFilter(int stateDimension,
                         int measureDimension,
                         int controlDimension) {
         this.stateTransitionMatrix = new Matrix(stateDimension, stateDimension);
         this.measurementModel = new Matrix(measureDimension, stateDimension);
-        this.controlMatrix = new Matrix(stateDimension, 1);
         this.processVariance = new Matrix(stateDimension, stateDimension);
         this.measureVariance = new Matrix(measureDimension, measureDimension);
 
+        this.controlMatrix = new Matrix(stateDimension, 1);
         this.controlVector = new Matrix(controlDimension, 1);
         this.actualMeasurement = new Matrix(measureDimension, 1);
 
@@ -58,6 +60,7 @@ public class KalmanFilter {
 
         this.auxBxU = new Matrix(stateDimension, controlDimension);
         this.auxSDxSD = new Matrix(stateDimension, stateDimension);
+        this.auxSDxMD = new Matrix(stateDimension, measureDimension);
     }
 
     public void Predict() {
@@ -78,14 +81,14 @@ public class KalmanFilter {
         Matrix.MatrixSubtract(actualMeasurement, measurementInnovation, measurementInnovation);
 
         //Sk = Rk + Hk*Pk|k-1*Hk(t)
-        Matrix.MatrixMultiplyByTranspose(predictedCovariance, measurementModel, auxSDxSD);
-        Matrix.MatrixMultiply(measurementModel, auxSDxSD, measurementInnovationCovariance);
+        Matrix.MatrixMultiplyByTranspose(predictedCovariance, measurementModel, auxSDxMD);
+        Matrix.MatrixMultiply(measurementModel, auxSDxMD, measurementInnovationCovariance);
         Matrix.MatrixAdd(measureVariance, measurementInnovationCovariance, measurementInnovationCovariance);
 
         //Kk = Pk|k-1*Hk(t)*Sk(inv)
         if (!(Matrix.MatrixDestructiveInvert(measurementInnovationCovariance, measurementInnovationCovarianceInverse)))
             return; //matrix hasn't inversion
-        Matrix.MatrixMultiply(auxSDxSD, measurementInnovationCovarianceInverse, optimalKalmanGain);
+        Matrix.MatrixMultiply(auxSDxMD, measurementInnovationCovarianceInverse, optimalKalmanGain);
 
         //xk|k = xk|k-1 + Kk*Yk
         Matrix.MatrixMultiply(optimalKalmanGain, measurementInnovation, currentState);
