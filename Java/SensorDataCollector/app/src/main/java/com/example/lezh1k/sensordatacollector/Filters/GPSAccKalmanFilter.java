@@ -33,12 +33,12 @@ public class GPSAccKalmanFilter {
                 0.0, 1.0);
 
         m_kf.measureVariance.Set(
-                positionDeviation*positionDeviation , 0.0,
-                0.0                                 , positionDeviation*positionDeviation);
+                positionDeviation , 0.0,
+                0.0 , positionDeviation);
 
         m_kf.processVariance.Set(
-                accelerometerDeviation*accelerometerDeviation , 0.0,
-                0.0                                           , accelerometerDeviation*accelerometerDeviation);
+                accelerometerDeviation, 0.0,
+                0.0 , accelerometerDeviation);
     }
 
 
@@ -62,13 +62,6 @@ public class GPSAccKalmanFilter {
     public double getCurrentVelocity() {
         return m_kf.currentState.data[1][0];
     }
-
-    public double getPredictedPosition() { return m_kf.predictedState.data[0][0]; }
-
-    public double getPredictedVelocity() {
-        return m_kf.predictedState.data[1][0];
-    }
-
 
     public void Predict(double timeNowMs,
                         double accAxis) {

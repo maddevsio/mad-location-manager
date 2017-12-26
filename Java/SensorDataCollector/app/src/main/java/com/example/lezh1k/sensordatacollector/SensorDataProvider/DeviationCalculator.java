@@ -46,7 +46,6 @@ public class DeviationCalculator {
             sigma += Math.pow(calibrations[i] - mean, 2.0);
         }
         sigma /= (m_measurementCalibrationCount - 1);
-        sigma = Math.sqrt(sigma);
         return sigma;
     }
 

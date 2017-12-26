@@ -63,22 +63,23 @@
 static void launchTests() {
   TestGeohash();
   TestMatrices();
-  TestSensorController();
   TestCoordinates();
-
-  assert(FilterInputFile("/home/lezh1k/gps_test_data/pos_final.json",
-                  "/home/lezh1k/gps_test_data/test.json",
-                         "/home/lezh1k/gps_test_data/test2.json"));
 }
 //////////////////////////////////////////////////////////////////////////
 
-
 int main(int argc, char *argv[]) {
-
   launchTests();
+  QString in("/home/lezh1k/gps_test_data/log1sorted"),
+          out("/home/lezh1k/gps_test_data/log1filtered");
+
+  if (!FilterInputFile(in, out)) {
+    qDebug() << "ABIR";
+    return 1;
+  }
+
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
-  MainWindow mainWindow("/home/lezh1k/gps_test_data/test.json", "/home/lezh1k/gps_test_data/test2.json" );
+  MainWindow mainWindow(in, out);
   mainWindow.show();
   return app.exec();
 }

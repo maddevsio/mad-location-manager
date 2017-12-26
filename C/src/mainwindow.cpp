@@ -33,13 +33,12 @@ static const QString g_baseHtml = "<!DOCTYPE html>\n"
                                   "</body>\n"
                                   "</html>\n";
 
-MainWindow::MainWindow(const QString &coordsFilePath,
-                       const QString &coordsFilePath2,
+MainWindow::MainWindow(const QString &coordsFilePath, const QString &filteredFilePath,
                        QWidget *parent)
   : QMainWindow(parent),
     m_view(new QWebEngineView(this)),
     m_coordsFilePath(coordsFilePath),
-    m_coordsFilePath2(coordsFilePath2)
+    m_filteredFilePath(filteredFilePath)
 {
   setCentralWidget(m_view);
   QWebEnginePage *page = m_view->page();  
@@ -64,7 +63,7 @@ MainWindow::MainWindow(const QString &coordsFilePath,
     }
   });
 
-  initMap(page, m_coordsFilePath, m_coordsFilePath2);
+  initMap(page, m_coordsFilePath, m_filteredFilePath);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -96,11 +95,11 @@ static QString jsCoordsString(const std::vector<geopoint_t>& lst,
 void
 MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
-                    const QString &pathToCoordsFile2) {
+                    const QString &filteredCoordsFile) {
   std::vector<geopoint_t> lstCoords = GetCoordsFromFile(pathToCoordsFile);
+//  lstCoords.clear();
   lstCoords = FilterByGeoHash(lstCoords, 9, 2);
-//  std::vector<geopoint_t> lstGeoFilter = FilterByGeoHash(lstCoords, 7, 2);
-  std::vector<geopoint_t> lstGeoFilter = GetCoordsFromFile(pathToCoordsFile2);
+  std::vector<geopoint_t> lstGeoFilter = GetCoordsFromFile(filteredCoordsFile);
   lstGeoFilter = FilterByGeoHash(lstGeoFilter, 9, 2);
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");

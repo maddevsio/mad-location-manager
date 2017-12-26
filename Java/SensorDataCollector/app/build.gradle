@@ -26,4 +26,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile group: 'net.sf.marineapi', name: 'marineapi', version: '0.10.0'
+    compile group: 'com.elvishew', name: 'xlog', version:'1.4.0'
 }

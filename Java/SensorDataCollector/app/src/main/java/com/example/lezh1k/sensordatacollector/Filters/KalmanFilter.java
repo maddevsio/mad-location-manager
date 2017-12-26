@@ -8,7 +8,7 @@ public class KalmanFilter {
 
     /*these matrices should be provided by user*/
     public Matrix stateTransitionMatrix; //Fk
-    public Matrix measurementModel; //Hk --> converts somehow measured data to model data.
+    public Matrix measurementModel; //Hk
     public Matrix controlMatrix; //Bk
     public Matrix processVariance; //Q
     public Matrix measureVariance; //R

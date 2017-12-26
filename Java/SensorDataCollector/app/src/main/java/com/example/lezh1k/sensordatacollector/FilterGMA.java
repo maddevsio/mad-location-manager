@@ -80,17 +80,17 @@ public class FilterGMA {
         timeStampMs = System.currentTimeMillis();
         kfLon = new GPSAccKalmanFilter(Coordinates.LongitudeToMeters(gpsLon),
                 velAxis[east],
-                2.0,
+                2.0*2.0,
                 linAccDeviations[east],
                 timeStampMs);
         kfLat = new GPSAccKalmanFilter(Coordinates.LatitudeToMeters(gpsLat),
                 velAxis[north],
-                2.0,
+                2.0*2.0,
                 linAccDeviations[north],
                 timeStampMs);
         kfAlt = new GPSAccKalmanFilter(gpsAlt,
                 velAxis[up],
-                3.518522417151836,
+                3.518522417151836*3.518522417151836,
                 linAccDeviations[up],
                 timeStampMs);
     }

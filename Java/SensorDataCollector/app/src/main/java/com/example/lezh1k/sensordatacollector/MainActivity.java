@@ -13,14 +13,23 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import com.elvishew.xlog.LogLevel;
+import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.AndroidPrinter;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
+import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
+import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.SensorDataProvider.DeviationCalculator;
-import com.example.lezh1k.sensordatacollector.SensorDataProvider.SensorRawDataLogger;
+import com.example.lezh1k.sensordatacollector.Loggers.SensorRawDataLogger;
 
 import net.sf.marineapi.nmea.parser.SentenceFactory;
 import net.sf.marineapi.nmea.sentence.GGASentence;
@@ -31,6 +40,8 @@ import net.sf.marineapi.nmea.sentence.RMCSentence;
 import net.sf.marineapi.nmea.sentence.Sentence;
 import net.sf.marineapi.nmea.sentence.VTGSentence;
 import net.sf.marineapi.nmea.util.Position;
+
+import java.io.File;
 
 
 enum InitSensorErrorFlag {
@@ -129,6 +140,8 @@ public class MainActivity extends AppCompatActivity
     private TextView m_tvLocationData = null;
 
     private SensorRawDataLogger m_sensorRawDataLogger = null;
+    private GPSDataLogger m_gpsDataLogger = null;
+    private AccelerationLogger m_accDataLogger = null;
 
     static String sensorDescription(Sensor s) {
         String res = "";
@@ -171,23 +184,32 @@ public class MainActivity extends AppCompatActivity
 
     protected void onPause() {
         super.onPause();
-//        if (m_sensorRawDataLogger != null)
-//            m_sensorRawDataLogger.stop();
-        m_sensorManager.unregisterListener(this);
-        m_locationManager.removeNmeaListener(this);
-        m_locationManager.removeUpdates(this);
-        m_refreshTask.needTerminate = true;
+        if (m_sensorRawDataLogger != null)
+            m_sensorRawDataLogger.stop();
+        if (m_gpsDataLogger != null)
+            m_gpsDataLogger.stop();
+        if (m_accDataLogger != null)
+            m_accDataLogger.stop();
+//        m_sensorManager.unregisterListener(this);
+//        m_locationManager.removeNmeaListener(this);
+//        m_locationManager.removeUpdates(this);
+//        m_refreshTask.needTerminate = true;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
             m_locationManager.removeUpdates(this);
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                     GpsMinTime, GpsMinDistance, this);
+        }
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
         }
     }
 
@@ -195,56 +217,93 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-//        if (m_sensorRawDataLogger != null)
-//            m_sensorRawDataLogger.start();
-        if (m_locationManager == null) return;
-        if (m_sensorManager == null) return;
-        if (m_refreshTask == null) return;
-
-        m_accDeviationCalculator =
-                new DeviationCalculator(200, 3);
-        m_linAccDeviationCalculator =
-                new DeviationCalculator(200, 3);
-        m_gyrDeviationCalculator =
-                new DeviationCalculator(200, 3);
-        m_magDeviationCalculator =
-                new DeviationCalculator(100, 3);
-
-        m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
-                m_gyrDeviationCalculator, m_magDeviationCalculator);
-
-        m_sensorManager.registerListener(this, m_grAccelerometer,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_linAccelerometer,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_rotationSensor,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_gyroscope,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_magnetometer,
-                SensorManager.SENSOR_DELAY_NORMAL);
 
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        } else {
-            m_locationManager.removeNmeaListener(this);
-            m_locationManager.addNmeaListener(this);
-            m_locationManager.removeUpdates(this);
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    GpsMinTime, GpsMinDistance, this);
-
-            Location lkl = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (lkl != null) {
-                m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
-                m_gma.setGpsSpeed(lkl.getSpeed());
-            }
         }
 
-        m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
-        m_refreshTask.needTerminate = false;
-        m_refreshTask.execute();
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] {
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE}, 110);
+        }
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] {
+                    Manifest.permission.READ_EXTERNAL_STORAGE}, 120);
+        }
+
+        if (m_gpsDataLogger != null) {
+            m_gpsDataLogger.start();
+        }
+
+        if (m_accDataLogger != null) {
+            m_accDataLogger.start();
+        }
+//        if (m_sensorRawDataLogger != null)
+//            m_sensorRawDataLogger.start();
+//        if (m_locationManager == null) return;
+//        if (m_sensorManager == null) return;
+//        if (m_refreshTask == null) return;
+//
+//        m_accDeviationCalculator =
+//                new DeviationCalculator(200, 3);
+//        m_linAccDeviationCalculator =
+//                new DeviationCalculator(200, 3);
+//        m_gyrDeviationCalculator =
+//                new DeviationCalculator(200, 3);
+//        m_magDeviationCalculator =
+//                new DeviationCalculator(100, 3);
+//
+//        m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
+//                m_gyrDeviationCalculator, m_magDeviationCalculator);
+//
+//        m_sensorManager.registerListener(this, m_grAccelerometer,
+//                SensorManager.SENSOR_DELAY_GAME);
+//        m_sensorManager.registerListener(this, m_linAccelerometer,
+//                SensorManager.SENSOR_DELAY_GAME);
+//        m_sensorManager.registerListener(this, m_rotationSensor,
+//                SensorManager.SENSOR_DELAY_GAME);
+//        m_sensorManager.registerListener(this, m_gyroscope,
+//                SensorManager.SENSOR_DELAY_GAME);
+//        m_sensorManager.registerListener(this, m_magnetometer,
+//                SensorManager.SENSOR_DELAY_NORMAL);
+//
+//        if (ActivityCompat.checkSelfPermission(this,
+//                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this, new String[]{
+//                    Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+//        } else {
+//            m_locationManager.removeNmeaListener(this);
+//            m_locationManager.addNmeaListener(this);
+//            m_locationManager.removeUpdates(this);
+//            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+//                    GpsMinTime, GpsMinDistance, this);
+//
+//            Location lkl = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            if (lkl != null) {
+//                m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
+//                m_gma.setGpsSpeed(lkl.getSpeed());
+//            }
+//        }
+//
+//        if (ActivityCompat.checkSelfPermission(this,
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this, new String[] {
+//                    Manifest.permission.WRITE_EXTERNAL_STORAGE}, 110);
+//        }
+//        if (ActivityCompat.checkSelfPermission(this,
+//                Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this, new String[] {
+//                    Manifest.permission.READ_EXTERNAL_STORAGE}, 120);
+//        }
+//
+//
+//        m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
+//        m_refreshTask.needTerminate = false;
+//        m_refreshTask.execute();
     }
 
     @Override
@@ -274,6 +333,26 @@ public class MainActivity extends AppCompatActivity
 
         if (m_sensorRawDataLogger == null)
             m_sensorRawDataLogger = new SensorRawDataLogger(m_sensorManager);
+
+        if (m_gpsDataLogger == null)
+            m_gpsDataLogger = new GPSDataLogger(m_locationManager, this);
+
+        if (m_accDataLogger == null)
+            m_accDataLogger = new AccelerationLogger(m_sensorManager);
+
+        File esd = Environment.getExternalStorageDirectory();
+        String storageState = Environment.getExternalStorageState();
+        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
+            String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
+            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
+            Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
+                    .Builder(logFolderPath)                              // Specify the path to save log file
+                    .fileNameGenerator(new DateFileNameGenerator()).build();
+            XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
+            XLog.i("Started!!!");
+        } else {
+            System.exit(0); //MUOHOHO
+        }
     }
     /*********************************************************/
 
@@ -304,6 +383,7 @@ public class MainActivity extends AppCompatActivity
     public void onNmeaReceived(long timestamp, String msg) {
         handleNMEAReceived(timestamp, msg);
     }
+
     private void handleNMEAReceived(long timeStamp, String msg) {
         for (int i = 0; i < 2; ++i) {
             char lc = msg.charAt(msg.length()-1);

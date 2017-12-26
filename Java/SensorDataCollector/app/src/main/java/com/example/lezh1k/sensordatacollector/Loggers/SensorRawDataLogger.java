@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.SensorDataProvider;
+package com.example.lezh1k.sensordatacollector.Loggers;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
+import com.elvishew.xlog.XLog;
 import com.example.lezh1k.sensordatacollector.Commons;
 
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 //collect all possible data. uses only in logger
 public class SensorRawDataLogger implements SensorEventListener {
 
-    private final Object m_syncObj = new Object();
     private List<Sensor> m_lstSensors = new ArrayList<Sensor>();
     private SensorManager m_sensorManager;
 
@@ -36,7 +36,7 @@ public class SensorRawDataLogger implements SensorEventListener {
             Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED,
             Sensor.TYPE_MAGNETIC_FIELD
     };
-    private static String[] sensorDataFormats = {
+    private static String[] sensorDataPrefix = {
             "Accelerometer uncalibrated : ",
             "Accelerometer : ",
             "Linear accelerometer : ",
@@ -65,11 +65,11 @@ public class SensorRawDataLogger implements SensorEventListener {
                 if (this.sensorType == sensorTypes[i]) break;
             }
             if (i == sensorTypes.length) return;
-
-            String logStr = sensorDataFormats[i];
+            String logStr = String.format(" %d ", timestamp);
+            logStr += sensorDataPrefix[i];
             for (float fv : data)
                 logStr += String.format("%f ", fv); //%)
-            Log.d(Commons.AppName, logStr);
+            XLog.i(logStr);
         }
     }
 
@@ -114,6 +114,7 @@ public class SensorRawDataLogger implements SensorEventListener {
 
     public void start() {
         loggerTask.needTerminate = false;
+        loggerTask = new LoggerTask(10);
         if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.HONEYCOMB)
             loggerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         else
@@ -133,7 +134,7 @@ public class SensorRawDataLogger implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        DataItem di = new DataItem(event.sensor.getType(), event.values, event.timestamp);
+        DataItem di = new DataItem(event.sensor.getType(), event.values, System.currentTimeMillis());
         m_sensorDataQueue.add(di);
     }
 
