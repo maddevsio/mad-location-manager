@@ -49,6 +49,7 @@
 ****************************************************************************/
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "mainwindow.h"
 #include <QApplication>
@@ -68,6 +69,7 @@ static void launchTests() {
 //////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]) {
+  srand(time(NULL));
   launchTests();
   QString in("/home/lezh1k/gps_test_data/log1sorted"),
           out("/home/lezh1k/gps_test_data/log1filtered");

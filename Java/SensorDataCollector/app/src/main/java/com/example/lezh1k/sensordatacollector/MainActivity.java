@@ -25,6 +25,7 @@ import com.elvishew.xlog.XLog;
 import com.elvishew.xlog.printer.AndroidPrinter;
 import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
@@ -346,8 +347,10 @@ public class MainActivity extends AppCompatActivity
             String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
             Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
             Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
-                    .Builder(logFolderPath)                              // Specify the path to save log file
-                    .fileNameGenerator(new DateFileNameGenerator()).build();
+                    .Builder(logFolderPath)                            // Specify the path to save log file
+                    .fileNameGenerator(new DateFileNameGenerator())    // Date as file name
+                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*300)) //300MB for backup files
+                    .build();
             XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
             XLog.i("Started!!!");
         } else {

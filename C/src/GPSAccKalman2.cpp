@@ -3,42 +3,34 @@
 #include "Matrix.h"
 #include "Kalman.h"
 
-GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x, double y,
-                                         double xVel, double yVel,
-                                         double xDev, double yDev,
-                                         double posDev, double timeStamp) {
-  GPSAccKalmanFilter2_t *f = (GPSAccKalmanFilter2_t*) malloc(sizeof(GPSAccKalmanFilter2_t));
+GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
+                                          double y,
+                                          double xVel,
+                                          double yVel,
+                                          double accDev,
+                                          double posDev,
+                                          double timeStamp) {
 
+  GPSAccKalmanFilter2_t *f = (GPSAccKalmanFilter2_t*) malloc(sizeof(GPSAccKalmanFilter2_t));
   assert(f);
-  f->kf = KalmanFilterCreate(4, 2, 1);
+  f->kf = KalmanFilterCreate(4, 4, 1);
   /*initialization*/
   f->timeStamp = timeStamp;
-
+  f->accSigma = accDev*accDev;
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
 
   MatrixSet(f->kf->H,
             1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0);
-
-  MatrixSet(f->kf->Pk_k,
-            1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0);
 
-  //warning
-  MatrixSet(f->kf->R,
-            posDev*posDev, 0.0,
-            0.0, posDev*posDev);
+  MatrixSetIdentity(f->kf->Pk_k);
+  MatrixScale(f->kf->Pk_k, posDev*posDev);
 
-  //todo change to G*G(t)*sigma
-//  xDev = yDev = posDev / 2.0;
-  MatrixSet(f->kf->Q,
-            xDev*xDev, 0.0, 0.0, 0.0,
-            0.0, yDev*yDev, 0.0, 0.0,
-            0.0, 0.0, xDev*xDev, 0.0,
-            0.0, 0.0, 0.0, yDev*yDev);
+  MatrixSetIdentity(f->kf->R);
+  MatrixScale(f->kf->R, posDev*posDev);
 
   //////////////////////////////////////////////////////////////////////////
   MatrixSet(f->kf->Uk, 1.0);
@@ -54,7 +46,7 @@ void GPSAccKalman2Free(GPSAccKalmanFilter2_t *k) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildStateTransitions(GPSAccKalmanFilter2_t *k, double dt) {
+static void rebuildF(GPSAccKalmanFilter2_t *k, double dt) {
   MatrixSet(k->kf->F,
             1.0, 0.0, dt,  0.0,
             0.0, 1.0, 0.0, dt,
@@ -63,25 +55,41 @@ static void rebuildStateTransitions(GPSAccKalmanFilter2_t *k, double dt) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildControlMatrix(GPSAccKalmanFilter2_t *k,
-                                 double dt,
-                                 double xAcc,
-                                 double yAcc) {
+static void rebuildB(GPSAccKalmanFilter2_t *k,
+                     double dt,
+                     double xAcc,
+                     double yAcc) {
+  double dt05 = 0.5*dt;
+  double dx = dt*xAcc;
+  double dy = dt*yAcc;
   MatrixSet(k->kf->B,
-            0.5 * dt * dt * xAcc,
-            0.5 * dt * dt * yAcc,
-            dt * xAcc,
-            dt * yAcc);
+            dt05 * dx,
+            dt05 * dy,
+            dx,
+            dy);
 }
 //////////////////////////////////////////////////////////////////////////
 
+static void rebuilQ(GPSAccKalmanFilter2_t *k,
+                    double dt) {
+  double dt2 = dt*dt;
+  double dt3 = dt2*dt;
+  double dt4 = dt3*dt;
+  static double sigma = k->accSigma; //todo change to acceleration deviation ** 2
+  MatrixSet(k->kf->Q,
+            0.25*dt4, 0.5*dt3,
+            0.5*dt3, dt2);
+  MatrixScale(k->kf->Q, sigma);
+}
+
 void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
-                         double timeNow,
-                         double xAcc,
-                         double yAcc) {
+                          double timeNow,
+                          double xAcc,
+                          double yAcc) {
   double dt = (timeNow - k->timeStamp) / 1000.0;
-  rebuildStateTransitions(k, dt);
-  rebuildControlMatrix(k, dt, xAcc, yAcc);
+  rebuildF(k, dt);
+  rebuildB(k, dt, xAcc, yAcc);
+  rebuilQ(k, dt);
   k->timeStamp = timeNow;
   KalmanFilterPredict(k->kf);
   MatrixCopy(k->kf->Xk_km1, k->kf->Xk_k);
@@ -90,8 +98,10 @@ void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
 
 void GPSAccKalman2Update(GPSAccKalmanFilter2_t *k,
                          double x,
-                         double y) {
-  MatrixSet(k->kf->Zk, x, y, 0.0, 0.0); // ????
+                         double y,
+                         double xVel,
+                         double yVel) {
+  MatrixSet(k->kf->Zk, x, y, xVel, yVel);
   KalmanFilterUpdate(k->kf);
 }
 //////////////////////////////////////////////////////////////////////////

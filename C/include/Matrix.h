@@ -66,4 +66,6 @@ void MatrixScale(matrix_t *m, double scalar);
 bool MatrixDestructiveInvert(matrix_t *input,
                              matrix_t *output);
 
+/* Turn m into an identity matrix. */
+void MatrixSetIdentity(matrix_t *m);
 #endif // MATRIX_H

@@ -2,6 +2,7 @@
 #define COMMONS_H
 
 #include <math.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 #define restrict __restrict__
@@ -39,5 +40,9 @@ inline double MilesPerHour2MeterPerSecond(double mph) {
   return 2.23694 * mph;
 }
 //////////////////////////////////////////////////////////////////////////
+
+inline int RandomBetween2Vals(int hi, int low) {
+  return (rand() % (hi - low)) + low;
+}
 
 #endif // COMMONS_H

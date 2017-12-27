@@ -28,13 +28,15 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
     return tt == 4;
   } else {
     if (strstr(str, GPS)) {
-      /*1514274617887 GPS : pos lat=42.879098, lon=74.617890, alt=702.000000, hdop=22.000000*/
-      tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf",
+     /*String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f"*/
+      tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf, speed=%lf, bearing=%f",
                   &sd->timestamp,
                   &sd->gpsLat,
                   &sd->gpsLon,
                   &sd->gpsAlt,
-                  &sd->posErr);
+                  &sd->posErr,
+                  &sd->speed,
+                  &sd->course);
       return tt == 5;
     } //GPS
 
@@ -115,21 +117,34 @@ FilterInputFile(const QString &inputFile,
       GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
                                      LongitudeToMeters(sd.gpsLon),
                                      LatitudeToMeters(sd.gpsLat),
-                                     0.0, 0.0,
-                                     0.1, 0.1,
-                                     4.0, sd.timestamp);
+                                     0.0,
+                                     0.0,
+                                     0.25,
+                                     2.0,
+                                     sd.timestamp);
 
       while (!fIn.atEnd()) {
         QString line = fIn.readLine();
         if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
           continue;
 
+        double noiseX = RandomBetween2Vals(800, 300) / 1000000.0;
+        double noiseY = RandomBetween2Vals(800, 300) / 1000000.0;
+        noiseX *= rand() & 0x01 ? -1.0 : 1.0;
+        noiseY *= rand() & 0x01 ? -1.0 : 1.0;
+
         if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
           GPSAccKalman2Predict(kf2, sd.timestamp, sd.absEastAcc, sd.absNorthAcc);
         } else {
+          sd.gpsLat += noiseX;
+          sd.gpsAlt += noiseY;
+          double xVel = sd.speed * cos(sd.course);
+          double yVel = sd.speed * sin(sd.course);
           GPSAccKalman2Update(kf2,
                               LongitudeToMeters(sd.gpsLon),
-                              LatitudeToMeters(sd.gpsLat));
+                              LatitudeToMeters(sd.gpsLat),
+                              xVel,
+                              yVel);
 
           geopoint_t predictedPoint = MetersToGeopoint(
                                         kf2->kf->Xk_k->data[0][0],

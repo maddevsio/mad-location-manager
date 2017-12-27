@@ -127,14 +127,15 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
             return;
 
         msgToLog = String.format("%d %s", System.currentTimeMillis(), msgToLog);
-        XLog.d(msgToLog);
+//        XLog.d(msgToLog);
     }
 
     @Override
     public void onLocationChanged(Location loc) {
-        String strToLog = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f",
+        String strToLog = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f",
                 System.currentTimeMillis(), loc.getLatitude(),
-                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy());
+                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
+                loc.getSpeed(), loc.getBearing());
         XLog.i(strToLog);
     }
 
