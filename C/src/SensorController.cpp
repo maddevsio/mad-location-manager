@@ -29,7 +29,7 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
   } else {
     if (strstr(str, GPS)) {
      /*String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f"*/
-      tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf, speed=%lf, bearing=%f",
+      tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf, speed=%lf, bearing=%lf",
                   &sd->timestamp,
                   &sd->gpsLat,
                   &sd->gpsLon,
@@ -37,7 +37,7 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
                   &sd->posErr,
                   &sd->speed,
                   &sd->course);
-      return tt == 5;
+      return tt == 7;
     } //GPS
 
     if (strstr(str, NMEA)) {
@@ -71,9 +71,9 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
 bool sensorDataToFile(QFile &fOut,
                       const SensorData_t *sd) {
   /*1514274617887 GPS : pos lat=42.879098, lon=74.617890, alt=702.000000, speed=0.000000, hdop=22.000000*/
-  QString data = QString("%1 GPS : pos lat=%2, lon=%3, alt=%4, hdop=%5\n").
+  QString data = QString("%1 GPS : pos lat=%2, lon=%3, alt=%4, hdop=%5, speed=%6, bearing=%7\n").
                  arg(sd->timestamp).arg(sd->gpsLat).arg(sd->gpsLon).
-                 arg(sd->gpsAlt).arg(sd->posErr);
+                 arg(sd->gpsAlt).arg(sd->posErr).arg(sd->speed).arg(sd->course);
   fOut.write(data.toUtf8());  
   return true;
 }
@@ -119,8 +119,8 @@ FilterInputFile(const QString &inputFile,
                                      LatitudeToMeters(sd.gpsLat),
                                      0.0,
                                      0.0,
-                                     0.25,
-                                     2.0,
+                                     0.03,
+                                     20.0,
                                      sd.timestamp);
 
       while (!fIn.atEnd()) {
@@ -128,18 +128,21 @@ FilterInputFile(const QString &inputFile,
         if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
           continue;
 
-        double noiseX = RandomBetween2Vals(800, 300) / 1000000.0;
-        double noiseY = RandomBetween2Vals(800, 300) / 1000000.0;
+        double noiseX = RandomBetween2Vals(0, 1500) / 1000000.0;
+        double noiseY = RandomBetween2Vals(0, 1500) / 1000000.0;
         noiseX *= rand() & 0x01 ? -1.0 : 1.0;
         noiseY *= rand() & 0x01 ? -1.0 : 1.0;
 
         if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
           GPSAccKalman2Predict(kf2, sd.timestamp, sd.absEastAcc, sd.absNorthAcc);
         } else {
+          qDebug() << CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
+                                                       sd.gpsLat + noiseX,
+                                                       sd.gpsLon + noiseY);
           sd.gpsLat += noiseX;
           sd.gpsAlt += noiseY;
           double xVel = sd.speed * cos(sd.course);
-          double yVel = sd.speed * sin(sd.course);
+          double yVel = sd.speed * sin(sd.course);          
           GPSAccKalman2Update(kf2,
                               LongitudeToMeters(sd.gpsLon),
                               LatitudeToMeters(sd.gpsLat),

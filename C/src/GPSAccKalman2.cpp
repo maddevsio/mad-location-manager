@@ -20,17 +20,26 @@ GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
 
-  MatrixSet(f->kf->H,
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0);
+  MatrixSetIdentity(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
 
   MatrixSetIdentity(f->kf->Pk_k);
   MatrixScale(f->kf->Pk_k, posDev*posDev);
 
-  MatrixSetIdentity(f->kf->R);
-  MatrixScale(f->kf->R, posDev*posDev);
+  //velocity measurement deviation is about 0.01 * 0.01
+  //we can REBUILD THIS DURING Update() procedure.
+  static double obsVelSigma = 0.04 * 0.04;
+  MatrixSet(f->kf->R,
+            posDev, 0.0, 0.0, 0.0,
+            0.0, posDev, 0.0, 0.0,
+            0.0, 0.0, obsVelSigma, 0.0,
+            0.0, 0.0, 0.0, obsVelSigma);
+
+  //process noise.
+  MatrixSet(f->kf->Q,
+            accDev, 0.0, 0.0, 0.0,
+            0.0, accDev, 0.0, 0.0,
+            0.0, 0.0, accDev, 0.0,
+            0.0, 0.0, 0.0, accDev);
 
   //////////////////////////////////////////////////////////////////////////
   MatrixSet(f->kf->Uk, 1.0);
@@ -70,18 +79,6 @@ static void rebuildB(GPSAccKalmanFilter2_t *k,
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuilQ(GPSAccKalmanFilter2_t *k,
-                    double dt) {
-  double dt2 = dt*dt;
-  double dt3 = dt2*dt;
-  double dt4 = dt3*dt;
-  static double sigma = k->accSigma; //todo change to acceleration deviation ** 2
-  MatrixSet(k->kf->Q,
-            0.25*dt4, 0.5*dt3,
-            0.5*dt3, dt2);
-  MatrixScale(k->kf->Q, sigma);
-}
-
 void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
                           double timeNow,
                           double xAcc,
@@ -89,7 +86,6 @@ void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
   double dt = (timeNow - k->timeStamp) / 1000.0;
   rebuildF(k, dt);
   rebuildB(k, dt, xAcc, yAcc);
-  rebuilQ(k, dt);
   k->timeStamp = timeNow;
   KalmanFilterPredict(k->kf);
   MatrixCopy(k->kf->Xk_km1, k->kf->Xk_k);

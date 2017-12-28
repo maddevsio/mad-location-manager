@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 #define restrict __restrict__
@@ -41,7 +42,8 @@ inline double MilesPerHour2MeterPerSecond(double mph) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-inline int RandomBetween2Vals(int hi, int low) {
+inline int RandomBetween2Vals(int low, int hi) {
+  assert(low <= hi);
   return (rand() % (hi - low)) + low;
 }
 
