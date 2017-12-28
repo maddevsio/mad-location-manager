@@ -115,12 +115,12 @@ FilterInputFile(const QString &inputFile,
         break;
 
       GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
-                                     LongitudeToMeters(sd.gpsLon),
-                                     LatitudeToMeters(sd.gpsLat),
+                                     CoordLongitudeToMeters(sd.gpsLon),
+                                     CoordLatitudeToMeters(sd.gpsLat),
                                      0.0,
                                      0.0,
                                      0.03,
-                                     20.0,
+                                     20.0, //??
                                      sd.timestamp);
 
       while (!fIn.atEnd()) {
@@ -136,24 +136,21 @@ FilterInputFile(const QString &inputFile,
         if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
           GPSAccKalman2Predict(kf2, sd.timestamp, sd.absEastAcc, sd.absNorthAcc);
         } else {
-          qDebug() << CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
-                                                       sd.gpsLat + noiseX,
-                                                       sd.gpsLon + noiseY);
           sd.gpsLat += noiseX;
-          sd.gpsAlt += noiseY;
+          sd.gpsLon += noiseY;
           double xVel = sd.speed * cos(sd.course);
-          double yVel = sd.speed * sin(sd.course);          
+          double yVel = sd.speed * sin(sd.course);
+//          xVel = yVel = 0.0;
           GPSAccKalman2Update(kf2,
-                              LongitudeToMeters(sd.gpsLon),
-                              LatitudeToMeters(sd.gpsLat),
+                              CoordLongitudeToMeters(sd.gpsLon),
+                              CoordLatitudeToMeters(sd.gpsLat),
                               xVel,
                               yVel);
-
-          geopoint_t predictedPoint = MetersToGeopoint(
+          geopoint_t pp = CoordMetersToGeopoint(
                                         kf2->kf->Xk_k->data[0][0],
                                         kf2->kf->Xk_k->data[1][0]);
-          sd.gpsLat = predictedPoint.Latitude;
-          sd.gpsLon = predictedPoint.Longitude;
+          sd.gpsLat = pp.Latitude;
+          sd.gpsLon = pp.Longitude;
           sensorDataToFile(fOut, &sd);
         }
       }

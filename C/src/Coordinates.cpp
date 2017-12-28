@@ -10,7 +10,7 @@
 #include "SensorController.h"
 
 
-std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
+std::vector<geopoint_t> CoordGetFromFile(const QString& filePath) {
   std::vector<geopoint_t> lstResult;
   QFile f(filePath);
   SensorData_t sd;
@@ -34,7 +34,7 @@ std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
 //////////////////////////////////////////////////////////////////////////
 
 std::vector<geopoint_t>
-FilterByGeoHash(std::vector<geopoint_t> &lstSrc,
+CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
                 int precision,
                 int minPointCount) {
   struct cindex {
@@ -85,13 +85,13 @@ static double geoDistanceMeters(double lon1, double lat1,
 }
 //////////////////////////////////////////////////////////////////////////
 
-double LongitudeToMeters(double lon) {
+double CoordLongitudeToMeters(double lon) {
   double distance = geoDistanceMeters(lon, 0.0, 0.0, 0.0);
   return distance * (lon < 0.0 ? -1.0 : 1.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-double LatitudeToMeters(double lat) {
+double CoordLatitudeToMeters(double lat) {
   double distance = geoDistanceMeters(0.0, lat, 0.0, 0.0);
   return distance * (lat < 0.0 ? -1.0 : 1.0);
 }
@@ -130,7 +130,7 @@ static geopoint_t pointPlusDistanceNorth(geopoint_t point, double distance) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t MetersToGeopoint(double lonMeters,
+geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters) {
   geopoint_t point = {0.0, 0.0};
   geopoint_t pointEast = pointPlusDistanceEast(point, lonMeters);

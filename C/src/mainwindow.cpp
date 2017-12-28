@@ -98,11 +98,11 @@ void
 MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
                     const QString &filteredCoordsFile) {
-  std::vector<geopoint_t> lstCoords = GetCoordsFromFile(pathToCoordsFile);
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile);
 //  lstCoords.clear();
-  lstCoords = FilterByGeoHash(lstCoords, 8, 2);
-  std::vector<geopoint_t> lstGeoFilter = GetCoordsFromFile(filteredCoordsFile);
-  lstGeoFilter = FilterByGeoHash(lstGeoFilter, 8, 2);
+  lstCoords = CoordFilterByGeoHash(lstCoords, 8, 2);
+  std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, 8, 2);
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");
   QString allCoordsStr = srcCoordsStr + geoCoordsStr;

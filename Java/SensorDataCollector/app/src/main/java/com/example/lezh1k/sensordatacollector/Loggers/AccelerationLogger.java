@@ -50,10 +50,10 @@ public class AccelerationLogger implements SensorEventListener {
         }
     }
 
-    float[] R = new float[16];
-    float[] RI = new float[16];
-    float[] accAxis = new float[4];
-    float[] linAcc = new float[4];
+    private float[] R = new float[16];
+    private float[] RI = new float[16];
+    private float[] accAxis = new float[4];
+    private float[] linAcc = new float[4];
 
     @Override
     public void onSensorChanged(SensorEvent event) {

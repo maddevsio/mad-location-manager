@@ -30,8 +30,6 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
 
     private LocationManager m_locationManager = null;
     private Context m_context = null;
-    private final int GpsMinTime = 1000; //1 sec
-    private final int GpsMinDistance = 0; //we don't need any distance. just give us position once per second
 
     public GPSDataLogger(LocationManager locationManager,
                          Context context) {
@@ -39,20 +37,26 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
         m_context = context;
     }
 
-    public void start() {
-        if (m_locationManager == null) return;
+    public boolean start() {
+        if (m_locationManager == null)
+            return false;
         if (ActivityCompat.checkSelfPermission(m_context,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeNmeaListener(this);
             m_locationManager.addNmeaListener(this);
             m_locationManager.removeUpdates(this);
+            final int gpsMinTime = 1000;
+            final int gpsMinDistance = 0;
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    GpsMinTime, GpsMinDistance, this);
+                    gpsMinTime, gpsMinDistance, this);
+            return true;
         }
+        return false;
     }
 
     public void stop() {
-        if (m_locationManager == null) return;
+        if (m_locationManager == null)
+            return;
         m_locationManager.removeNmeaListener(this);
         m_locationManager.removeUpdates(this);
     }
@@ -78,6 +82,7 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
                     GSASentence gsa = (GSASentence) s;
                     msgToLog = String.format("NMEA gsa: HDOP=%f, VDOP=%f", gsa.getHorizontalDOP(),
                             gsa.getVerticalDOP());
+                    break;
                 case "gga":
                     GGASentence gga = (GGASentence) s;
                     pos = gga.getPosition();
@@ -123,11 +128,11 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
             msgToLog += String.format(" NMEA SPEED: %f, NMEA COURSE: %f", speed.doubleValue(), course.doubleValue());
         }
 
-        if (msgToLog == null || msgToLog.isEmpty())
+        if (msgToLog.isEmpty())
             return;
 
         msgToLog = String.format("%d %s", System.currentTimeMillis(), msgToLog);
-//        XLog.d(msgToLog);
+        XLog.d(msgToLog);
     }
 
     @Override

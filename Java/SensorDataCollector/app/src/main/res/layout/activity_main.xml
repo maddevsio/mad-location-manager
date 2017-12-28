@@ -9,7 +9,7 @@
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="358dp"
-        android:layout_height="27dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -21,7 +21,7 @@
     <TextView
         android:id="@+id/tvLocation"
         android:layout_width="127dp"
-        android:layout_height="65dp"
+        android:layout_height="100dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Location"
@@ -31,11 +31,11 @@
     <TextView
         android:id="@+id/tvLocationData"
         android:layout_width="218dp"
-        android:layout_height="340dp"
+        android:layout_height="100dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Collecting to Log.d"
+        android:text="Collecting to XLog.i"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLocation"
         app:layout_constraintTop_toBottomOf="@+id/tvLinAccelerometerData" />
@@ -43,7 +43,7 @@
     <TextView
         android:id="@+id/tvLinAccelerometer"
         android:layout_width="127dp"
-        android:layout_height="65dp"
+        android:layout_height="100dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Linear accelerometer"
@@ -53,12 +53,27 @@
     <TextView
         android:id="@+id/tvLinAccelerometerData"
         android:layout_width="218dp"
-        android:layout_height="85dp"
+        android:layout_height="100dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Collecting to Log.d"
+        android:text="Collecting to XLog.i"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvLinAccelerometer"
         app:layout_constraintTop_toBottomOf="@+id/tvStatus" />
+
+    <Button
+        android:id="@+id/btnStartStop"
+        android:layout_width="348dp"
+        android:layout_height="111dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:onClick="btnStartStop_click"
+        android:text="Start"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvLocationData" />
 </android.support.constraint.ConstraintLayout>
