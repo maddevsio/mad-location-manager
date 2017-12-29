@@ -16,7 +16,6 @@ GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
   f->kf = KalmanFilterCreate(4, 4, 1);
   /*initialization*/
   f->timeStamp = timeStamp;
-  f->accSigma = accDev*accDev;
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
 

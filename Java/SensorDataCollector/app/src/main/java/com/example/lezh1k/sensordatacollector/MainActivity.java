@@ -3,21 +3,15 @@ package com.example.lezh1k.sensordatacollector;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.GpsStatus;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -32,39 +26,76 @@ import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
-import com.example.lezh1k.sensordatacollector.SensorDataProvider.DeviationCalculator;
-import com.example.lezh1k.sensordatacollector.Loggers.SensorRawDataLogger;
-
-import net.sf.marineapi.nmea.parser.SentenceFactory;
-import net.sf.marineapi.nmea.sentence.GGASentence;
-import net.sf.marineapi.nmea.sentence.GLLSentence;
-import net.sf.marineapi.nmea.sentence.GSASentence;
-import net.sf.marineapi.nmea.sentence.GSVSentence;
-import net.sf.marineapi.nmea.sentence.RMCSentence;
-import net.sf.marineapi.nmea.sentence.Sentence;
-import net.sf.marineapi.nmea.sentence.VTGSentence;
-import net.sf.marineapi.nmea.util.Position;
+import com.example.lezh1k.sensordatacollector.SensorDataProvider.SensorCalibrator;
 
 import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LocationManager m_locationManager = null;
-    private SensorManager m_sensorManager = null;
-    private SensorRawDataLogger m_sensorRawDataLogger = null;
+    class RefreshTask extends AsyncTask {
+        boolean needTerminate = false;
+        long deltaT;
+        RefreshTask(long deltaTMs) {
+            this.deltaT = deltaTMs;
+        }
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            while (!needTerminate) {
+                try {
+                    Thread.sleep(deltaT);
+                    publishProgress();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            TextView tvLinAcc = (TextView) findViewById(R.id.tvLinAccelerometer);
+            TextView tvLinAccData = (TextView) findViewById(R.id.tvLinAccelerometerData);
+
+            TextView tvLocation = (TextView) findViewById(R.id.tvLocation);
+            TextView tvLocationData = (TextView) findViewById(R.id.tvLocationData);
+
+            tvLocationData.setText(String.format("%s\n%s\n", m_gpsDataLogger.getLastLoggedGPSMessage(),
+                    m_gpsDataLogger.getLastLoggedNMEAMessage()));
+            tvLinAccData.setText(m_accDataLogger.getLastLoggedString());
+
+            tvLinAcc.setText(String.format("Lin acc : %s\n%s",
+                    m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
+                    m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
+
+            if (m_sensorCalibrator.isInProgress() &&
+                    m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                    m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
+                set_isCalibrating(false, false);
+            }
+        }
+    }
+    /*********************************************************/
+
     private GPSDataLogger m_gpsDataLogger = null;
     private AccelerationLogger m_accDataLogger = null;
+    private SensorCalibrator m_sensorCalibrator = null;
+
     private boolean m_isLogging = false;
+    private boolean m_isCalibrating = false;
+    RefreshTask m_refreshTask = new RefreshTask(1000l);
 
     protected void onPause() {
         super.onPause();
-        if (m_sensorRawDataLogger != null)
-            m_sensorRawDataLogger.stop();
+        m_refreshTask.needTerminate = true;
+        m_refreshTask.cancel(true);
         if (m_gpsDataLogger != null)
             m_gpsDataLogger.stop();
         if (m_accDataLogger != null)
             m_accDataLogger.stop();
+        if (m_sensorCalibrator != null)
+            m_sensorCalibrator.stop();
         m_isLogging = false;
     }
 
@@ -73,50 +104,84 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    public void set_isLogging(boolean isLogging) {
+
+    //todo change to state machine
+    private void set_isLogging(boolean isLogging) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
-        if (btnStartStop != null) {
-            btnStartStop.setText(isLogging ? "Stop" : "Start");
+        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        String btnStartStopText;
+        String btnTvStatusText;
+
+        if (isLogging) {
+            btnStartStopText = "Stop tracking";
+            btnTvStatusText = "Tracking is in progress";
+            m_gpsDataLogger.start();
+            m_accDataLogger.start();
+        } else {
+            btnStartStopText = "Start tracking";
+            btnTvStatusText = "Paused";
+            m_gpsDataLogger.stop();
+            m_accDataLogger.stop();
         }
 
+        if (btnStartStop != null)
+            btnStartStop.setText(btnStartStopText);
+        if (tvStatus != null)
+            tvStatus.setText(btnTvStatusText);
+
+        btnCalibrate.setEnabled(!isLogging);
+        m_isLogging = isLogging;
+    }
+
+    //todo change to state machine
+    private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
+        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
         TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        if (tvStatus != null) {
-            tvStatus.setText(isLogging ? "In progress" : "Paused");
+        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        String btnCalibrateText;
+        String tvStatusText;
+
+        if (isCalibrating) {
+            btnCalibrateText = "Stop calibration";
+            tvStatusText = "Calibrating";
+            m_sensorCalibrator.reset();
+            m_sensorCalibrator.start();
+        } else {
+            btnCalibrateText = "Start calibration";
+            tvStatusText = byUser ? "Calibration finished by user" : "Calibration finished";
+            m_sensorCalibrator.stop();
         }
-        this.m_isLogging = isLogging;
+
+        btnCalibrate.setText(btnCalibrateText);
+        tvStatus.setText(tvStatusText);
+        btnStartStop.setEnabled(!isCalibrating);
+        m_isCalibrating = isCalibrating;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (!m_isLogging)
-            return;
 
-        if (m_gpsDataLogger != null && m_accDataLogger != null) {
-            m_gpsDataLogger.start();
-            m_accDataLogger.start();
-        }
+        m_refreshTask = new RefreshTask(1000);
+        m_refreshTask.needTerminate = false;
+        if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.HONEYCOMB)
+            m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        else
+            m_refreshTask.execute();
     }
 
-    //used as handler!!! don't remove.
     public void btnStartStop_click(View v) {
-        if (m_isLogging) {
-            m_gpsDataLogger.stop();
-            m_accDataLogger.stop();
-            set_isLogging(false);
-        } else {
-            m_gpsDataLogger.start();
-            m_accDataLogger.start();
-            set_isLogging(true);
-        }
+        set_isLogging(!m_isLogging);
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    public void btnCalibrate_click(View v) {
+        set_isCalibrating(!m_isCalibrating, true);
+    }
 
+    private void createNewActivity() {
+        setContentView(R.layout.activity_main);
         String[] interestedPermissions;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
             interestedPermissions = new String[]{
@@ -130,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
             };
         }
-        ArrayList<String> lstPermissions = new ArrayList<>(interestedPermissions.length);
 
+        ArrayList<String> lstPermissions = new ArrayList<>(interestedPermissions.length);
         for (String perm : interestedPermissions) {
             if (ActivityCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
                 lstPermissions.add(perm);
@@ -143,19 +208,16 @@ public class MainActivity extends AppCompatActivity {
                     100);
         }
 
-        m_sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (m_sensorManager == null) {
+        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if (sensorManager == null || locationManager == null) {
             System.exit(1);
         }
 
-        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (m_locationManager == null) {
-            System.exit(2);
-        }
-
-        m_sensorRawDataLogger = new SensorRawDataLogger(m_sensorManager);
-        m_gpsDataLogger = new GPSDataLogger(m_locationManager, this);
-        m_accDataLogger = new AccelerationLogger(m_sensorManager);
+        m_gpsDataLogger = new GPSDataLogger(locationManager, this);
+        m_accDataLogger = new AccelerationLogger(sensorManager);
+        m_sensorCalibrator = new SensorCalibrator(sensorManager);
 
         File esd = Environment.getExternalStorageDirectory();
         String storageState = Environment.getExternalStorageState();
@@ -165,12 +227,26 @@ public class MainActivity extends AppCompatActivity {
             Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
                     .Builder(logFolderPath)                            // Specify the path to save log file
                     .fileNameGenerator(new DateFileNameGenerator())    // Date as file name
-                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*300)) //300MB for backup files
+                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
                     .build();
             XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
             XLog.i("Application started!!!");
         } else {
-            System.exit(3); //MUOHOHO
+            System.exit(3);
         }
+        set_isLogging(false);
+        set_isCalibrating(false, false);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        createNewActivity();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
     }
 }

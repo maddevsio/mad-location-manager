@@ -7,7 +7,6 @@
 
 typedef struct GPSAccKalmanFilter2 {
   double timeStamp;
-  double accSigma;
   KalmanFilter_t *kf;
 } GPSAccKalmanFilter2_t;
 

@@ -120,7 +120,7 @@ FilterInputFile(const QString &inputFile,
                                      0.0,
                                      0.0,
                                      0.03,
-                                     20.0, //??
+                                     20.0, //??? todo calculate and rebuild on each step.
                                      sd.timestamp);
 
       while (!fIn.atEnd()) {
@@ -140,7 +140,8 @@ FilterInputFile(const QString &inputFile,
           sd.gpsLon += noiseY;
           double xVel = sd.speed * cos(sd.course);
           double yVel = sd.speed * sin(sd.course);
-//          xVel = yVel = 0.0;
+
+
           GPSAccKalman2Update(kf2,
                               CoordLongitudeToMeters(sd.gpsLon),
                               CoordLatitudeToMeters(sd.gpsLat),

@@ -37,11 +37,15 @@ public class AccelerationLogger implements SensorEventListener {
         }
     }
 
-    public void start() {
+    public boolean start() {
         for (Sensor sensor : m_lstSensors) {
-            m_sensorManager.registerListener(this, sensor,
-                    SensorManager.SENSOR_DELAY_GAME);
+            if (!m_sensorManager.registerListener(this, sensor,
+                    SensorManager.SENSOR_DELAY_GAME)) {
+                XLog.e("Couldn't register listener : %d", sensor.getType());
+                return false;
+            }
         }
+        return true;
     }
 
     public void stop() {
@@ -54,6 +58,11 @@ public class AccelerationLogger implements SensorEventListener {
     private float[] RI = new float[16];
     private float[] accAxis = new float[4];
     private float[] linAcc = new float[4];
+    private String lastLoggedString = "";
+
+    public String getLastLoggedString() {
+        return lastLoggedString;
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -62,8 +71,10 @@ public class AccelerationLogger implements SensorEventListener {
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
-                XLog.i(" %d Linear abs acc : %f %f %f", System.currentTimeMillis(), event.values[0],
+                lastLoggedString = String.format(" %d Linear abs acc : %f %f %f",
+                        System.currentTimeMillis(), event.values[0],
                         event.values[1], event.values[2]);
+                XLog.i(lastLoggedString);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(R, event.values);

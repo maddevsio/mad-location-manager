@@ -30,6 +30,16 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
 
     private LocationManager m_locationManager = null;
     private Context m_context = null;
+    private String m_lastLoggedNMEAMessage;
+    private String m_lastLoggedGPSMessage;
+
+    public String getLastLoggedNMEAMessage() {
+        return m_lastLoggedNMEAMessage;
+    }
+
+    public String getLastLoggedGPSMessage() {
+        return m_lastLoggedGPSMessage;
+    }
 
     public GPSDataLogger(LocationManager locationManager,
                          Context context) {
@@ -73,20 +83,20 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
         Position pos = null;
         Double speed = null;
         Double course = null;
-        String msgToLog = null;
+        m_lastLoggedNMEAMessage = "";
 
         try {
             Sentence s = SentenceFactory.getInstance().createParser(msg);
             switch (s.getSentenceId().toLowerCase()) {
                 case "gsa":
                     GSASentence gsa = (GSASentence) s;
-                    msgToLog = String.format("NMEA gsa: HDOP=%f, VDOP=%f", gsa.getHorizontalDOP(),
+                    m_lastLoggedNMEAMessage = String.format("NMEA gsa: HDOP=%f, VDOP=%f", gsa.getHorizontalDOP(),
                             gsa.getVerticalDOP());
                     break;
                 case "gga":
                     GGASentence gga = (GGASentence) s;
                     pos = gga.getPosition();
-                    msgToLog = String.format("NMEA gga: HDOP=%f", gga.getHorizontalDOP());
+                    m_lastLoggedNMEAMessage = String.format("NMEA gga: HDOP=%f", gga.getHorizontalDOP());
                     break;
                 case "gll":
                     GLLSentence gll = (GLLSentence) s;
@@ -116,32 +126,29 @@ public class GPSDataLogger implements GpsStatus.NmeaListener, LocationListener {
             return;
         }
 
-        if (msgToLog == null)
-            msgToLog = "";
-
         if (pos != null) {
-            msgToLog += String.format(" NMEA POS: lat=%f, lon=%f, alt=%f",
+            m_lastLoggedNMEAMessage += String.format(" NMEA POS: lat=%f, lon=%f, alt=%f",
                     pos.getLatitude(), pos.getLongitude(), pos.getAltitude());
         }
 
         if (speed != null && course != null) {
-            msgToLog += String.format(" NMEA SPEED: %f, NMEA COURSE: %f", speed.doubleValue(), course.doubleValue());
+            m_lastLoggedNMEAMessage += String.format(" NMEA SPEED: %f, NMEA COURSE: %f", speed.doubleValue(), course.doubleValue());
         }
 
-        if (msgToLog.isEmpty())
+        if (m_lastLoggedNMEAMessage.isEmpty())
             return;
 
-        msgToLog = String.format("%d %s", System.currentTimeMillis(), msgToLog);
-        XLog.d(msgToLog);
+        m_lastLoggedNMEAMessage = String.format("%d %s", System.currentTimeMillis(), m_lastLoggedNMEAMessage);
+        XLog.d(m_lastLoggedNMEAMessage);
     }
 
     @Override
     public void onLocationChanged(Location loc) {
-        String strToLog = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f",
+        m_lastLoggedGPSMessage = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f",
                 System.currentTimeMillis(), loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing());
-        XLog.i(strToLog);
+        XLog.i(m_lastLoggedGPSMessage);
     }
 
     @Override
