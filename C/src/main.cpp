@@ -61,6 +61,7 @@
 #include "SensorController.h"
 #include "MadgwickAHRS.h"
 
+#include "Coordinates.h"
 static void launchTests() {
   TestGeohash();
   TestMatrices();

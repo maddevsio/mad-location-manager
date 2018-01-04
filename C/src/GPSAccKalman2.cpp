@@ -20,27 +20,16 @@ GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
             x, y, xVel, yVel);
 
   MatrixSetIdentity(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
-
-  MatrixSetIdentity(f->kf->Pk_k);
-  MatrixScale(f->kf->Pk_k, posDev*posDev);
-
-  //velocity measurement deviation is about 0.01 * 0.01
-  //we can REBUILD THIS DURING Update() procedure.
-  static double obsVelSigma = 0.04 * 0.04;
-  MatrixSet(f->kf->R,
+  MatrixSet(f->kf->Pk_k,
             posDev, 0.0, 0.0, 0.0,
             0.0, posDev, 0.0, 0.0,
-            0.0, 0.0, obsVelSigma, 0.0,
-            0.0, 0.0, 0.0, obsVelSigma);
+            0.0, 0.0, posDev, 0.0,
+            0.0, 0.0, 0.0, posDev); //todo get speed accuracy if possible
 
   //process noise.
-  MatrixSet(f->kf->Q,
-            accDev, 0.0, 0.0, 0.0,
-            0.0, accDev, 0.0, 0.0,
-            0.0, 0.0, accDev, 0.0,
-            0.0, 0.0, 0.0, accDev);
+  MatrixSetIdentity(f->kf->Q);
+  MatrixScale(f->kf->Q, accDev);
 
-  //////////////////////////////////////////////////////////////////////////
   MatrixSet(f->kf->Uk, 1.0);
   return f;
 }
@@ -54,8 +43,8 @@ void GPSAccKalman2Free(GPSAccKalmanFilter2_t *k) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildF(GPSAccKalmanFilter2_t *k, double dt) {
-  MatrixSet(k->kf->F,
+static void rebuildF(GPSAccKalmanFilter2_t *f, double dt) {
+  MatrixSet(f->kf->F,
             1.0, 0.0, dt,  0.0,
             0.0, 1.0, 0.0, dt,
             0.0, 0.0, 1.0, 0.0,
@@ -63,18 +52,29 @@ static void rebuildF(GPSAccKalmanFilter2_t *k, double dt) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildB(GPSAccKalmanFilter2_t *k,
+static void rebuildB(GPSAccKalmanFilter2_t *f,
                      double dt,
                      double xAcc,
                      double yAcc) {
   double dt05 = 0.5*dt;
   double dx = dt*xAcc;
   double dy = dt*yAcc;
-  MatrixSet(k->kf->B,
+  MatrixSet(f->kf->B,
             dt05 * dx,
             dt05 * dy,
             dx,
             dy);
+}
+//////////////////////////////////////////////////////////////////////////
+
+static void rebuildR(GPSAccKalmanFilter2_t *f,
+                     double posSigma,
+                     double velSigma) {
+  MatrixSet(f->kf->R,
+            posSigma, 0.0, 0.0, 0.0,
+            0.0, posSigma, 0.0, 0.0,
+            0.0, 0.0, velSigma, 0.0,
+            0.0, 0.0, 0.0, velSigma);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -95,7 +95,10 @@ void GPSAccKalman2Update(GPSAccKalmanFilter2_t *k,
                          double x,
                          double y,
                          double xVel,
-                         double yVel) {
+                         double yVel,
+                         double posDev,
+                         double velDev) {
+  rebuildR(k, posDev, velDev);
   MatrixSet(k->kf->Zk, x, y, xVel, yVel);
   KalmanFilterUpdate(k->kf);
 }

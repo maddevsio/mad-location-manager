@@ -104,7 +104,6 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-
     //todo change to state machine
     private void set_isLogging(boolean isLogging) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
@@ -180,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         set_isCalibrating(!m_isCalibrating, true);
     }
 
-    private void createNewActivity() {
+    private void initActivity() {
         setContentView(R.layout.activity_main);
         String[] interestedPermissions;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
@@ -219,8 +218,12 @@ public class MainActivity extends AppCompatActivity {
         m_accDataLogger = new AccelerationLogger(sensorManager);
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
 
+        set_isLogging(false);
+        set_isCalibrating(false, true);
+
         File esd = Environment.getExternalStorageDirectory();
         String storageState = Environment.getExternalStorageState();
+        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
         if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
             String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
             Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
@@ -231,22 +234,20 @@ public class MainActivity extends AppCompatActivity {
                     .build();
             XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
             XLog.i("Application started!!!");
+            tvStatus.setText(logFolderPath);
         } else {
             System.exit(3);
         }
-        set_isLogging(false);
-        set_isCalibrating(false, false);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        createNewActivity();
+        initActivity();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
     }
 }

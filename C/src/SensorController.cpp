@@ -28,7 +28,7 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
     return tt == 4;
   } else {
     if (strstr(str, GPS)) {
-     /*String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f"*/
+      /*String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f"*/
       tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf, speed=%lf, bearing=%lf",
                   &sd->timestamp,
                   &sd->gpsLat,
@@ -60,7 +60,8 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
         if ((tt=sscanf(sub, "NMEA COURSE: %lf", &sd->course)) != 1)
           return false;
       }
-      return true;
+      return false;
+//      return true;
     } //NMEA
 
   }
@@ -74,7 +75,7 @@ bool sensorDataToFile(QFile &fOut,
   QString data = QString("%1 GPS : pos lat=%2, lon=%3, alt=%4, hdop=%5, speed=%6, bearing=%7\n").
                  arg(sd->timestamp).arg(sd->gpsLat).arg(sd->gpsLon).
                  arg(sd->gpsAlt).arg(sd->posErr).arg(sd->speed).arg(sd->course);
-  fOut.write(data.toUtf8());  
+  fOut.write(data.toUtf8());
   return true;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -82,86 +83,103 @@ bool sensorDataToFile(QFile &fOut,
 bool
 FilterInputFile(const QString &inputFile,
                 const QString &outputFile) {
-    QFile fIn(inputFile);
-    QFile fOut(outputFile);
-    SensorData_t sd;
-    bool initialData = false;
-    bool result = false;
+  QFile fIn(inputFile);
+  QFile fOut(outputFile);
+  SensorData_t sd;
+  bool initialData = false;
+  bool result = false;
 
-    do {
-      if (!fIn.open(QFile::ReadOnly)) {
-        qDebug() << "Couldn't open input file";
-        return false;
+  do {
+    if (!fIn.open(QFile::ReadOnly)) {
+      qDebug() << "Couldn't open input file";
+      return false;
+    }
+
+    if (!fOut.open(QFile::WriteOnly)) {
+      qDebug() << "Couldn't open out file";
+      return false;
+    }
+
+    while (!fIn.atEnd()) {
+      QString line = fIn.readLine();
+      if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
+        continue;
+
+      if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0)
+        continue;
+
+      initialData = true;
+      break;
+    }
+
+    if (!initialData)
+      break;
+
+    static const int GPS_COUNT = 1;
+    int gps_count = GPS_COUNT;
+    static const double accDev = 1.0;
+
+    double xVel = sd.speed * cos(sd.course);
+    double yVel = sd.speed * sin(sd.course);
+//    xVel = yVel = 0.0;
+    GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
+                                   CoordLongitudeToMeters(sd.gpsLon),
+                                   CoordLatitudeToMeters(sd.gpsLat),
+                                   xVel,
+                                   yVel,
+                                   accDev,
+                                   sd.posErr,
+                                   sd.timestamp);
+    while (!fIn.atEnd()) {
+      QString line = fIn.readLine();
+      if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
+        continue;
+
+      double noiseX = RandomBetween2Vals(800, 1200) / 1000000.0;
+      double noiseY = RandomBetween2Vals(800, 1200) / 1000000.0;
+      noiseX *= rand() & 0x01 ? -1.0 : 1.0;
+      noiseY *= rand() & 0x01 ? -1.0 : 1.0;
+
+      if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
+        GPSAccKalman2Predict(kf2,
+                             sd.timestamp,
+                             sd.absEastAcc,
+                             sd.absNorthAcc);
+      } else {
+        if (--gps_count)
+          continue;        
+        gps_count = GPS_COUNT;
+
+        sd.posErr += CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
+                                                      sd.gpsLat+noiseX, sd.gpsLon+noiseY) / 0.68;
+        sd.gpsLat += noiseX;
+        sd.gpsLon += noiseY;
+
+        xVel = sd.speed * cos(sd.course);
+        yVel = sd.speed * sin(sd.course);
+
+        GPSAccKalman2Update(kf2,
+                            CoordLongitudeToMeters(sd.gpsLon),
+                            CoordLatitudeToMeters(sd.gpsLat),
+                            xVel,
+                            yVel,
+                            sd.posErr,
+                            accDev * 0.1); //HACK!!!! todo log speed accuracy
+
+        geopoint_t pp = CoordMetersToGeopoint(
+                          kf2->kf->Xk_k->data[0][0], kf2->kf->Xk_k->data[1][0]);
+
+        sd.gpsLat = pp.Latitude;
+        sd.gpsLon = pp.Longitude;
+        sensorDataToFile(fOut, &sd);
       }
+    } //while (!fIn.atEnd())
+    result = true;
+  } while (0);
 
-      if (!fOut.open(QFile::WriteOnly)) {
-        qDebug() << "Couldn't open out file";
-        return false;
-      }
-
-      while (!fIn.atEnd()) {
-        QString line = fIn.readLine();
-        if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
-          continue;
-
-        if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0)
-          continue;
-
-        initialData = true;
-        break;
-      }
-
-      if (!initialData)
-        break;
-
-      GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
-                                     CoordLongitudeToMeters(sd.gpsLon),
-                                     CoordLatitudeToMeters(sd.gpsLat),
-                                     0.0,
-                                     0.0,
-                                     0.03,
-                                     20.0, //??? todo calculate and rebuild on each step.
-                                     sd.timestamp);
-
-      while (!fIn.atEnd()) {
-        QString line = fIn.readLine();
-        if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
-          continue;
-
-        double noiseX = RandomBetween2Vals(0, 1500) / 1000000.0;
-        double noiseY = RandomBetween2Vals(0, 1500) / 1000000.0;
-        noiseX *= rand() & 0x01 ? -1.0 : 1.0;
-        noiseY *= rand() & 0x01 ? -1.0 : 1.0;
-
-        if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
-          GPSAccKalman2Predict(kf2, sd.timestamp, sd.absEastAcc, sd.absNorthAcc);
-        } else {
-          sd.gpsLat += noiseX;
-          sd.gpsLon += noiseY;
-          double xVel = sd.speed * cos(sd.course);
-          double yVel = sd.speed * sin(sd.course);
-
-
-          GPSAccKalman2Update(kf2,
-                              CoordLongitudeToMeters(sd.gpsLon),
-                              CoordLatitudeToMeters(sd.gpsLat),
-                              xVel,
-                              yVel);
-          geopoint_t pp = CoordMetersToGeopoint(
-                                        kf2->kf->Xk_k->data[0][0],
-                                        kf2->kf->Xk_k->data[1][0]);
-          sd.gpsLat = pp.Latitude;
-          sd.gpsLon = pp.Longitude;
-          sensorDataToFile(fOut, &sd);
-        }
-      }
-
-      result = true;
-    } while (0);
-
-    if (fIn.isOpen())
-      fIn.close();
-    if (fOut.isOpen())
-      fOut.close();
-    return result;
+  if (fIn.isOpen())
+    fIn.close();
+  if (fOut.isOpen())
+    fOut.close();
+  return result;
 }

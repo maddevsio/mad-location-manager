@@ -56,7 +56,6 @@ public class SensorCalibrator implements SensorEventListener {
     }
 
     boolean inProgress = false;
-
     public boolean isInProgress() {
         return inProgress;
     }
