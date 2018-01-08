@@ -7,56 +7,57 @@ package com.example.lezh1k.sensordatacollector.Filters;
 public class KalmanFilter {
 
     /*these matrices should be provided by user*/
-    public Matrix stateTransitionMatrix; //Fk
-    public Matrix measurementModel; //Hk
-    public Matrix controlMatrix; //Bk
-    public Matrix processVariance; //Q
-    public Matrix measureVariance; //R
+    public Matrix F; //state transition model
+    public Matrix H; //observation model
+    public Matrix B; //control matrix
+    public Matrix Q; //process noise covariance
+    public Matrix R; //observation noise covariance
 
-    /*these matrices will be updated by user*/
-    public Matrix controlVector; //Uk
-    public Matrix actualMeasurement; //Zk
-    public Matrix predictedState; //Xk|k-1
-    public Matrix predictedCovariance; //Pk|k-1
-    public Matrix measurementInnovation; //Yk
+  /*these matrices will be updated by user*/
+    public Matrix Uk; //control vector
+    public Matrix Zk; //actual values (measured)
+    public Matrix Xk_km1; //predicted state estimate
+    public Matrix Pk_km1; //predicted estimate covariance
+    public Matrix Yk; //measurement innovation
 
-    public Matrix measurementInnovationCovariance; //Sk
-    public Matrix measurementInnovationCovarianceInverse; //Sk(-1)
+    public Matrix Sk; //innovation covariance
+    public Matrix SkInv; //innovation covariance inverse
 
-    public Matrix optimalKalmanGain; //Kk
-    public Matrix currentState; //Xk|k
-    public Matrix updatedCovariance; //Pk|k
-    public Matrix measurementPostfitResidual; //Yk|k
+    public Matrix K; //Kalman gain (optimal)
+    public Matrix Xk_k; //updated (current) state
+    public Matrix Pk_k; //updated estimate covariance
+    public Matrix Yk_k; //post fit residual
 
-    /*auxiliary matrices*/
-    private Matrix auxBxU;
-    private Matrix auxSDxSD;
-    private Matrix auxSDxMD;
+  /*auxiliary matrices*/
+    public Matrix auxBxU;
+    public Matrix auxSDxSD;
+    public Matrix auxSDxMD;
 
     public KalmanFilter(int stateDimension,
                         int measureDimension,
                         int controlDimension) {
-        this.stateTransitionMatrix = new Matrix(stateDimension, stateDimension);
-        this.measurementModel = new Matrix(measureDimension, stateDimension);
-        this.processVariance = new Matrix(stateDimension, stateDimension);
-        this.measureVariance = new Matrix(measureDimension, measureDimension);
+        this.F = new Matrix(stateDimension, stateDimension);
+        this.H = new Matrix(measureDimension, stateDimension);
+        this.Q = new Matrix(stateDimension, stateDimension);
+        this.R = new Matrix(measureDimension, measureDimension);
 
-        this.controlMatrix = new Matrix(stateDimension, 1);
-        this.controlVector = new Matrix(controlDimension, 1);
-        this.actualMeasurement = new Matrix(measureDimension, 1);
+        this.B = new Matrix(stateDimension, 1);
+        this.Uk = new Matrix(controlDimension, 1);
 
-        this.predictedState = new Matrix(stateDimension, 1);
-        this.predictedCovariance = new Matrix(stateDimension, stateDimension);
+        this.Zk = new Matrix(measureDimension, 1);
 
-        this.measurementInnovation = new Matrix(measureDimension, 1);
-        this.measurementInnovationCovariance = new Matrix(measureDimension, measureDimension);
-        this.measurementInnovationCovarianceInverse = new Matrix(measureDimension, measureDimension);
+        this.Xk_km1 = new Matrix(stateDimension, 1);
+        this.Pk_km1 = new Matrix(stateDimension, stateDimension);
 
-        this.optimalKalmanGain = new Matrix(stateDimension, measureDimension);
+        this.Yk = new Matrix(measureDimension, 1);
+        this.Sk = new Matrix(measureDimension, measureDimension);
+        this.SkInv = new Matrix(measureDimension, measureDimension);
 
-        this.currentState = new Matrix(stateDimension, 1);
-        this.updatedCovariance = new Matrix(stateDimension, stateDimension);
-        this.measurementPostfitResidual = new Matrix(measureDimension, 1);
+        this.K = new Matrix(stateDimension, measureDimension);
+
+        this.Xk_k = new Matrix(stateDimension, 1);
+        this.Pk_k = new Matrix(stateDimension, stateDimension);
+        this.Yk_k = new Matrix(measureDimension, 1);
 
         this.auxBxU = new Matrix(stateDimension, controlDimension);
         this.auxSDxSD = new Matrix(stateDimension, stateDimension);
@@ -65,42 +66,42 @@ public class KalmanFilter {
 
     public void Predict() {
         //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
-        Matrix.MatrixMultiply(stateTransitionMatrix, currentState, predictedState);
-        Matrix.MatrixMultiply(controlMatrix, controlVector, auxBxU);
-        Matrix.MatrixAdd(predictedState, auxBxU, predictedState);
+        Matrix.MatrixMultiply(this.F, this.Xk_k, this.Xk_km1);
+        Matrix.MatrixMultiply(this.B, this.Uk, this.auxBxU);
+        Matrix.MatrixAdd(this.Xk_km1, this.auxBxU, this.Xk_km1);
 
         //Pk|k-1 = Fk*Pk-1|k-1*Fk(t) + Qk
-        Matrix.MatrixMultiply(stateTransitionMatrix, updatedCovariance, auxSDxSD);
-        Matrix.MatrixMultiplyByTranspose(auxSDxSD, stateTransitionMatrix, predictedCovariance);
-        Matrix.MatrixAdd(predictedCovariance, processVariance, predictedCovariance);
+        Matrix.MatrixMultiply(this.F, this.Pk_k, this.auxSDxSD);
+        Matrix.MatrixMultiplyByTranspose(this.auxSDxSD, this.F, this.Pk_km1);
+        Matrix.MatrixAdd(this.Pk_km1, this.Q, this.Pk_km1);
     }
 
     public void Update() {
         //Yk = Zk - Hk*Xk|k-1
-        Matrix.MatrixMultiply(measurementModel, predictedState, measurementInnovation);
-        Matrix.MatrixSubtract(actualMeasurement, measurementInnovation, measurementInnovation);
+        Matrix.MatrixMultiply(this.H, this.Xk_km1, this.Yk);
+        Matrix.MatrixSubtract(this.Zk, this.Yk, this.Yk);
 
         //Sk = Rk + Hk*Pk|k-1*Hk(t)
-        Matrix.MatrixMultiplyByTranspose(predictedCovariance, measurementModel, auxSDxMD);
-        Matrix.MatrixMultiply(measurementModel, auxSDxMD, measurementInnovationCovariance);
-        Matrix.MatrixAdd(measureVariance, measurementInnovationCovariance, measurementInnovationCovariance);
+        Matrix.MatrixMultiplyByTranspose(this.Pk_km1, this.H, this.auxSDxMD);
+        Matrix.MatrixMultiply(this.H, this.auxSDxMD, this.Sk);
+        Matrix.MatrixAdd(this.R, this.Sk, this.Sk);
 
         //Kk = Pk|k-1*Hk(t)*Sk(inv)
-        if (!(Matrix.MatrixDestructiveInvert(measurementInnovationCovariance, measurementInnovationCovarianceInverse)))
+        if (!(Matrix.MatrixDestructiveInvert(this.Sk, this.SkInv)))
             return; //matrix hasn't inversion
-        Matrix.MatrixMultiply(auxSDxMD, measurementInnovationCovarianceInverse, optimalKalmanGain);
+        Matrix.MatrixMultiply(this.auxSDxMD, this.SkInv, this.K);
 
         //xk|k = xk|k-1 + Kk*Yk
-        Matrix.MatrixMultiply(optimalKalmanGain, measurementInnovation, currentState);
-        Matrix.MatrixAdd(predictedState, currentState, currentState);
+        Matrix.MatrixMultiply(this.K, this.Yk, this.Xk_k);
+        Matrix.MatrixAdd(this.Xk_km1, this.Xk_k, this.Xk_k);
 
         //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
-        Matrix.MatrixMultiply(optimalKalmanGain, measurementModel, auxSDxSD);
-        auxSDxSD.SubtractFromIdentity();
-        Matrix.MatrixMultiply(auxSDxSD, predictedCovariance, updatedCovariance);
+        Matrix.MatrixMultiply(this.K, this.H, this.auxSDxSD);
+        Matrix.MatrixSubtractFromIdentity(this.auxSDxSD);
+        Matrix.MatrixMultiply(this.auxSDxSD, this.Pk_km1, this.Pk_k);
 
         //Yk|k = Zk - Hk*Xk|k
-        Matrix.MatrixMultiply(measurementModel, currentState, measurementPostfitResidual);
-        Matrix.MatrixSubtract(actualMeasurement, measurementPostfitResidual, measurementPostfitResidual);
+        Matrix.MatrixMultiply(this.H, this.Xk_k, this.Yk_k);
+        Matrix.MatrixSubtract(this.Zk, this.Yk_k, this.Yk_k);
     }
 }

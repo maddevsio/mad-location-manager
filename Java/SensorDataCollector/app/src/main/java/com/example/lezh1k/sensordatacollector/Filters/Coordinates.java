@@ -14,10 +14,11 @@ public class Coordinates {
     public static double geoDistanceMeters(double lon1, double lat1, double lon2, double lat2) {
         double deltaLon = Math.toRadians(lon2 - lon1);
         double deltaLat = Math.toRadians(lat2 - lat1);
-        double a = Math.pow(Math.sin(deltaLat / 2.0), 2.0) +
-                Math.cos(Math.toRadians(lat1))*
-                        Math.cos(Math.toRadians(lat2))*
-                        Math.pow(Math.sin(deltaLon/2.0), 2.0);
+        double a =
+                Math.pow(Math.sin(deltaLat / 2.0), 2.0) +
+                Math.cos(Math.toRadians(lat1)) *
+                Math.cos(Math.toRadians(lat2)) *
+                Math.pow(Math.sin(deltaLon/2.0), 2.0);
         double c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0-a));
         return EARTH_RADIUS * c;
     }

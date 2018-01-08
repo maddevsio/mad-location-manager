@@ -58,10 +58,17 @@ public class AccelerationLogger implements SensorEventListener {
     private float[] RI = new float[16];
     private float[] accAxis = new float[4];
     private float[] linAcc = new float[4];
-    private String lastLoggedString = "";
+    private String lastAbsAccelerationString = "";
+    private String lastLinAccelerationString = "";
 
-    public String getLastLoggedString() {
-        return lastLoggedString;
+    //related to absolut North-East-Up
+    public String getLastAbsAccelerationString() {
+        return lastAbsAccelerationString;
+    }
+
+    //related to relative xyz phone
+    public String getLastLinAccelerationString() {
+        return lastLinAccelerationString;
     }
 
     @Override
@@ -71,10 +78,13 @@ public class AccelerationLogger implements SensorEventListener {
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
-                lastLoggedString = String.format(" %d Linear abs acc : %f %f %f",
-                        System.currentTimeMillis(), event.values[0],
-                        event.values[1], event.values[2]);
-                XLog.i(lastLoggedString);
+                long now = System.currentTimeMillis();
+                lastAbsAccelerationString = String.format(" %d abs acc: %f %f %f",
+                        now, accAxis[0], accAxis[1], accAxis[2]);
+                lastLinAccelerationString = String.format(" %d rel acc: %f %f %f",
+                        now, linAcc[0], linAcc[1], linAcc[2]);
+                XLog.i(lastAbsAccelerationString);
+                XLog.i(lastLinAccelerationString);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(R, event.values);

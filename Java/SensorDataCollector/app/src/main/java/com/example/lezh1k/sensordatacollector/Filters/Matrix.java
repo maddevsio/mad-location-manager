@@ -33,7 +33,7 @@ public class Matrix {
         }
     }
 
-    private void setIdentity() {
+    public void SetIdentity() {
         assert(rows == cols);
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
@@ -214,7 +214,7 @@ public class Matrix {
         assert(mtxout.rows == mtxin.rows);
         int r, ri;
         double scalar;
-        mtxout.setIdentity();
+        mtxout.SetIdentity();
 
         for (r = 0; r < mtxin.rows; ++r) {
             if (mtxin.data[r][r] == 0.0) { //we have to swap rows here to make nonzero diagonal
@@ -247,5 +247,16 @@ public class Matrix {
             }
         } //for r < mtxin.rows
         return true;
+    }
+
+    public static void MatrixSubtractFromIdentity(Matrix m) {
+        int r, c;
+        for (r = 0; r < m.rows; ++r) {
+            for (c = 0; c < r; ++c)
+                m.data[r][c] = -m.data[r][c];
+            m.data[r][r] = 1.0 - m.data[r][r];
+            for (c = r+1; c < m.cols; ++c)
+                m.data[r][c] = -m.data[r][c];
+        }
     }
 }

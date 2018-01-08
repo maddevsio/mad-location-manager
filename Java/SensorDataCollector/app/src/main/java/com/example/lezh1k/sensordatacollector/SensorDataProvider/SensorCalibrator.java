@@ -25,7 +25,6 @@ public class SensorCalibrator implements SensorEventListener {
     public DeviationCalculator getDcLinearAcceleration() {
         return m_dcLinearAcceleration;
     }
-
     public DeviationCalculator getDcAbsLinearAcceleration() {
         return m_dcAbsLinearAcceleration;
     }
@@ -36,8 +35,8 @@ public class SensorCalibrator implements SensorEventListener {
     };
 
     public SensorCalibrator(SensorManager sensorManager) {
-        m_dcAbsLinearAcceleration = new DeviationCalculator(500, 3);
-        m_dcLinearAcceleration = new DeviationCalculator(500, 3);
+        m_dcAbsLinearAcceleration = new DeviationCalculator(4000, 3);
+        m_dcLinearAcceleration = new DeviationCalculator(4000, 3);
 
         m_sensorManager = sensorManager;
         for (Integer st : sensorTypes) {
@@ -76,6 +75,12 @@ public class SensorCalibrator implements SensorEventListener {
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
         }
+    }
+
+    public String getCalibrationStatus()  {
+        return String.format("abs:%f%%, lin::%f%%",
+                m_dcAbsLinearAcceleration.getCompletePercentage(),
+                m_dcLinearAcceleration.getCompletePercentage());
     }
 
     private float[] R = new float[16];

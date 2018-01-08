@@ -94,18 +94,15 @@ public class DeviationCalculator {
     public double[] getSigmas() {
         return m_sigmas;
     }
-    public double[] getMeans() {
-        return m_means;
-    }
     public boolean isCalculated() {
         return m_calculated;
     }
-    public double getFrequencyMean() { return m_freqMean; }
+    public double getCompletePercentage() { return ((double)m_count / (double)m_measurementCalibrationCount) * 100.0;}
 
     public String deviationInfoString() {
         String res = "";
         for (int i = 0; i < m_valuesCount; ++i) {
-            res += String.format("\n%d : sigma=%f", i, m_sigmas[i]);
+            res += String.format("\n%d:sigma=%f\nmean=%f", i, m_sigmas[i], m_means[i]);
         }
         res += String.format("\nFrequency:%f", m_freqMean);
         return res;

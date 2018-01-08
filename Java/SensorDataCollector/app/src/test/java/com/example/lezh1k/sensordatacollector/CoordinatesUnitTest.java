@@ -37,4 +37,10 @@ public class CoordinatesUnitTest {
         assertTrue(Math.abs(t.Latitude - 36.323543) < eps);
         assertTrue(Math.abs(t.Longitude - 12.348039) < eps);
     }
+
+    @Test
+    public void MetersBetween2PointsTest() throws Exception {
+        double distance = Coordinates.geoDistanceMeters(42.312000, 74.819000, 42.312001, 74.819000);
+        assertTrue(distance < 0.1);
+    }
 }

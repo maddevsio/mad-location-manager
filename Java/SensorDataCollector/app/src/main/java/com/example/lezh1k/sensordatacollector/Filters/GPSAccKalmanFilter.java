@@ -12,78 +12,97 @@ public class GPSAccKalmanFilter {
     private double m_timeStampMs;
     private KalmanFilter m_kf;
 
-    public GPSAccKalmanFilter(double initPos,
-                              double initVel,
-                              double positionDeviation,
-                              double accelerometerDeviation,
-                              double currentTimeStamp) {
-        m_kf = new KalmanFilter(2, 2, 1);
-  /*initialization*/
-        m_timeStampMs = currentTimeStamp;
-        m_kf.currentState.Set(
-                initPos,
-                initVel);
+    public GPSAccKalmanFilter(double x, double y,
+                              double xVel, double yVel,
+                              double accDev, double posDev,
+                              double timeStamp) {
+        m_kf = new KalmanFilter(4, 4, 1);
+        m_timeStampMs = timeStamp;
+        m_kf.Xk_k.Set(x, y, xVel, yVel);
 
-        m_kf.measurementModel.Set(
-                1.0, 0.0,
-                0.0, 1.0);
+        m_kf.H.SetIdentity(); //state has 4d and measurement has 4d too. so here is identity
+        m_kf.Pk_k.Set(
+                posDev, 0.0, 0.0, 0.0,
+                0.0, posDev, 0.0, 0.0,
+                0.0, 0.0, posDev, 0.0,
+                0.0, 0.0, 0.0, posDev); //todo get speed accuracy if possible
 
-        m_kf.updatedCovariance.Set(
-                1.0, 0.0,
-                0.0, 1.0);
-
-        m_kf.measureVariance.Set(
-                positionDeviation , 0.0,
-                0.0 , positionDeviation);
-
-        m_kf.processVariance.Set(
-                accelerometerDeviation, 0.0,
-                0.0 , accelerometerDeviation);
+        //process noise.
+        m_kf.Q.SetIdentity();
+        m_kf.Q.Scale(accDev);
+        m_kf.Uk.Set( 1.0);
     }
 
-
-    private void rebuildStateTransitions(double deltaT) {
-        m_kf.stateTransitionMatrix.Set(
-                1.0, deltaT,
-                0.0, 1.0);
-
+    private void rebuildF(double dt) {
+        double f[] = {
+                1.0, 0.0, dt, 0.0,
+                0.0, 1.0, 0.0, dt,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0
+        };
+        m_kf.F.Set(f);
     }
 
-    private void rebuildControlMatrix(double deltaT) {
-        m_kf.controlMatrix.Set(
-                0.5 * deltaT * deltaT,
-                deltaT);
+    private void rebuildB(double dt,
+                          double xAcc,
+                          double yAcc) {
+        double dt05 = 0.5*dt;
+        double dx = dt*xAcc;
+        double dy = dt*yAcc;
+        double b[] = {
+                dt05 * dx,
+                dt05 * dy,
+                dx,
+                dy
+        };
+        m_kf.B.Set(b);
     }
 
-    public double getCurrentPosition() {
-        return m_kf.currentState.data[0][0];
+    private void rebuildR(double posSigma,
+                          double velSigma) {
+        double R[] = {
+                posSigma, 0.0, 0.0, 0.0,
+                0.0, posSigma, 0.0, 0.0,
+                0.0, 0.0, velSigma, 0.0,
+                0.0, 0.0, 0.0, velSigma};
+        m_kf.R.Set(R);
     }
 
-    public double getCurrentVelocity() {
-        return m_kf.currentState.data[1][0];
-    }
-
-    public void Predict(double timeNowMs,
-                        double accAxis) {
-        double deltaTInSeconds = (timeNowMs - m_timeStampMs) / 1000.0;
-        rebuildControlMatrix(deltaTInSeconds);
-        rebuildStateTransitions(deltaTInSeconds);
-        m_kf.controlVector.data[0][0] =  accAxis;
+    public void predict(double timeNowMs,
+                        double xAcc,
+                        double yAcc) {
+        double dt = (timeNowMs - m_timeStampMs) / 1000.0;
+        rebuildF(dt);
+        rebuildB(dt, xAcc, yAcc);
         m_timeStampMs = timeNowMs;
         m_kf.Predict();
-
-        //this is not right. but we have something like this :
-        //predict, predict, predict, update, predict, predict, predict, update
-        //so we just integrate predictions.
-        Matrix.MatrixClone(m_kf.predictedState, m_kf.currentState);
+        Matrix.MatrixClone(m_kf.Xk_km1, m_kf.Xk_k);
     }
 
-    public void Update(double position, double velocityAxis,
-                       double positionError, double velocityError) {
-        m_kf.actualMeasurement.Set(position, velocityAxis);
-        if (positionError != 0.0)
-            m_kf.measureVariance.data[0][0] = positionError * positionError;
-        m_kf.measureVariance.data[1][1] = velocityError*velocityError;
-        m_kf.Update();
+    public void update(double x,
+                       double y,
+                       double xVel,
+                       double yVel,
+                       double posDev,
+                       double velDev) {
+        rebuildR(posDev, velDev);
+        m_kf.Zk.Set(x, y, xVel, yVel);
+        m_kf.Predict();
+    }
+
+    public double getCurrentX() {
+        return m_kf.Xk_k.data[0][0];
+    }
+
+    public double getCurrentY() {
+        return m_kf.Xk_k.data[1][0];
+    }
+
+    public double getCurrentXVel() {
+        return m_kf.Xk_k.data[2][0];
+    }
+
+    public double getCurrentYVel() {
+        return m_kf.Xk_k.data[3][0];
     }
 }

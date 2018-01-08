@@ -25,6 +25,13 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
                 &sd->absEastAcc,
                 &sd->absNorthAcc,
                 &sd->absUpAcc);
+    if (tt != 4) { //todo remove this check and previous try because of format change
+      tt = sscanf(str+1, "%lf abs acc: %lf %lf %lf",
+                  &sd->timestamp,
+                  &sd->absEastAcc,
+                  &sd->absNorthAcc,
+                  &sd->absUpAcc);
+    }
     return tt == 4;
   } else {
     if (strstr(str, GPS)) {
@@ -117,11 +124,11 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 1.0;
+    static const double accDev = 0.001;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
-//    xVel = yVel = 0.0;
+
     GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
                                    CoordLongitudeToMeters(sd.gpsLon),
                                    CoordLatitudeToMeters(sd.gpsLat),
@@ -130,6 +137,7 @@ FilterInputFile(const QString &inputFile,
                                    accDev,
                                    sd.posErr,
                                    sd.timestamp);
+
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
@@ -150,10 +158,10 @@ FilterInputFile(const QString &inputFile,
           continue;        
         gps_count = GPS_COUNT;
 
-        sd.posErr += CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
-                                                      sd.gpsLat+noiseX, sd.gpsLon+noiseY) / 0.68;
-        sd.gpsLat += noiseX;
-        sd.gpsLon += noiseY;
+//        sd.posErr += CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
+//                                                      sd.gpsLat+noiseX, sd.gpsLon+noiseY) / 0.68;
+//        sd.gpsLat += noiseX;
+//        sd.gpsLon += noiseY;
 
         xVel = sd.speed * cos(sd.course);
         yVel = sd.speed * sin(sd.course);
