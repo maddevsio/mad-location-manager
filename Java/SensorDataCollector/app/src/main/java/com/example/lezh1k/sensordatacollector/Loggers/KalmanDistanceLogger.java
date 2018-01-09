@@ -18,6 +18,7 @@ import com.elvishew.xlog.XLog;
 import com.example.lezh1k.sensordatacollector.Commons;
 import com.example.lezh1k.sensordatacollector.Filters.Coordinates;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
+import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
 import com.example.lezh1k.sensordatacollector.Filters.GeoPoint;
 
 import java.util.ArrayList;
@@ -29,10 +30,11 @@ import java.util.List;
 
 public class KalmanDistanceLogger implements SensorEventListener, LocationListener {
 
-    GPSAccKalmanFilter m_kalmanFilter = null;
-
+    private GPSAccKalmanFilter m_kalmanFilter = null;
     private List<Sensor> m_lstSensors = new ArrayList<Sensor>();
     private SensorManager m_sensorManager;
+    private boolean m_inProgress = false;
+    private Object m_syncObject = new Object();
 
     private static int[] sensorTypes = {
             Sensor.TYPE_LINEAR_ACCELERATION,
@@ -80,6 +82,7 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
             }
         }
         m_distance = 0.0;
+        m_inProgress = true;
         return true;
     }
 
@@ -91,10 +94,10 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
         }
+        m_inProgress = false;
     }
 
     ///////////////////////////////////////////////////////////////
-
 
     private float[] R = new float[16];
     private float[] RI = new float[16];
@@ -112,6 +115,7 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
+                /*todo use magnetic declination for acceleration course correction*/
                 long now = System.currentTimeMillis();
                 if (m_kalmanFilter != null) {
                     m_kalmanFilter.predict(now, accAxis[east], accAxis[north]);
@@ -136,11 +140,12 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
 
     ///////////////////////////////////////////////////////////////
 
-    static final double ACC_DEV = 1.0; //TODO GET FROM CALIBRATION STEP
     double m_distance = 0.0;
     double llat, llon;
+
     @Override
     public void onLocationChanged(Location loc) {
+        final double accDev = 1.0;
         double x, y, xVel, yVel, posDev, timeStamp;
         x = loc.getLongitude();
         y = loc.getLatitude();
@@ -155,7 +160,7 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
                     Coordinates.LatitudeToMeters(y),
                     xVel,
                     yVel,
-                    ACC_DEV,
+                    accDev,
                     posDev,
                     timeStamp);
             llon = x;
@@ -169,11 +174,21 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
                 xVel,
                 yVel,
                 posDev,
-                ACC_DEV*0.1); //todo get speed accuracy
+                posDev * 0.1); //we assume that speed accuracy is much higher.
+        // todo get speed accuracy from loc.
 
         GeoPoint pp = Coordinates.MetersToGeoPoint(
                 m_kalmanFilter.getCurrentX(), m_kalmanFilter.getCurrentY());
-        m_distance += Coordinates.geoDistanceMeters(llon, llat, pp.Longitude, pp.Latitude);
+
+        final int prec = 8;
+        String geo0 = GeoHash.Encode(llat, llon, prec);
+        String geo1 = GeoHash.Encode(pp.Latitude, pp.Longitude, prec);
+        if (geo0.equals(geo1))
+            return;
+        Log.d(Commons.AppName, String.format("\nlat1:%f\nlat2:%f\nlon1:%f\nlon2:%f",
+                llat, pp.Latitude, llon, pp.Longitude));
+        double dd = Coordinates.geoDistanceMeters(llon, llat, pp.Longitude, pp.Latitude);
+        m_distance += dd;
         llon = pp.Longitude;
         llat = pp.Latitude;
     }
@@ -189,13 +204,16 @@ public class KalmanDistanceLogger implements SensorEventListener, LocationListen
 
     @Override
     public void onProviderEnabled(String provider) {
-        /*todo something*/
+        if (m_inProgress) {
+            start();
+        }
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        /*todo something*/
+        if (m_inProgress) {
+            stop();
+        }
     }
-
     ///////////////////////////////////////////////////////////////
 }

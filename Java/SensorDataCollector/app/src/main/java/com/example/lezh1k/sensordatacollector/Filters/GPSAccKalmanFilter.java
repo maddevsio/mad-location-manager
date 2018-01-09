@@ -11,6 +11,7 @@ import com.example.lezh1k.sensordatacollector.Commons;
 public class GPSAccKalmanFilter {
     private double m_timeStampMs;
     private KalmanFilter m_kf;
+    private double m_accSigma;
 
     public GPSAccKalmanFilter(double x, double y,
                               double xVel, double yVel,
@@ -27,9 +28,10 @@ public class GPSAccKalmanFilter {
                 0.0, 0.0, posDev, 0.0,
                 0.0, 0.0, 0.0, posDev); //todo get speed accuracy if possible
 
+        m_accSigma = accDev;
         //process noise.
         m_kf.Q.SetIdentity();
-        m_kf.Q.Scale(accDev);
+        m_kf.Q.Scale(m_accSigma);
         m_kf.Uk.Set( 1.0);
     }
 
@@ -68,12 +70,28 @@ public class GPSAccKalmanFilter {
         m_kf.R.Set(R);
     }
 
+    private void rebuildQ(double dt,
+                          double accSigma) {
+
+        dt *= 1000.0; //to milliseconds (because dt usual < 1.0)
+        double dt2 = dt*dt;
+        double dt3 = dt2*dt;
+        double dt4 = dt3*dt;
+        m_kf.Q.Set(
+                0.25*dt4, 0.5*dt3, 0.0, 0.0,
+                0.5*dt3, dt2, 0.0, 0.0,
+                0.0, 0.0, 0.25*dt4, 0.5*dt3,
+                0.0, 0.0, 0.5*dt3, dt2);
+        m_kf.Q.Scale( 0.0001 * m_accSigma);
+    }
+
     public void predict(double timeNowMs,
                         double xAcc,
                         double yAcc) {
         double dt = (timeNowMs - m_timeStampMs) / 1000.0;
         rebuildF(dt);
         rebuildB(dt, xAcc, yAcc);
+//        rebuildQ(dt, m_accSigma);
         m_timeStampMs = timeNowMs;
         m_kf.Predict();
         Matrix.MatrixClone(m_kf.Xk_km1, m_kf.Xk_k);

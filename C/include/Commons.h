@@ -47,4 +47,8 @@ inline int RandomBetween2Vals(int low, int hi) {
   return (rand() % (hi - low)) + low;
 }
 
+inline double LowPassFilter(double prev, double measured, double alpha) {
+  return prev + alpha * (measured - prev);
+}
+
 #endif // COMMONS_H

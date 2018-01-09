@@ -1,7 +1,8 @@
 #include "mainwindow.h"
 #include <QMessageBox>
 #include <QWebEngineProfile>
-#include <Coordinates.h>
+#include "Coordinates.h"
+#include "Geohash.h"
 
 static const QString g_mapDiv = "megamap";
 static const QString g_baseHtml = "<!DOCTYPE html>\n"
@@ -99,24 +100,19 @@ MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
                     const QString &filteredCoordsFile) {
   std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile);
-//  lstCoords.clear();
-//  lstCoords = CoordFilterByGeoHash(lstCoords, 8, 2);
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile);
-  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, 8, 2);
 
-  if (!lstGeoFilter.empty()) {
-    double distance = 0.0;
-    double llon, llat;
-    llon = lstGeoFilter[0].Longitude;
-    llat = lstGeoFilter[0].Latitude;
+  const int filterPrec = 7;
+  const int minPoints = 3;
+  qDebug() << "Src distance : " << CoordGetDistance(lstCoords);
+  qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter);
 
-    for (auto pp = lstGeoFilter.begin()+1; pp != lstGeoFilter.end(); ++pp) {
-      distance += CoordDistanceBetweenPointsMeters(llat, llon, pp->Latitude, pp->Longitude);
-      llat = pp->Latitude;
-      llon = pp->Longitude;
-    }
-    qDebug() << distance;
-  }
+  //filter for display
+//  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+//  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+
+  qDebug() << "2Src distance : " << CoordGetDistance(lstCoords);
+  qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter);
 
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");

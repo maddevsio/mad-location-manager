@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
           out("/home/lezh1k/gps_test_data/log1filtered");
 
   if (!FilterInputFile(in, out)) {
-    qDebug() << "ABIR";
     return 1;
   }
 

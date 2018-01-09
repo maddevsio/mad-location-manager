@@ -19,19 +19,11 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
   int tt;
   sd->gpsAlt = sd->gpsLat = sd->gpsLon = 0.0;
   if (str[0] == ' ') {
-    /* 1514272299183 Linear abs acc : 0.618369 -2.226876 3.471822 0.000000 */
-    tt = sscanf(str+1, "%lf Linear abs acc : %lf %lf %lf",
+    tt = sscanf(str+1, "%lf abs acc: %lf %lf %lf",
                 &sd->timestamp,
                 &sd->absEastAcc,
                 &sd->absNorthAcc,
                 &sd->absUpAcc);
-    if (tt != 4) { //todo remove this check and previous try because of format change
-      tt = sscanf(str+1, "%lf abs acc: %lf %lf %lf",
-                  &sd->timestamp,
-                  &sd->absEastAcc,
-                  &sd->absNorthAcc,
-                  &sd->absUpAcc);
-    }
     return tt == 4;
   } else {
     if (strstr(str, GPS)) {
@@ -67,7 +59,7 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
         if ((tt=sscanf(sub, "NMEA COURSE: %lf", &sd->course)) != 1)
           return false;
       }
-      return false;
+      return false; //we don't want to use nmea right now.
 //      return true;
     } //NMEA
 
@@ -86,7 +78,10 @@ bool sensorDataToFile(QFile &fOut,
   return true;
 }
 //////////////////////////////////////////////////////////////////////////
-
+/*lat1:42.879049
+  lat2:42.878948
+  lon1:74.617879
+  lon2:74.617974*/
 bool
 FilterInputFile(const QString &inputFile,
                 const QString &outputFile) {
@@ -124,7 +119,7 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 0.001;
+    static const double accDev = 1.0;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
@@ -143,8 +138,8 @@ FilterInputFile(const QString &inputFile,
       if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
         continue;
 
-      double noiseX = RandomBetween2Vals(800, 1200) / 1000000.0;
-      double noiseY = RandomBetween2Vals(800, 1200) / 1000000.0;
+      double noiseX = RandomBetween2Vals(800, 1300) / 1000000.0;
+      double noiseY = RandomBetween2Vals(800, 1300) / 1000000.0;
       noiseX *= rand() & 0x01 ? -1.0 : 1.0;
       noiseY *= rand() & 0x01 ? -1.0 : 1.0;
 
@@ -172,7 +167,7 @@ FilterInputFile(const QString &inputFile,
                             xVel,
                             yVel,
                             sd.posErr,
-                            accDev * 0.1); //HACK!!!! todo log speed accuracy
+                            sd.posErr*0.1);
 
         geopoint_t pp = CoordMetersToGeopoint(
                           kf2->kf->Xk_k->data[0][0], kf2->kf->Xk_k->data[1][0]);

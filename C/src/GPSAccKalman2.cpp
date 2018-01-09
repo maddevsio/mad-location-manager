@@ -78,6 +78,21 @@ static void rebuildR(GPSAccKalmanFilter2_t *f,
 }
 //////////////////////////////////////////////////////////////////////////
 
+static void rebuildQ(GPSAccKalmanFilter2_t *f,
+                     double dt,
+                     double accSigma) {
+  dt *= 1000.0; //to milliseconds (because dt usual < 1.0)
+  double dt2 = dt*dt;
+  double dt3 = dt2*dt;
+  double dt4 = dt3*dt;
+  MatrixSet(f->kf->Q,
+            0.25*dt4, 0.5*dt3, 0.0, 0.0,
+            0.5*dt3, dt2, 0.0, 0.0,
+            0.0, 0.0, 0.25*dt4, 0.5*dt3,
+            0.0, 0.0, 0.5*dt3, dt2);
+  MatrixScale(f->kf->Q, 0.0001 * accSigma);
+}
+
 void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
                           double timeNow,
                           double xAcc,
@@ -85,6 +100,7 @@ void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
   double dt = (timeNow - k->timeStamp) / 1000.0;
   rebuildF(k, dt);
   rebuildB(k, dt, xAcc, yAcc);
+//  rebuildQ(k, dt, 1.0); //todo comment after test
   k->timeStamp = timeNow;
   KalmanFilterPredict(k->kf);
   MatrixCopy(k->kf->Xk_km1, k->kf->Xk_k);

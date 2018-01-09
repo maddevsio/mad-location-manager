@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define GEOHASH_MAX_PRECISION 12
+static const int GEOHASH_MAX_PRECISION = 12;
 void GeohashEncode(double srcLat,
                    double srcLon,
                    char* geohash,
@@ -12,5 +12,9 @@ void GeohashEncode(double srcLat,
 void GeohashDecode(const char* str,
                    double *pLon,
                    double *pLat);
+
+int GeohashComparePoints(double lon1, double lat1,
+                         double lon2, double lat2,
+                         int precision);
 
 #endif // GEOHASH_H

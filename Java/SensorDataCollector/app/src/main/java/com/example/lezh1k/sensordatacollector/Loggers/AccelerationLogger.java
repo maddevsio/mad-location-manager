@@ -79,12 +79,10 @@ public class AccelerationLogger implements SensorEventListener {
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
                 long now = System.currentTimeMillis();
+                /*todo use magnetic declination for acceleration course correction*/
                 lastAbsAccelerationString = String.format(" %d abs acc: %f %f %f",
                         now, accAxis[0], accAxis[1], accAxis[2]);
-                lastLinAccelerationString = String.format(" %d rel acc: %f %f %f",
-                        now, linAcc[0], linAcc[1], linAcc[2]);
                 XLog.i(lastAbsAccelerationString);
-                XLog.i(lastLinAccelerationString);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(R, event.values);

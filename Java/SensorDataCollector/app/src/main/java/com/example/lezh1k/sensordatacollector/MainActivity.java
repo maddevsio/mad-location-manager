@@ -62,8 +62,7 @@ public class MainActivity extends AppCompatActivity {
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
 
-            tvLocationData.setText(String.format("Location:\n%s\n%s", m_gpsDataLogger.getLastLoggedGPSMessage(),
-                    m_gpsDataLogger.getLastLoggedNMEAMessage()));
+            tvLocationData.setText(String.format("Location:\n%s", m_gpsDataLogger.getLastLoggedGPSMessage()));
 
             tvLinAccData.setText(String.format("Acceleration:\n" +
                             "Lin:%s\n" +
@@ -101,12 +100,19 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         m_refreshTask.needTerminate = true;
         m_refreshTask.cancel(true);
-        if (m_gpsDataLogger != null)
-            m_gpsDataLogger.stop();
-        if (m_accDataLogger != null)
-            m_accDataLogger.stop();
-        if (m_sensorCalibrator != null)
+        if (m_gpsDataLogger != null) {
+//            m_gpsDataLogger.stop();
+        }
+        if (m_accDataLogger != null) {
+//            m_accDataLogger.stop();
+        }
+        if (m_sensorCalibrator != null) {
             m_sensorCalibrator.stop();
+        }
+
+        if (m_kalmanDistanceLogger != null) {
+            m_kalmanDistanceLogger.stop();
+        }
         m_isLogging = false;
     }
 
