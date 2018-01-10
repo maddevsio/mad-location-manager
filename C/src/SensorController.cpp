@@ -6,6 +6,7 @@
 #include "GPSAccKalman.h"
 #include "GPSAccKalman2.h"
 #include "Coordinates.h"
+
 #include <QDebug>
 
 static const char* NMEA = "NMEA";
@@ -78,10 +79,20 @@ bool sensorDataToFile(QFile &fOut,
   return true;
 }
 //////////////////////////////////////////////////////////////////////////
-/*lat1:42.879049
-  lat2:42.878948
-  lon1:74.617879
-  lon2:74.617974*/
+
+static void patchSdWithNoise(SensorData *sd) {
+  double noiseX = RandomBetween2Vals(800, 1300) / 1000000.0;
+  double noiseY = RandomBetween2Vals(800, 1300) / 1000000.0;
+
+  noiseX *= rand() & 0x01 ? -1.0 : 1.0;
+  noiseY *= rand() & 0x01 ? -1.0 : 1.0;
+
+  sd->posErr += CoordDistanceBetweenPointsMeters(sd->gpsLat, sd->gpsLon,
+                                                sd->gpsLat+noiseX, sd->gpsLon+noiseY) / 0.68;
+  sd->gpsLat += noiseX;
+  sd->gpsLon += noiseY;
+}
+
 bool
 FilterInputFile(const QString &inputFile,
                 const QString &outputFile) {
@@ -124,6 +135,7 @@ FilterInputFile(const QString &inputFile,
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
 
+//    patchSdWithNoise(&sd);
     GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
                                    CoordLongitudeToMeters(sd.gpsLon),
                                    CoordLatitudeToMeters(sd.gpsLat),
@@ -136,12 +148,7 @@ FilterInputFile(const QString &inputFile,
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
-        continue;
-
-      double noiseX = RandomBetween2Vals(800, 1300) / 1000000.0;
-      double noiseY = RandomBetween2Vals(800, 1300) / 1000000.0;
-      noiseX *= rand() & 0x01 ? -1.0 : 1.0;
-      noiseY *= rand() & 0x01 ? -1.0 : 1.0;
+        continue;      
 
       if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
         GPSAccKalman2Predict(kf2,
@@ -153,15 +160,12 @@ FilterInputFile(const QString &inputFile,
           continue;        
         gps_count = GPS_COUNT;
 
-//        sd.posErr += CoordDistanceBetweenPointsMeters(sd.gpsLat, sd.gpsLon,
-//                                                      sd.gpsLat+noiseX, sd.gpsLon+noiseY) / 0.68;
-//        sd.gpsLat += noiseX;
-//        sd.gpsLon += noiseY;
-
+//        patchSdWithNoise(&sd);
         xVel = sd.speed * cos(sd.course);
         yVel = sd.speed * sin(sd.course);
 
         GPSAccKalman2Update(kf2,
+                            sd.timestamp,
                             CoordLongitudeToMeters(sd.gpsLon),
                             CoordLatitudeToMeters(sd.gpsLat),
                             xVel,

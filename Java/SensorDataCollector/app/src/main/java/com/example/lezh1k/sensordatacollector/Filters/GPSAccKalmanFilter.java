@@ -1,15 +1,14 @@
 package com.example.lezh1k.sensordatacollector.Filters;
 
-import android.util.Log;
-
-import com.example.lezh1k.sensordatacollector.Commons;
+import com.elvishew.xlog.XLog;
 
 /**
  * Created by lezh1k on 12/11/17.
  */
 
 public class GPSAccKalmanFilter {
-    private double m_timeStampMs;
+    private double m_timeStampMsPredict;
+    private double m_timeStampMsUpdate;
     private KalmanFilter m_kf;
     private double m_accSigma;
 
@@ -18,39 +17,36 @@ public class GPSAccKalmanFilter {
                               double accDev, double posDev,
                               double timeStamp) {
         m_kf = new KalmanFilter(4, 4, 1);
-        m_timeStampMs = timeStamp;
+        m_timeStampMsPredict = m_timeStampMsUpdate = timeStamp;
+        m_accSigma = accDev;
         m_kf.Xk_k.Set(x, y, xVel, yVel);
 
         m_kf.H.SetIdentity(); //state has 4d and measurement has 4d too. so here is identity
-        m_kf.Pk_k.Set(
-                posDev, 0.0, 0.0, 0.0,
-                0.0, posDev, 0.0, 0.0,
-                0.0, 0.0, posDev, 0.0,
-                0.0, 0.0, 0.0, posDev); //todo get speed accuracy if possible
+        m_kf.Pk_k.SetIdentity();
+        m_kf.Pk_k.Scale(posDev);
 
-        m_accSigma = accDev;
         //process noise.
         m_kf.Q.SetIdentity();
         m_kf.Q.Scale(m_accSigma);
         m_kf.Uk.Set( 1.0);
     }
 
-    private void rebuildF(double dt) {
+    private void rebuildF(double dtPredict) {
         double f[] = {
-                1.0, 0.0, dt, 0.0,
-                0.0, 1.0, 0.0, dt,
+                1.0, 0.0, dtPredict, 0.0,
+                0.0, 1.0, 0.0, dtPredict,
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0
         };
         m_kf.F.Set(f);
     }
 
-    private void rebuildB(double dt,
+    private void rebuildB(double dtPredict,
                           double xAcc,
                           double yAcc) {
-        double dt05 = 0.5*dt;
-        double dx = dt*xAcc;
-        double dy = dt*yAcc;
+        double dt05 = 0.5*dtPredict;
+        double dx = dtPredict*xAcc;
+        double dy = dtPredict*yAcc;
         double b[] = {
                 dt05 * dx,
                 dt05 * dy,
@@ -70,39 +66,33 @@ public class GPSAccKalmanFilter {
         m_kf.R.Set(R);
     }
 
-    private void rebuildQ(double dt,
+    private void rebuildQ(double dtUpdate,
                           double accSigma) {
-
-        dt *= 1000.0; //to milliseconds (because dt usual < 1.0)
-        double dt2 = dt*dt;
-        double dt3 = dt2*dt;
-        double dt4 = dt3*dt;
-        m_kf.Q.Set(
-                0.25*dt4, 0.5*dt3, 0.0, 0.0,
-                0.5*dt3, dt2, 0.0, 0.0,
-                0.0, 0.0, 0.25*dt4, 0.5*dt3,
-                0.0, 0.0, 0.5*dt3, dt2);
-        m_kf.Q.Scale( 0.0001 * m_accSigma);
+        m_kf.Q.SetIdentity();
+        m_kf.Q.Scale(accSigma * dtUpdate);
     }
 
     public void predict(double timeNowMs,
                         double xAcc,
                         double yAcc) {
-        double dt = (timeNowMs - m_timeStampMs) / 1000.0;
-        rebuildF(dt);
-        rebuildB(dt, xAcc, yAcc);
-//        rebuildQ(dt, m_accSigma);
-        m_timeStampMs = timeNowMs;
+        double dtPredict = (timeNowMs - m_timeStampMsPredict) / 1000.0;
+        double dtUpdate = (timeNowMs - m_timeStampMsUpdate) / 1000.0;
+        rebuildF(dtPredict);
+        rebuildB(dtPredict, xAcc, yAcc);
+        rebuildQ(dtUpdate, m_accSigma); //empirical method. WARNING!!!
+        m_timeStampMsPredict = timeNowMs;
         m_kf.Predict();
         Matrix.MatrixClone(m_kf.Xk_km1, m_kf.Xk_k);
     }
 
-    public void update(double x,
+    public void update(double timeStamp,
+                       double x,
                        double y,
                        double xVel,
                        double yVel,
                        double posDev,
                        double velDev) {
+        m_timeStampMsUpdate = timeStamp;
         rebuildR(posDev, velDev);
         m_kf.Zk.Set(x, y, xVel, yVel);
         m_kf.Predict();

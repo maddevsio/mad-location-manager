@@ -159,9 +159,10 @@ double CoordDistanceBetweenPointsMeters(double lat1, double lon1,
 }
 //////////////////////////////////////////////////////////////////////////
 
-double CoordGetDistance(const std::vector<geopoint_t> &lst) {
+double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision) {
   double distance = 0.0;
   double llon, llat;
+
   if (lst.empty() || lst.size() == 1)
     return 0.0;
 
@@ -169,6 +170,10 @@ double CoordGetDistance(const std::vector<geopoint_t> &lst) {
   llat = lst[0].Latitude;
 
   for (auto pp = lst.begin()+1; pp != lst.end(); ++pp) {
+
+    if (GeohashComparePoints(llon, llat, pp->Longitude, pp->Latitude, precision) == 0)
+      continue;
+
     distance += CoordDistanceBetweenPointsMeters(llat, llon,
                                                  pp->Latitude, pp->Longitude);
     llat = pp->Latitude;

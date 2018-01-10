@@ -27,7 +27,7 @@ double CoordLatitudeToMeters(double lat);
 geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters);
 
-double CoordGetDistance(const std::vector<geopoint_t> &lst);
+double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision);
 double CoordGetDistanceWithGeohash(const std::vector<geopoint_t> &lst,
                                    int precision,
                                    int minPoints);

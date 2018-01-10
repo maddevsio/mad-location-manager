@@ -74,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
 
-            tvDistance.setText(String.format("Distance : %f m", m_kalmanDistanceLogger.getDistance()));
+            tvDistance.setText(String.format("Distance : %fm\n" +
+                    "%s", m_kalmanDistanceLogger.getDistance(), m_kalmanDistanceLogger.getLastResultsString()));
 
             if (m_sensorCalibrator.isInProgress()) {
                 tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
@@ -101,10 +102,10 @@ public class MainActivity extends AppCompatActivity {
         m_refreshTask.needTerminate = true;
         m_refreshTask.cancel(true);
         if (m_gpsDataLogger != null) {
-//            m_gpsDataLogger.stop();
+            m_gpsDataLogger.stop();
         }
         if (m_accDataLogger != null) {
-//            m_accDataLogger.stop();
+            m_accDataLogger.stop();
         }
         if (m_sensorCalibrator != null) {
             m_sensorCalibrator.stop();

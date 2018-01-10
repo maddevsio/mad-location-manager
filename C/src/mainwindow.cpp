@@ -104,23 +104,23 @@ MainWindow::initMap(QWebEnginePage *page,
 
   const int filterPrec = 7;
   const int minPoints = 3;
-  qDebug() << "Src distance : " << CoordGetDistance(lstCoords);
-  qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter);
+  qDebug() << "Src distance : " << CoordGetDistance(lstCoords, filterPrec);
+  qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
 
   //filter for display
-//  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
-//  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
 
-  qDebug() << "2Src distance : " << CoordGetDistance(lstCoords);
-  qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter);
+  qDebug() << "2Src distance : " << CoordGetDistance(lstCoords, filterPrec);
+  qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
 
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");
   QString allCoordsStr = srcCoordsStr + geoCoordsStr;
 
-  double coord00, coord01;
-  coord00 = lstCoords.empty() ? 42.87336 : lstCoords[0].Latitude;
-  coord01 = lstCoords.empty() ? 74.61873 : lstCoords[0].Longitude;
-  QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(coord00).arg(coord01);
+  double lat, lon;
+  lat = lstCoords.empty() ? 42.87336 : lstCoords[0].Latitude;
+  lon = lstCoords.empty() ? 74.61873 : lstCoords[0].Longitude;
+  QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(lat).arg(lon);
   page->setHtml(html);
 }
