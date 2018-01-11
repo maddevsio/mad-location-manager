@@ -4,6 +4,7 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
 import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,8 +107,7 @@ public class Coordinates {
             it.lon += ci.Longitude;
         }
 
-        ArrayList<GeoPoint> lstRes = new ArrayList<GeoPoint>(idx);
-
+        GeoPoint resArr[] = new GeoPoint[idx];
         for (Map.Entry<String, cindex> it : dctHashCount.entrySet()) {
             cindex val = it.getValue();
             if (val.index == -1)
@@ -115,9 +115,9 @@ public class Coordinates {
 
             GeoPoint np = new GeoPoint(val.lat / val.count,
                     val.lon / val.count);
-            lstRes.add(val.index, np);
+            resArr[val.index] = np;
         }
-
+        ArrayList<GeoPoint> lstRes = new ArrayList<>(Arrays.asList(resArr));
         return lstRes;
     }
 

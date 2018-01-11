@@ -114,6 +114,8 @@ void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
 }
 //////////////////////////////////////////////////////////////////////////
 
+#include <QDebug>
+double dt2max = 0.0;
 void GPSAccKalman2Update(GPSAccKalmanFilter2_t *k,
                          double timeNow,
                          double x,
@@ -122,6 +124,9 @@ void GPSAccKalman2Update(GPSAccKalmanFilter2_t *k,
                          double yVel,
                          double posDev,
                          double velDev) {
+  double dt2 = (timeNow - k->updateTime)  / 1000.0;
+  dt2max = std::max(dt2max, dt2);
+//  qDebug() << dt2max;
   k->updateTime = timeNow;
   rebuildR(k, posDev, velDev);
   MatrixSet(k->kf->Zk, x, y, xVel, yVel);

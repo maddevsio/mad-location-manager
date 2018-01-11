@@ -36,86 +36,57 @@ import java.util.concurrent.PriorityBlockingQueue;
  * Created by lezh1k on 1/8/18.
  */
 
-/*class SensorDataEventLoopTask extends AsyncTask {
-
-        boolean needTerminate = false;
-        long deltaTMs;
-        double llat, llon;
-        ArrayList<GeoPoint> track = new ArrayList<>();
-        ArrayList<GeoPoint> tmp = new ArrayList<>();
-
-        SensorDataEventLoopTask(long deltaTMs) {
-            this.deltaTMs = deltaTMs;
-        }
-
-        private void calculateDistanceStep() {
-            GeoPoint pp = Coordinates.metersToGeoPoint(
-                    m_kalmanFilter.getCurrentX(),
-                    m_kalmanFilter.getCurrentY());
-            String geo0, geo1;
-            final int precision = 7;
-            final int minPoints = 3;
-
-            geo0 = GeoHash.encode(llat, llon, precision);
-            geo1 = GeoHash.encode(pp.Latitude, pp.Longitude, precision);
-
-            track.add(pp);
-
-            if (geo0.equals(geo1))
-                return;
-
-            tmp = Coordinates.filterByGeohash(track, precision, minPoints);
-            double dd = Coordinates.calculateDistance(tmp);
-            m_distance += dd;
-            llat = pp.Latitude;
-            llon = pp.Longitude;
-        }
-
-        @Override
-        protected Object doInBackground(Object[] objects) {
-            while (!needTerminate) {
-                try {
-                    Thread.sleep(deltaTMs);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    continue; //bad
-                }
-
-                SensorGpsDataItem sdi;
-                while ((sdi = m_sensorDataQueue.poll()) != null) {
-                    //warning!!!
-                    if (sdi.getGpsLat() == SensorGpsDataItem.NOT_INITIALIZED) {
-                        m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
-                    } else {
-                        double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
-                        double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
-                        m_kalmanFilter.update(
-                                sdi.getTimestamp(),
-                                Coordinates.longitudeToMeters(sdi.getGpsLon()),
-                                Coordinates.latitudeToMeters(sdi.getGpsLat()),
-                                xVel,
-                                yVel,
-                                sdi.getPosErr(),
-                                sdi.getVelErr());
-                        calculateDistanceStep();
-                    }
-                }
-            }
-            return null;
-        }
-    }*/
-
 public class KalmanDistanceLogger implements LocationServiceInterface {
 
-    private boolean firstCoordinateReceived = true;
+    private boolean firstCoordinateReceived = false;
     private double llat, llon;
+    private ArrayList<GeoPoint> track = new ArrayList<>();
+    private ArrayList<GeoPoint> tmp = new ArrayList<>();
+    private double m_distance;
 
     public KalmanDistanceLogger() {
         ServicesHelper.addLocationServiceInterface(this);
     }
 
-    @Override
-    public void locationChanged(Location location) {
+    public double getDistance() {
+        return m_distance;
+    }
+
+    public void reset() {
+        track.clear();
+        tmp.clear();
+        m_distance = 0.0;
         firstCoordinateReceived = false;
+    }
+
+    @Override
+    public void locationChanged(Location loc) {
+        GeoPoint pp = new GeoPoint(loc.getLatitude()+1.0, loc.getLongitude());
+        if (!firstCoordinateReceived) {
+            llat = loc.getLatitude();
+            llon = loc.getLongitude();
+            firstCoordinateReceived = true;
+            track.add(pp);
+            return;
+        }
+
+        pp.Latitude += 1.0;
+        String geo0, geo1;
+        final int precision = 7;
+        final int minPoints = 1;
+
+        geo0 = GeoHash.encode(llat, llon, precision);
+        geo1 = GeoHash.encode(pp.Latitude, pp.Longitude, precision);
+
+        track.add(pp);
+
+        if (geo0.equals(geo1))
+            return;
+
+        tmp = Coordinates.filterByGeohash(track, precision, minPoints);
+        double dd = Coordinates.calculateDistance(tmp);
+        m_distance += dd;
+        llat = pp.Latitude;
+        llon = pp.Longitude;
     }
 }

@@ -75,8 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
 
-//            tvDistance.setText(String.format("Distance : %fm\n" +
-//                    "%s", m_kalmanDistanceLogger.getDistance(), m_kalmanDistanceLogger.getLastResultsString()));
+            tvDistance.setText(String.format("Distance : %fm", m_kalmanDistanceLogger.getDistance()));
 
             if (m_sensorCalibrator.isInProgress()) {
                 tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
@@ -135,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
             btnTvStatusText = "Tracking is in progress";
             m_gpsDataLogger.start();
             m_accDataLogger.start();
+            m_kalmanDistanceLogger.reset();
             ServicesHelper.getLocationService(this, value -> {
                 value.reset();
                 value.start();
@@ -240,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
         m_gpsDataLogger = new GPSDataLogger(locationManager, this);
         m_accDataLogger = new AccelerationLogger(sensorManager);
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
-//        m_kalmanDistanceLogger = new KalmanDistanceLogger(sensorManager, locationManager, this);
         m_kalmanDistanceLogger = new KalmanDistanceLogger();
         set_isLogging(false);
         set_isCalibrating(false, true);

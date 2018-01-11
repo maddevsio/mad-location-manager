@@ -23,6 +23,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.example.lezh1k.sensordatacollector.CommonClasses.Coordinates;
+import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
 import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
@@ -121,8 +122,9 @@ public class KalmanLocationService extends Service
                                 sdi.getVelErr());
 
                         Location loc = new Location(TAG);
-                        loc.setLatitude(m_kalmanFilter.getCurrentY());
-                        loc.setLongitude(m_kalmanFilter.getCurrentX());
+                        GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(), m_kalmanFilter.getCurrentY());
+                        loc.setLatitude(pp.Latitude);
+                        loc.setLongitude(pp.Longitude);
                         loc.setAltitude(sdi.getGpsAlt());
                         xVel = m_kalmanFilter.getCurrentX();
                         yVel = m_kalmanFilter.getCurrentY();
