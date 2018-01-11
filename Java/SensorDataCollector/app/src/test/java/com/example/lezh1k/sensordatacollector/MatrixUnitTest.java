@@ -1,6 +1,6 @@
 package com.example.lezh1k.sensordatacollector;
 
-import com.example.lezh1k.sensordatacollector.Filters.Matrix;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Matrix;
 
 import org.junit.Test;
 
@@ -18,7 +18,7 @@ public class MatrixUnitTest {
     public void matrixSetTest() throws Exception {
         Matrix m1, m2;
         m1 = new Matrix(3, 3);
-        m1.Set(
+        m1.setData(
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0,
                 7.0, 8.0, 9.0);
@@ -32,7 +32,7 @@ public class MatrixUnitTest {
         assertEquals(m1.data[2][1] , 8.0);
         assertEquals(m1.data[2][2] , 9.0);
         m2 = new Matrix(2, 1);
-        m2.Set( 4.2, 3.3);
+        m2.setData( 4.2, 3.3);
         assertEquals(m2.data[0][0] , 4.2);
         assertEquals(m2.data[1][0] , 3.3);
     }
@@ -44,12 +44,12 @@ public class MatrixUnitTest {
         mb = new Matrix(2, 3);
         mc = new Matrix(2, 3);
 
-        ma.Set(1.0, 2.0, 3.0,
+        ma.setData(1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0);
-        mb.Set(
+        mb.setData(
                 7.0, 8.0, 9.0,
                 10.0, 11.0, 12.0);
-        Matrix.MatrixAdd(ma, mb, mc);
+        Matrix.matrixAdd(ma, mb, mc);
         assertEquals(mc.data[0][0] , 8.0);
         assertEquals(mc.data[0][1] , 10.0);
         assertEquals(mc.data[0][2] , 12.0);
@@ -57,7 +57,7 @@ public class MatrixUnitTest {
         assertEquals(mc.data[1][1] , 16.0);
         assertEquals(mc.data[1][2] , 18.0);
 
-        Matrix.MatrixAdd(ma, mc, ma); //inplace test
+        Matrix.matrixAdd(ma, mc, ma); //inplace test
         assertEquals(ma.data[0][0] , 9.0);
         assertEquals(ma.data[0][1] , 12.0);
         assertEquals(ma.data[0][2] , 15.0);
@@ -73,14 +73,14 @@ public class MatrixUnitTest {
         mb = new Matrix(2, 3);
         mc = new Matrix(2, 3);
 
-        ma.Set(
+        ma.setData(
                 12.0, 11.0, 10.0,
                 9.0,  8.0,  7.0);
-        mb.Set(
+        mb.setData(
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0);
 
-        Matrix.MatrixSubtract(ma, mb, mc);
+        Matrix.matrixSubtract(ma, mb, mc);
         assertEquals(mc.data[0][0] , 11.0);
         assertEquals(mc.data[0][1] , 9.0);
         assertEquals(mc.data[0][2] , 7.0);
@@ -88,7 +88,7 @@ public class MatrixUnitTest {
         assertEquals(mc.data[1][1] , 3.0);
         assertEquals(mc.data[1][2] , 1.0);
 
-        Matrix.MatrixSubtract(ma, mc, ma); //inplace test
+        Matrix.matrixSubtract(ma, mc, ma); //inplace test
         assertEquals(ma.data[0][0] , 1.0);
         assertEquals(ma.data[0][1] , 2.0);
         assertEquals(ma.data[0][2] , 3.0);
@@ -101,11 +101,11 @@ public class MatrixUnitTest {
     public void matrixSubstractFromIdentityTest() throws Exception {
         Matrix m;
         m = new Matrix(3, 3);
-        m.Set(
+        m.setData(
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0,
                 7.0, 8.0, 9.0);
-        m.SubtractFromIdentity();
+        m.subtractFromIdentity();
 
         assertEquals(m.data[0][0] , 0.0);
         assertEquals(m.data[0][1] , -2.0);
@@ -126,22 +126,22 @@ public class MatrixUnitTest {
         mc = new Matrix(3, 3);
         md = new Matrix(3, 3);
 
-        ma.Set(
+        ma.setData(
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0,
                 7.0, 8.0, 9.0);
 
-        mb.Set(
+        mb.setData(
                 10.0, 11.0, 12.0,
                 13.0, 14.0, 15.0,
                 16.0, 17.0, 18.0);
 
-        mc.Set(
+        mc.setData(
                 84.0, 90.0, 96.0,
                 201.0, 216.0, 231.0,
                 318.0, 342.0, 366.0);
-        Matrix.MatrixMultiply(ma, mb, md);
-        assertTrue(Matrix.MatrixEq(md, mc, 1e-06));
+        Matrix.matrixMultiply(ma, mb, md);
+        assertTrue(Matrix.matrixEq(md, mc, 1e-06));
     }
 
     @Test
@@ -152,23 +152,23 @@ public class MatrixUnitTest {
         mc = new Matrix(3, 3);
         md = new Matrix(3, 3);
 
-        ma.Set(
+        ma.setData(
                 1.0, 2.0, 3.0,
                 4.0, 5.0, 6.0,
                 7.0, 8.0, 9.0);
 
-        mb.Set(
+        mb.setData(
                 10.0, 11.0, 12.0,
                 13.0, 14.0, 15.0,
                 16.0, 17.0, 18.0);
 
-        mc.Set(
+        mc.setData(
                 68.0, 86.0, 104.0,
                 167.0, 212.0, 257.0,
                 266.0, 338.0, 410.0);
 
-        Matrix.MatrixMultiplyByTranspose(ma, mb, md);
-        assertTrue(Matrix.MatrixEq(mc, md, 1e-06));
+        Matrix.matrixMultiplyByTranspose(ma, mb, md);
+        assertTrue(Matrix.matrixEq(mc, md, 1e-06));
     }
 
     @Test
@@ -176,10 +176,10 @@ public class MatrixUnitTest {
         Matrix ma, mb, mc;ma = new Matrix(3, 1);
         mb = new Matrix(1, 3);
         mc = new Matrix(1, 3);
-        ma.Set( 1, 2, 3);
-        mb.Set( 1, 2, 3);
-        Matrix.MatrixTranspose(ma, mc);
-        assert(Matrix.MatrixEq(mb, mc, 1e-06));
+        ma.setData( 1, 2, 3);
+        mb.setData( 1, 2, 3);
+        Matrix.matrixTranspose(ma, mc);
+        assert(Matrix.matrixEq(mb, mc, 1e-06));
     }
 
     @Test
@@ -194,7 +194,7 @@ public class MatrixUnitTest {
                 m1.data[r][c] = m2.data[r][c] = rnd.nextDouble();
             }
         }
-        assertTrue(Matrix.MatrixEq(m1, m2, 1e-06));
+        assertTrue(Matrix.matrixEq(m1, m2, 1e-06));
     }
 
     @Test
@@ -204,14 +204,14 @@ public class MatrixUnitTest {
         ma = new Matrix(2, 2);
         mb = new Matrix(2, 2);
 
-        ma.Set(
+        ma.setData(
                 1.0, 2.0,
                 3.0, 4.0);
-        mb.Set(
+        mb.setData(
                 2.5, 5.0,
                 7.5, 10.0);
-        ma.Scale(scalar);
-        assertTrue(Matrix.MatrixEq(ma, mb, 1e-06));
+        ma.scale(scalar);
+        assertTrue(Matrix.matrixEq(ma, mb, 1e-06));
     }
 
     @Test
@@ -221,18 +221,18 @@ public class MatrixUnitTest {
         mb = new Matrix(3, 3);
         mc = new Matrix(3, 3);
 
-        ma.Set(
+        ma.setData(
                 5.0, 2.0, 3.0,
                 8.0, 12.0, 22.0,
                 39.0, 3.0, 11.0);
 
-        mc.Set(
+        mc.setData(
                 33.0 / 269.0, -13.0 / 538.0, 4.0 / 269.0,
                 385.0 / 269.0, -31.0 / 269.0, -43.0 / 269.0,
                 -222.0 / 269.0, 63.0 / 538.0, 22.0 / 269.0);
 
-        Matrix.MatrixDestructiveInvert(ma, mb);
-        assertTrue(Matrix.MatrixEq(mb, mc, 1e-06));
+        Matrix.matrixDestructiveInvert(ma, mb);
+        assertTrue(Matrix.matrixEq(mb, mc, 1e-06));
     }
 
     @Test
@@ -252,8 +252,8 @@ public class MatrixUnitTest {
             }
         }
 
-        assertTrue(!Matrix.MatrixEq(ma, mb, eps));
-        Matrix.MatrixClone(ma, mb);
-        assertTrue(Matrix.MatrixEq(ma, mb, eps));
+        assertTrue(!Matrix.matrixEq(ma, mb, eps));
+        Matrix.matrixClone(ma, mb);
+        assertTrue(Matrix.matrixEq(ma, mb, eps));
     }
 }

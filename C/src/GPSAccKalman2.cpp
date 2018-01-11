@@ -4,7 +4,6 @@
 #include "Kalman.h"
 #include <QFile>
 
-QFile tf("/home/lezh1k/gps_test_data/log2");
 GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
                                           double y,
                                           double xVel,
@@ -12,7 +11,6 @@ GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
                                           double accDev,
                                           double posDev,
                                           double timeStamp) {
-  tf.open(QFile::ReadWrite);
   GPSAccKalmanFilter2_t *f = (GPSAccKalmanFilter2_t*) malloc(sizeof(GPSAccKalmanFilter2_t));
   assert(f);
   f->kf = KalmanFilterCreate(4, 4, 1);
@@ -42,7 +40,6 @@ void GPSAccKalman2Free(GPSAccKalmanFilter2_t *k) {
   assert(k);
   KalmanFilterFree(k->kf);
   free(k);
-  tf.close();
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -84,8 +81,20 @@ static void rebuildR(GPSAccKalmanFilter2_t *f,
 static void rebuildQ(GPSAccKalmanFilter2_t *f,
                      double dt,
                      double accSigma) { 
+//  double dt2 = dt;
+//  dt2 *= 1000.0;
+//  dt2 *= dt2;
+//  dt2 /= 1000.0;
+
   MatrixSetIdentity(f->kf->Q);
   MatrixScale(f->kf->Q, accSigma * dt);
+
+//  MatrixSet(f->kf->Q,
+//            dt2, 0.0, 0.0, 0.0,
+//            0.0, dt2, 0.0, 0.0,
+//            0.0, 0.0, dt, 0.0,
+//            0.0, 0.0, 0.0, dt);
+//  MatrixScale(f->kf->Q, accSigma);
 }
 
 void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,

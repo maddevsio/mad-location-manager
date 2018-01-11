@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -24,10 +23,12 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
-import com.example.lezh1k.sensordatacollector.SensorDataProvider.SensorCalibrator;
+import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
+import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
 
-            tvDistance.setText(String.format("Distance : %fm\n" +
-                    "%s", m_kalmanDistanceLogger.getDistance(), m_kalmanDistanceLogger.getLastResultsString()));
+//            tvDistance.setText(String.format("Distance : %fm\n" +
+//                    "%s", m_kalmanDistanceLogger.getDistance(), m_kalmanDistanceLogger.getLastResultsString()));
 
             if (m_sensorCalibrator.isInProgress()) {
                 tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
@@ -111,9 +112,8 @@ public class MainActivity extends AppCompatActivity {
             m_sensorCalibrator.stop();
         }
 
-        if (m_kalmanDistanceLogger != null) {
-            m_kalmanDistanceLogger.stop();
-        }
+        ServicesHelper.getLocationService(this, value -> value.stop());
+
         m_isLogging = false;
     }
 
@@ -135,13 +135,18 @@ public class MainActivity extends AppCompatActivity {
             btnTvStatusText = "Tracking is in progress";
             m_gpsDataLogger.start();
             m_accDataLogger.start();
-            m_kalmanDistanceLogger.start();
+            ServicesHelper.getLocationService(this, value -> {
+                value.reset();
+                value.start();
+            });
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
             m_gpsDataLogger.stop();
             m_accDataLogger.stop();
-            m_kalmanDistanceLogger.stop();
+            ServicesHelper.getLocationService(this, value -> {
+                value.stop();
+            });
         }
 
         if (btnStartStop != null)
@@ -153,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
         m_isLogging = isLogging;
     }
 
+//    private TestServiceLogger tt = new TestServiceLogger();
     //todo change to state machine
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
@@ -185,10 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
         m_refreshTask = new RefreshTask(1000);
         m_refreshTask.needTerminate = false;
-        if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.HONEYCOMB)
-            m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        else
-            m_refreshTask.execute();
+        m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void btnStartStop_click(View v) {
@@ -237,8 +240,8 @@ public class MainActivity extends AppCompatActivity {
         m_gpsDataLogger = new GPSDataLogger(locationManager, this);
         m_accDataLogger = new AccelerationLogger(sensorManager);
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
-        m_kalmanDistanceLogger = new KalmanDistanceLogger(sensorManager, locationManager, this);
-
+//        m_kalmanDistanceLogger = new KalmanDistanceLogger(sensorManager, locationManager, this);
+        m_kalmanDistanceLogger = new KalmanDistanceLogger();
         set_isLogging(false);
         set_isCalibrating(false, true);
 

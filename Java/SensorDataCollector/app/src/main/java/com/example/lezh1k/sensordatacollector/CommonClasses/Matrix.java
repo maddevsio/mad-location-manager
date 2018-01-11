@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.Filters;
+package com.example.lezh1k.sensordatacollector.CommonClasses;
 
 /**
  * Created by lezh1k on 12/6/17.
@@ -15,7 +15,7 @@ public class Matrix {
         data = new double[rows][cols];
     }
 
-    public void Set(double... args) {
+    public void setData(double... args) {
         assert(args.length == rows * cols);
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
@@ -24,7 +24,7 @@ public class Matrix {
         }
     }
 
-    public void Set(float... args) {
+    public void setData(float... args) {
         assert(args.length == rows * cols);
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
@@ -33,7 +33,7 @@ public class Matrix {
         }
     }
 
-    public void SetIdentity() {
+    public void setIdentity() {
         assert(rows == cols);
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
@@ -43,9 +43,9 @@ public class Matrix {
         }
     }
 
-    public static void MatrixAdd(Matrix ma,
-                          Matrix mb,
-                          Matrix mc) {
+    public static void matrixAdd(Matrix ma,
+                                 Matrix mb,
+                                 Matrix mc) {
         assert(ma != null);
         assert(mb != null);
         assert(mc != null);
@@ -59,9 +59,9 @@ public class Matrix {
         }
     }
 
-    public static void MatrixSubtract(Matrix ma,
-                               Matrix mb,
-                               Matrix mc) {
+    public static void matrixSubtract(Matrix ma,
+                                      Matrix mb,
+                                      Matrix mc) {
         assert(ma != null);
         assert(mb != null);
         assert(mc != null);
@@ -75,7 +75,7 @@ public class Matrix {
         }
     }
 
-    public void SubtractFromIdentity() {
+    public void subtractFromIdentity() {
         int r, c;
         for (r = 0; r < rows; ++r) {
             for (c = 0; c < r; ++c)
@@ -86,9 +86,9 @@ public class Matrix {
         }
     }
 
-    public static void MatrixMultiply(Matrix ma,
-                               Matrix mb,
-                               Matrix mc) {
+    public static void matrixMultiply(Matrix ma,
+                                      Matrix mb,
+                                      Matrix mc) {
         assert(ma != null);
         assert(mb != null);
         assert(mc != null);
@@ -107,9 +107,9 @@ public class Matrix {
         } //for row
     }
 
-    public static void MatrixMultiplyByTranspose(Matrix ma,
-                                          Matrix mb,
-                                          Matrix mc) {
+    public static void matrixMultiplyByTranspose(Matrix ma,
+                                                 Matrix mb,
+                                                 Matrix mc) {
         assert(ma != null);
         assert(mb != null);
         assert(mc != null);
@@ -127,8 +127,8 @@ public class Matrix {
         } //for row
     }
 
-    public static void MatrixTranspose(Matrix mtxin,
-                         Matrix mtxout) {
+    public static void matrixTranspose(Matrix mtxin,
+                                       Matrix mtxout) {
         assert(mtxin != null);
         assert(mtxout != null);
         assert(mtxin.rows == mtxout.cols);
@@ -141,7 +141,7 @@ public class Matrix {
         } //for row
     }
 
-    public static boolean MatrixEq(Matrix ma,
+    public static boolean matrixEq(Matrix ma,
                                    Matrix mb,
                                    double eps) {
         assert(ma != null);
@@ -159,8 +159,8 @@ public class Matrix {
         return true;
     }
 
-    public static void MatrixClone(Matrix mSrc,
-                            Matrix mDst) {
+    public static void matrixClone(Matrix mSrc,
+                                   Matrix mDst) {
         assert(mSrc != null);
         assert(mDst != null);
         assert(mSrc.rows == mDst.rows && mSrc.cols == mDst.cols);
@@ -171,7 +171,7 @@ public class Matrix {
         }
     }
 
-    public void Scale(double scalar) {
+    public void scale(double scalar) {
         int r, c;
         for (r = 0; r < rows; ++r) {
             for (c = 0; c < cols; ++c) {
@@ -205,8 +205,8 @@ public class Matrix {
             data[r1][c] += data[r2][c] * scalar;
     }
 
-    public static boolean MatrixDestructiveInvert(Matrix mtxin,
-                                 Matrix mtxout) {
+    public static boolean matrixDestructiveInvert(Matrix mtxin,
+                                                  Matrix mtxout) {
         assert(mtxin != null);
         assert(mtxout != null);
         assert(mtxin.cols == mtxin.rows);
@@ -214,7 +214,7 @@ public class Matrix {
         assert(mtxout.rows == mtxin.rows);
         int r, ri;
         double scalar;
-        mtxout.SetIdentity();
+        mtxout.setIdentity();
 
         for (r = 0; r < mtxin.rows; ++r) {
             if (mtxin.data[r][r] == 0.0) { //we have to swap rows here to make nonzero diagonal
@@ -249,7 +249,7 @@ public class Matrix {
         return true;
     }
 
-    public static void MatrixSubtractFromIdentity(Matrix m) {
+    public static void matrixSubtractFromIdentity(Matrix m) {
         int r, c;
         for (r = 0; r < m.rows; ++r) {
             for (c = 0; c < r; ++c)

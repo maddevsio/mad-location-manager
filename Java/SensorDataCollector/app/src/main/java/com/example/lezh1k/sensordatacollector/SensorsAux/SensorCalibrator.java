@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.SensorDataProvider;
+package com.example.lezh1k.sensordatacollector.SensorsAux;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -6,7 +6,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
 
-import com.example.lezh1k.sensordatacollector.Commons;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.example.lezh1k.sensordatacollector;
 
-import com.example.lezh1k.sensordatacollector.SensorDataProvider.DeviationCalculator;
+import com.example.lezh1k.sensordatacollector.SensorsAux.DeviationCalculator;
 
 import org.junit.Test;
 

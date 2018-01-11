@@ -1,5 +1,10 @@
 package com.example.lezh1k.sensordatacollector.Filters;
 
+import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by lezh1k on 12/6/17.
  */
@@ -11,8 +16,9 @@ public class GeoHash {
             '8', '9', 'b', 'c', 'd', 'e', 'f', 'g',
             'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
             's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    public static final int GEOHASH_MAX_PRECISION = 12;
 
-    public static String Encode(double srcLat, double srcLon, int precision) {
+    public static String encode(double srcLat, double srcLon, int precision) {
         class Interval {
             private double min, max;
 
@@ -58,5 +64,12 @@ public class GeoHash {
             }
         }
         return geohash;
+    }
+
+
+    public static double distance(List<GeoPoint> track, int precision) {
+        assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
+
+        return 0.0;
     }
 }

@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.SensorDataProvider;
+package com.example.lezh1k.sensordatacollector.SensorsAux;
 
 /**
  * Created by lezh1k on 12/12/17.

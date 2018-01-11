@@ -1,5 +1,8 @@
 package com.example.lezh1k.sensordatacollector.Filters;
 
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Matrix;
+
 /**
  * Created by lezh1k on 12/11/17.
  */
@@ -64,44 +67,44 @@ public class KalmanFilter {
         this.auxSDxMD = new Matrix(stateDimension, measureDimension);
     }
 
-    public void Predict() {
+    public void predict() {
         //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
-        Matrix.MatrixMultiply(this.F, this.Xk_k, this.Xk_km1);
-        Matrix.MatrixMultiply(this.B, this.Uk, this.auxBxU);
-        Matrix.MatrixAdd(this.Xk_km1, this.auxBxU, this.Xk_km1);
+        Matrix.matrixMultiply(this.F, this.Xk_k, this.Xk_km1);
+        Matrix.matrixMultiply(this.B, this.Uk, this.auxBxU);
+        Matrix.matrixAdd(this.Xk_km1, this.auxBxU, this.Xk_km1);
 
         //Pk|k-1 = Fk*Pk-1|k-1*Fk(t) + Qk
-        Matrix.MatrixMultiply(this.F, this.Pk_k, this.auxSDxSD);
-        Matrix.MatrixMultiplyByTranspose(this.auxSDxSD, this.F, this.Pk_km1);
-        Matrix.MatrixAdd(this.Pk_km1, this.Q, this.Pk_km1);
+        Matrix.matrixMultiply(this.F, this.Pk_k, this.auxSDxSD);
+        Matrix.matrixMultiplyByTranspose(this.auxSDxSD, this.F, this.Pk_km1);
+        Matrix.matrixAdd(this.Pk_km1, this.Q, this.Pk_km1);
     }
 
-    public void Update() {
+    public void update() {
         //Yk = Zk - Hk*Xk|k-1
-        Matrix.MatrixMultiply(this.H, this.Xk_km1, this.Yk);
-        Matrix.MatrixSubtract(this.Zk, this.Yk, this.Yk);
+        Matrix.matrixMultiply(this.H, this.Xk_km1, this.Yk);
+        Matrix.matrixSubtract(this.Zk, this.Yk, this.Yk);
 
         //Sk = Rk + Hk*Pk|k-1*Hk(t)
-        Matrix.MatrixMultiplyByTranspose(this.Pk_km1, this.H, this.auxSDxMD);
-        Matrix.MatrixMultiply(this.H, this.auxSDxMD, this.Sk);
-        Matrix.MatrixAdd(this.R, this.Sk, this.Sk);
+        Matrix.matrixMultiplyByTranspose(this.Pk_km1, this.H, this.auxSDxMD);
+        Matrix.matrixMultiply(this.H, this.auxSDxMD, this.Sk);
+        Matrix.matrixAdd(this.R, this.Sk, this.Sk);
 
         //Kk = Pk|k-1*Hk(t)*Sk(inv)
-        if (!(Matrix.MatrixDestructiveInvert(this.Sk, this.SkInv)))
+        if (!(Matrix.matrixDestructiveInvert(this.Sk, this.SkInv)))
             return; //matrix hasn't inversion
-        Matrix.MatrixMultiply(this.auxSDxMD, this.SkInv, this.K);
+        Matrix.matrixMultiply(this.auxSDxMD, this.SkInv, this.K);
 
         //xk|k = xk|k-1 + Kk*Yk
-        Matrix.MatrixMultiply(this.K, this.Yk, this.Xk_k);
-        Matrix.MatrixAdd(this.Xk_km1, this.Xk_k, this.Xk_k);
+        Matrix.matrixMultiply(this.K, this.Yk, this.Xk_k);
+        Matrix.matrixAdd(this.Xk_km1, this.Xk_k, this.Xk_k);
 
         //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
-        Matrix.MatrixMultiply(this.K, this.H, this.auxSDxSD);
-        Matrix.MatrixSubtractFromIdentity(this.auxSDxSD);
-        Matrix.MatrixMultiply(this.auxSDxSD, this.Pk_km1, this.Pk_k);
+        Matrix.matrixMultiply(this.K, this.H, this.auxSDxSD);
+        Matrix.matrixSubtractFromIdentity(this.auxSDxSD);
+        Matrix.matrixMultiply(this.auxSDxSD, this.Pk_km1, this.Pk_k);
 
         //Yk|k = Zk - Hk*Xk|k
-        Matrix.MatrixMultiply(this.H, this.Xk_k, this.Yk_k);
-        Matrix.MatrixSubtract(this.Zk, this.Yk_k, this.Yk_k);
+        Matrix.matrixMultiply(this.H, this.Xk_k, this.Yk_k);
+        Matrix.matrixSubtract(this.Zk, this.Yk_k, this.Yk_k);
     }
 }

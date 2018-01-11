@@ -7,7 +7,7 @@ import android.hardware.SensorManager;
 import android.util.Log;
 
 import com.elvishew.xlog.XLog;
-import com.example.lezh1k.sensordatacollector.Commons;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 
 import java.util.ArrayList;
 import java.util.List;

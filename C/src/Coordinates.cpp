@@ -55,15 +55,13 @@ CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
     dctIter it = dctHashCount.find(geohash);
     if (it == dctHashCount.end()) {
       cindex ni;
-      ni.count = 1;
-      ni.lat = ci->Latitude;
-      ni.lon = ci->Longitude;
+      ni.count = 0;
+      ni.lat = 0.0;
+      ni.lon = 0.0;
       ni.index = -1;
       auto ir = dctHashCount.insert(std::pair<std::string, cindex>(geohash, ni));
       it = ir.first;
-      continue;
     }
-
     if (++it->second.count == minPointCount)
       it->second.index = idx++;
     it->second.lat += ci->Latitude;
