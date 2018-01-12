@@ -135,7 +135,7 @@ FilterInputFile(const QString &inputFile,
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
 
-    patchSdWithNoise(&sd);
+//    patchSdWithNoise(&sd);
     GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
                                    CoordLongitudeToMeters(sd.gpsLon),
                                    CoordLatitudeToMeters(sd.gpsLat),
@@ -160,7 +160,7 @@ FilterInputFile(const QString &inputFile,
           continue;        
         gps_count = GPS_COUNT;
 
-        patchSdWithNoise(&sd);
+//        patchSdWithNoise(&sd);
         xVel = sd.speed * cos(sd.course);
         yVel = sd.speed * sin(sd.course);
 

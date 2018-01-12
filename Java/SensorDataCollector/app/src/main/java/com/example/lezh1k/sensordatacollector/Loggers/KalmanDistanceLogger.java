@@ -73,7 +73,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
         pp.Latitude += 1.0;
         String geo0, geo1;
         final int precision = 7;
-        final int minPoints = 1;
+        final int minPoints = 3;
 
         geo0 = GeoHash.encode(llat, llon, precision);
         geo1 = GeoHash.encode(pp.Latitude, pp.Longitude, precision);

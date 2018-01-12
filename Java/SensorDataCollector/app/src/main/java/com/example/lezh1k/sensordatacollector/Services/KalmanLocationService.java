@@ -28,6 +28,7 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
+import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -373,9 +374,11 @@ public class KalmanLocationService extends Service
         }
     }
 
+//    private FusedLocationProviderClient mFusedLocationClient;
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         /*do nothing*/
+        ;
     }
 
     /*LocationListener methods implementation*/

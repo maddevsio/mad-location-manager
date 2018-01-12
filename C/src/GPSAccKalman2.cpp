@@ -13,24 +13,22 @@ GPSAccKalmanFilter2_t *GPSAccKalman2Alloc(double x,
                                           double timeStamp) {
   GPSAccKalmanFilter2_t *f = (GPSAccKalmanFilter2_t*) malloc(sizeof(GPSAccKalmanFilter2_t));
   assert(f);
-  f->kf = KalmanFilterCreate(4, 4, 1);
+  f->kf = KalmanFilterCreate(4, 4, 2);
   /*initialization*/
   f->predictTime = f->updateTime = timeStamp;
   f->accDev = accDev;
+
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
 
   MatrixSetIdentity(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
+
   MatrixSet(f->kf->Pk_k,
             posDev, 0.0, 0.0, 0.0,
             0.0, posDev, 0.0, 0.0,
             0.0, 0.0, posDev, 0.0,
             0.0, 0.0, 0.0, posDev); //todo get speed accuracy if possible
 
-  //process noise.
-  MatrixSetIdentity(f->kf->Q);
-  MatrixScale(f->kf->Q, accDev);
-  MatrixSet(f->kf->Uk, 1.0);
   return f;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -52,18 +50,22 @@ static void rebuildF(GPSAccKalmanFilter2_t *f, double dt) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildB(GPSAccKalmanFilter2_t *f,
-                     double dt,
+static void rebuildU(GPSAccKalmanFilter2_t *f,
                      double xAcc,
                      double yAcc) {
+  MatrixSet(f->kf->Uk,
+            xAcc,
+            yAcc);
+}
+
+static void rebuildB(GPSAccKalmanFilter2_t *f,
+                     double dt) {
   double dt05 = 0.5*dt;
-  double dx = dt*xAcc;
-  double dy = dt*yAcc;
   MatrixSet(f->kf->B,
-            dt05 * dx,
-            dt05 * dy,
-            dx,
-            dy);
+            dt05, 0.0,
+            0.0, dt05,
+            dt, 0.0,
+            0.0, dt);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -80,21 +82,26 @@ static void rebuildR(GPSAccKalmanFilter2_t *f,
 
 static void rebuildQ(GPSAccKalmanFilter2_t *f,
                      double dt,
-                     double accSigma) { 
-//  double dt2 = dt;
-//  dt2 *= 1000.0;
-//  dt2 *= dt2;
-//  dt2 /= 1000.0;
+                     double accSigma) {
+  UNUSED_ARG(dt);
+//  MatrixSetIdentity(f->kf->Q);
+//  MatrixScale(f->kf->Q, accSigma * dt);
 
-  MatrixSetIdentity(f->kf->Q);
-  MatrixScale(f->kf->Q, accSigma * dt);
-
-//  MatrixSet(f->kf->Q,
-//            dt2, 0.0, 0.0, 0.0,
-//            0.0, dt2, 0.0, 0.0,
-//            0.0, 0.0, dt, 0.0,
-//            0.0, 0.0, 0.0, dt);
+//  1st variant from Wiki. Shows bad results
+//  MatrixMultiplyByTranspose(f->kf->B, f->kf->B, f->kf->Q);
 //  MatrixScale(f->kf->Q, accSigma);
+
+//  2nd Variant from Wiki. It shows much worse results. Maybe we need to check
+  dt *= 1000.0;
+  double dt2 = dt*dt;
+  double dt3 = dt2*dt;
+  double dt4 = dt3*dt;
+  MatrixSet(f->kf->Q,
+            0.25*dt4, 0.0, 0.5*dt3, 0.0,
+            0.0, 0.25*dt4, 0.0, 0.5*dt3,
+            0.5*dt3, 0.0, dt2, 0.0,
+            0.0, 0.5*dt3, 0.0, dt2);
+  MatrixScale(f->kf->Q, 0.0001 * accSigma * accSigma);
 }
 
 void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
@@ -105,7 +112,8 @@ void GPSAccKalman2Predict(GPSAccKalmanFilter2_t *k,
   double dt2 = (timeNow - k->updateTime)  / 1000.0;
 
   rebuildF(k, dt1);
-  rebuildB(k, dt1, xAcc, yAcc);
+  rebuildB(k, dt1);
+  rebuildU(k, xAcc, yAcc);
   rebuildQ(k, dt2, k->accDev);
 
   k->predictTime = timeNow;
@@ -126,7 +134,7 @@ void GPSAccKalman2Update(GPSAccKalmanFilter2_t *k,
                          double velDev) {
   double dt2 = (timeNow - k->updateTime)  / 1000.0;
   dt2max = std::max(dt2max, dt2);
-//  qDebug() << dt2max;
+  qDebug() << dt2max;
   k->updateTime = timeNow;
   rebuildR(k, posDev, velDev);
   MatrixSet(k->kf->Zk, x, y, xVel, yVel);

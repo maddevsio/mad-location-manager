@@ -102,8 +102,8 @@ MainWindow::initMap(QWebEnginePage *page,
   std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile);
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile);
 
-  const int filterPrec = 7;
-  const int minPoints = 3;
+  const int filterPrec = 8;
+  const int minPoints = 2;
   qDebug() << "Src distance : " << CoordGetDistance(lstCoords, filterPrec);
   qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
 
