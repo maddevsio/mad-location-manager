@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
 #include "Geohash.h"
 
 //where is 'A'???? oh my god, we lost 'I', 'L', 'O' too. :(
@@ -97,3 +98,15 @@ void GeohashDecode(const char* str,
   *pLon = lonInterval.max - ((lonInterval.max - lonInterval.min) / 2.0);
 }
 //////////////////////////////////////////////////////////////////////////
+
+int GeohashComparePoints(double lon1, double lat1,
+                         double lon2, double lat2,
+                         int precision) {
+  assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
+  static char geohash1[GEOHASH_MAX_PRECISION+1] = {0};
+  static char geohash2[GEOHASH_MAX_PRECISION+1] = {0};
+
+  GeohashEncode(lat1, lon1, geohash1, precision);
+  GeohashEncode(lat2, lon2, geohash2, precision);
+  return memcmp(geohash1, geohash2, precision);
+}

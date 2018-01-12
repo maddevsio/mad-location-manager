@@ -1,7 +1,8 @@
 #include "mainwindow.h"
 #include <QMessageBox>
 #include <QWebEngineProfile>
-#include <Coordinates.h>
+#include "Coordinates.h"
+#include "Geohash.h"
 
 static const QString g_mapDiv = "megamap";
 static const QString g_baseHtml = "<!DOCTYPE html>\n"
@@ -9,7 +10,7 @@ static const QString g_baseHtml = "<!DOCTYPE html>\n"
                                   "<head>\n"
                                   "  <style>\n"
                                   "     #%1 {\n"
-                                  "      height: 600px;\n"
+                                  "      height: 650px;\n"
                                   "      width: 100%;\n"
                                   "     }\n"
                                   "  </style>\n"
@@ -34,12 +35,15 @@ static const QString g_baseHtml = "<!DOCTYPE html>\n"
                                   "</html>\n";
 
 MainWindow::MainWindow(const QString &coordsFilePath,
+                       const QString &filteredFilePath,
                        QWidget *parent)
   : QMainWindow(parent),
     m_view(new QWebEngineView(this)),
-    m_coordsFilePath(coordsFilePath)
+    m_coordsFilePath(coordsFilePath),
+    m_filteredFilePath(filteredFilePath)
 {
-  setCentralWidget(m_view);
+  this->setGeometry(0, 0, 800, 750);
+  setCentralWidget(m_view);  
   QWebEnginePage *page = m_view->page();  
 
   connect(page, &QWebEnginePage::featurePermissionRequested,
@@ -62,7 +66,7 @@ MainWindow::MainWindow(const QString &coordsFilePath,
     }
   });
 
-  initMap(page, m_coordsFilePath);
+  initMap(page, m_coordsFilePath, m_filteredFilePath);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -92,16 +96,31 @@ static QString jsCoordsString(const std::vector<geopoint_t>& lst,
 }
 
 void
-MainWindow::initMap(QWebEnginePage *page, const QString &pathToCoordsFile) {
-  std::vector<geopoint_t> lstCoords = GetCoordsFromFile(pathToCoordsFile);
-  std::vector<geopoint_t> lstGeoFilter = FilterByGeoHash(lstCoords, 7, 2);
+MainWindow::initMap(QWebEnginePage *page,
+                    const QString &pathToCoordsFile,
+                    const QString &filteredCoordsFile) {
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile);
+  std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile);
+
+  const int filterPrec = 7;
+  const int minPoints = 3;
+  qDebug() << "Src distance : " << CoordGetDistance(lstCoords, filterPrec);
+  qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
+
+  //filter for display
+  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+
+  qDebug() << "2Src distance : " << CoordGetDistance(lstCoords, filterPrec);
+  qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
+
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");
   QString allCoordsStr = srcCoordsStr + geoCoordsStr;
 
-  double coord00, coord01;
-  coord00 = lstCoords.empty() ? 42.87336 : lstCoords[0].Latitude;
-  coord01 = lstCoords.empty() ? 74.61873 : lstCoords[0].Longitude;
-  QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(coord00).arg(coord01);
+  double lat, lon;
+  lat = lstCoords.empty() ? 42.87336 : lstCoords[0].Latitude;
+  lon = lstCoords.empty() ? 74.61873 : lstCoords[0].Longitude;
+  QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(lat).arg(lon);
   page->setHtml(html);
 }

@@ -19,8 +19,7 @@ static void shearRow(matrix_t *m, uint32_t r1,
    This is one of the three "elementary row operations". */
 static void scaleRow(matrix_t *m, uint32_t r, double scalar);
 
-/* Turn m into an identity matrix. */
-static void setIdentity(matrix_t *m);
+
 
 
 //todo remove asserts. return null if something is wrong
@@ -76,7 +75,7 @@ void MatrixSet(matrix_t *m, ...) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void setIdentity(matrix_t *m) {
+void MatrixSetIdentity(matrix_t *m) {
   assert(m);
   assert(m->rows == m->cols);
   uint32_t r, c;
@@ -303,7 +302,7 @@ bool MatrixDestructiveInvert(matrix_t *mtxin,
   assert(mtxout->rows == mtxin->rows);
   uint32_t r, ri;
   double scalar;
-  setIdentity(mtxout);
+  MatrixSetIdentity(mtxout);
 
   for (r = 0; r < mtxin->rows; ++r) {
     if (mtxin->data[r][r] == 0.0) { //we have to swap rows here to make nonzero diagonal

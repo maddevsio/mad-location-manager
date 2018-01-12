@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector;
+package com.example.lezh1k.sensordatacollector.CommonClasses;
 
 /**
  * Created by lezh1k on 12/12/17.

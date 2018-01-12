@@ -12,19 +12,24 @@ struct geopoint_t {
   }
 };
 
-std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath);
-std::vector<geopoint_t> FilterByGeoHash(std::vector<geopoint_t> &lstSrc, int precision, int minPointCount);
-
+std::vector<geopoint_t> CoordGetFromFile(const QString& filePath);
+std::vector<geopoint_t> CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
+                                             int precision,
+                                             int minPointCount);
 
 #define EARTH_RADIUS (6371.0 * 1000.0) // meters
 #define ACTUAL_GRAVITY 9.80665
 
 /*todo write tests*/
 double CoordDistanceBetweenPointsMeters(double lat1, double lon1, double lat2, double lon2);
-double LongitudeToMeters(double lon);
-double LatitudeToMeters(double lat);
-geopoint_t MetersToGeopoint(double lonMeters,
+double CoordLongitudeToMeters(double lon);
+double CoordLatitudeToMeters(double lat);
+geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters);
 
+double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision);
+double CoordGetDistanceWithGeohash(const std::vector<geopoint_t> &lst,
+                                   int precision,
+                                   int minPoints);
 
 #endif // COORDINATES_H

@@ -1,5 +1,7 @@
 package com.example.lezh1k.sensordatacollector;
 
+import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
+
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -56,11 +58,11 @@ public class GeoHashUnitTest {
         };
 
         for (EncodeTestItem ti : posTests) {
-            assertEquals(ti.expected, GeoHash.Encode(ti.lat, ti.lon, ti.precision));
+            assertEquals(ti.expected, GeoHash.encode(ti.lat, ti.lon, ti.precision));
         }
 
         for (EncodeTestItem ti : negTests) {
-            assertNotSame(ti.expected, GeoHash.Encode(ti.lat, ti.lon, ti.precision));
+            assertNotSame(ti.expected, GeoHash.encode(ti.lat, ti.lon, ti.precision));
         }
     }
 }

@@ -3,26 +3,22 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <QString>
 
 typedef struct SensorData {
   double timestamp;
   double gpsLat;
   double gpsLon;
   double gpsAlt;
-  double pitch;
-  double yaw;
-  double roll;
   double absNorthAcc;
   double absEastAcc;
   double absUpAcc;
-  double velNorth;
-  double velEast;
-  double velDown;
-  double velError;
-  double altitudeError;
+  double speed;
+  double course;
+  double posErr;
 } SensorData_t;
 
 bool SensorControllerParseDataString(const char *str, SensorData_t *sd);
-bool FilterInputFile(const char *inputFile, const char *outputFile);
+bool FilterInputFile(const QString &inputFile, const QString &outputFile);
 
 #endif // SENSORCONTROLLER_H

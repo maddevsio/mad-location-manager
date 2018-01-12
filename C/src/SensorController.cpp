@@ -1,139 +1,125 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <QFile>
 #include "SensorController.h"
 #include "GPSAccKalman.h"
+#include "GPSAccKalman2.h"
 #include "Coordinates.h"
+
 #include <QDebug>
 
-bool SensorControllerParseDataString(const char *str, SensorData_t *sd) {
-  static const char* inFormat = "{\"timestamp\":%lf,"
-                                "\"gps_lat\":%lf,"
-                                "\"gps_lon\":%lf,"
-                                "\"gps_alt\":%lf,"
-                                "\"pitch\":%lf,"
-                                "\"yaw\":%lf,"
-                                "\"roll\":%lf,"
-                                "\"abs_north_acc\":%lf,"
-                                "\"abs_east_acc\":%lf,"
-                                "\"abs_up_acc\":%lf,"
-                                "\"vel_north\":%lf,"
-                                "\"vel_east\":%lf,"
-                                "\"vel_down\":%lf,"
-                                "\"vel_error\":%lf,"
-                                "\"altitude_error\":%lf}";
-  int result = sscanf(str, inFormat,
-                      &sd->timestamp,
-                      &sd->gpsLat,
-                      &sd->gpsLon,
-                      &sd->gpsAlt,
-                      &sd->pitch,
-                      &sd->yaw,
-                      &sd->roll,
-                      &sd->absNorthAcc,
-                      &sd->absEastAcc,
-                      &sd->absUpAcc,
-                      &sd->velNorth,
-                      &sd->velEast,
-                      &sd->velDown,
-                      &sd->velError,
-                      &sd->altitudeError);
-  return result == 15;
-}
-//////////////////////////////////////////////////////////////////////////
-
-bool sensorDataToFile(FILE *fout,
-                      const SensorData_t *sd,
-                      double predictedAlt,
-                      double predictedLon,
-                      double predictedLat,
-                      double resultantMph) {
-
-  static const char* outFormat = "{\n"
-                                 "    \"timestamp\": %.16f,\n"
-                                 "    \"gps_alt\": %.16f,\n"
-                                 "    \"pitch\": %.16f,\n"
-                                 "    \"yaw\": %.16f,\n"
-                                 "    \"roll\": %.16f,\n"
-                                 "    \"abs_north_acc\": %.16f,\n"
-                                 "    \"abs_east_acc\": %.16f,\n"
-                                 "    \"abs_up_acc\": %.16f,\n"
-                                 "    \"vel_north\": %.16f,\n"
-                                 "    \"vel_east\": %.16f,\n"
-                                 "    \"vel_down\": %.16f,\n"
-                                 "    \"vel_error\": %.16f,\n"
-                                 "    \"altitude_error\": %.16f,\n"
-                                 "    \"predicted_lat\": %.16f,\n"
-                                 "    \"predicted_lon\": %.16f,\n"
-                                 "    \"predicted_alt\": %.16f,\n"
-                                 "    \"resultant_mph\": %.16f,\n"
-                                 "    \"gps_lat\": %.16f,\n"
-                                 "    \"gps_lon\": %.16f\n"
-                                 "},\n";
-  return fprintf(fout, outFormat,
-                 sd->timestamp,
-                 sd->gpsAlt,
-                 sd->pitch,
-                 sd->yaw,
-                 sd->roll,
-                 sd->absNorthAcc,
-                 sd->absEastAcc,
-                 sd->absUpAcc,
-                 sd->velNorth,
-                 sd->velEast,
-                 sd->velDown,
-                 sd->velError,
-                 sd->altitudeError,
-                 predictedLat,
-                 predictedLon,
-                 predictedAlt,
-                 resultantMph,
-                 sd->gpsLat,
-                 sd->gpsLon) >= 0;
-}
-//////////////////////////////////////////////////////////////////////////
+static const char* NMEA = "NMEA";
+static const char* NMEA_POS = "NMEA POS: ";
+static const char* NMEA_SPEED = "NMEA SPEED: ";
+static const char* NMEA_COURSE = "NMEA COURSE: ";
+static const char* GPS  = "GPS ";
 
 bool
-FilterInputFile(const char *inputFile,
-                const char *outputFile) {
-  int i;
-  char line[1024];
-  SensorData_t sd;
-  FILE *fin, *fout;
-  double latLonStandardDeviation = 2.0; // +/- 1m, increased for safety
-  double altitudeStandardDeviation = 3.518522417151836;
-  // got this value by getting standard deviation from accelerometer, assuming that mean SHOULD be 0
-  double accelerometerEastStandardDeviation = ACTUAL_GRAVITY * 0.033436506994600976;
-  double accelerometerNorthStandardDeviation = ACTUAL_GRAVITY * 0.05355371135598354;
-  double accelerometerUpStandardDeviation = ACTUAL_GRAVITY * 0.2088683796078286;
+SensorControllerParseDataString(const char *str, SensorData_t *sd) {
+  int tt;
+  sd->gpsAlt = sd->gpsLat = sd->gpsLon = 0.0;
+  if (str[0] == ' ') {
+    tt = sscanf(str+1, "%lf abs acc: %lf %lf %lf",
+                &sd->timestamp,
+                &sd->absEastAcc,
+                &sd->absNorthAcc,
+                &sd->absUpAcc);
+    return tt == 4;
+  } else {
+    if (strstr(str, GPS)) {
+      /*String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f"*/
+      tt = sscanf(str, "%lf GPS : pos lat=%lf, lon=%lf, alt=%lf, hdop=%lf, speed=%lf, bearing=%lf",
+                  &sd->timestamp,
+                  &sd->gpsLat,
+                  &sd->gpsLon,
+                  &sd->gpsAlt,
+                  &sd->posErr,
+                  &sd->speed,
+                  &sd->course);
+      return tt == 7;
+    } //GPS
 
-  GPSAccKalmanFilter_t *kfLat, *kfLon, *kfAlt;
+    if (strstr(str, NMEA)) {
+      const char *sub;
+      if ((tt=sscanf(str, "%lf NMEA", &sd->timestamp)) != 1)
+        return false;
+
+      if ((sub = strstr(str, NMEA_POS))) {
+        if ((tt=sscanf(sub, "NMEA POS: lat=%lf, lon=%lf, alt=%lf",
+                       &sd->gpsLat, &sd->gpsLon, &sd->gpsAlt)) != 3)
+          return false;
+      }
+
+      if ((sub = strstr(str, NMEA_SPEED))) {
+        if ((tt=sscanf(sub, "NMEA SPEED: %lf", &sd->speed)) != 1)
+          return false;
+      }
+
+      if ((sub = strstr(str, NMEA_COURSE))) {
+        if ((tt=sscanf(sub, "NMEA COURSE: %lf", &sd->course)) != 1)
+          return false;
+      }
+      return false; //we don't want to use nmea right now.
+//      return true;
+    } //NMEA
+
+  }
+  return false;
+}
+//////////////////////////////////////////////////////////////////////////
+
+bool sensorDataToFile(QFile &fOut,
+                      const SensorData_t *sd) {
+  /*1514274617887 GPS : pos lat=42.879098, lon=74.617890, alt=702.000000, speed=0.000000, hdop=22.000000*/
+  QString data = QString("%1 GPS : pos lat=%2, lon=%3, alt=%4, hdop=%5, speed=%6, bearing=%7\n").
+                 arg(sd->timestamp).arg(sd->gpsLat).arg(sd->gpsLon).
+                 arg(sd->gpsAlt).arg(sd->posErr).arg(sd->speed).arg(sd->course);
+  fOut.write(data.toUtf8());
+  return true;
+}
+//////////////////////////////////////////////////////////////////////////
+
+static void patchSdWithNoise(SensorData *sd) {
+  double noiseX = RandomBetween2Vals(800, 1300) / 1000000.0;
+  double noiseY = RandomBetween2Vals(800, 1300) / 1000000.0;
+
+  noiseX *= rand() & 0x01 ? -1.0 : 1.0;
+  noiseY *= rand() & 0x01 ? -1.0 : 1.0;
+
+  sd->posErr += CoordDistanceBetweenPointsMeters(sd->gpsLat, sd->gpsLon,
+                                                sd->gpsLat+noiseX, sd->gpsLon+noiseY) / 0.68;
+  sd->gpsLat += noiseX;
+  sd->gpsLon += noiseY;
+}
+
+bool
+FilterInputFile(const QString &inputFile,
+                const QString &outputFile) {
+  QFile fIn(inputFile);
+  QFile fOut(outputFile);
+  SensorData_t sd;
   bool initialData = false;
   bool result = false;
-  geopoint_t predictedPoint;
-  double predictedVE, predictedVN; //velocity east, north
-  double resultantV;
-  matrix_t *currentStateLat, *currentStateLon, *currentStateAlt;
-  int predictCount = 0;
-
-  fin= fopen(inputFile, "r");
-  if (fin == NULL)
-    return result = false;
 
   do {
-    fout = fopen(outputFile, "w");
-    if (fout == NULL)
-      break;
+    if (!fIn.open(QFile::ReadOnly)) {
+      qDebug() << "Couldn't open input file";
+      return false;
+    }
 
-    while (!feof(fin)) {
-      for (i = 0; i < 1024 && !feof(fin); ++i) {
-        line[i] = getc(fin);
-        if (line[i] == '\n') break;
-      }
+    if (!fOut.open(QFile::WriteOnly)) {
+      qDebug() << "Couldn't open out file";
+      return false;
+    }
 
-      if (!SensorControllerParseDataString(line, &sd)) {
+    while (!fIn.atEnd()) {
+      QString line = fIn.readLine();
+      if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
         continue;
-      }
+
+      if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0)
+        continue;
 
       initialData = true;
       break;
@@ -142,84 +128,65 @@ FilterInputFile(const char *inputFile,
     if (!initialData)
       break;
 
-    kfLon = GPSAccKalmanAlloc(LongitudeToMeters(sd.gpsLon),
-                              sd.velEast,
-                              latLonStandardDeviation,
-                              accelerometerEastStandardDeviation,
-                              sd.timestamp);
+    static const int GPS_COUNT = 1;
+    int gps_count = GPS_COUNT;
+    static const double accDev = 1.0;
 
-    kfLat = GPSAccKalmanAlloc(LatitudeToMeters(sd.gpsLat),
-                              sd.velNorth,
-                              latLonStandardDeviation,
-                              accelerometerNorthStandardDeviation,
-                              sd.timestamp);
+    double xVel = sd.speed * cos(sd.course);
+    double yVel = sd.speed * sin(sd.course);
 
-    kfAlt = GPSAccKalmanAlloc(sd.gpsAlt,
-                              -sd.velDown,
-                              altitudeStandardDeviation,
-                              accelerometerUpStandardDeviation,
-                              sd.timestamp);
+    patchSdWithNoise(&sd);
+    GPSAccKalmanFilter2_t *kf2 = GPSAccKalman2Alloc(
+                                   CoordLongitudeToMeters(sd.gpsLon),
+                                   CoordLatitudeToMeters(sd.gpsLat),
+                                   xVel,
+                                   yVel,
+                                   accDev,
+                                   sd.posErr,
+                                   sd.timestamp);
 
-    while (!feof(fin)) {
-      for (int i = 0; i < 1024 && !feof(fin); ++i) {
-        line[i] = getc(fin);
-        if (line[i] == '\n') break;
+    while (!fIn.atEnd()) {
+      QString line = fIn.readLine();
+      if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
+        continue;      
+
+      if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
+        GPSAccKalman2Predict(kf2,
+                             sd.timestamp,
+                             sd.absEastAcc,
+                             sd.absNorthAcc);
+      } else {
+        if (--gps_count)
+          continue;        
+        gps_count = GPS_COUNT;
+
+        patchSdWithNoise(&sd);
+        xVel = sd.speed * cos(sd.course);
+        yVel = sd.speed * sin(sd.course);
+
+        GPSAccKalman2Update(kf2,
+                            sd.timestamp,
+                            CoordLongitudeToMeters(sd.gpsLon),
+                            CoordLatitudeToMeters(sd.gpsLat),
+                            xVel,
+                            yVel,
+                            sd.posErr,
+                            sd.posErr*0.1);
+
+        geopoint_t pp = CoordMetersToGeopoint(
+                          kf2->kf->Xk_k->data[0][0], kf2->kf->Xk_k->data[1][0]);
+
+        sd.gpsLat = pp.Latitude;
+        sd.gpsLon = pp.Longitude;
+        sensorDataToFile(fOut, &sd);
       }
-
-      if (!SensorControllerParseDataString(line, &sd)) {
-        continue;
-      }
-
-      GPSAccKalmanPredict(kfLon, sd.timestamp, sd.absEastAcc*ACTUAL_GRAVITY);
-      GPSAccKalmanPredict(kfLat, sd.timestamp, sd.absNorthAcc*ACTUAL_GRAVITY);
-      GPSAccKalmanPredict(kfAlt, sd.timestamp, sd.absUpAcc*ACTUAL_GRAVITY);
-
-      currentStateAlt = kfAlt->kf->predictedState;
-      currentStateLat = kfLat->kf->predictedState;
-      currentStateLon = kfLon->kf->predictedState;
-
-
-      if (sd.gpsLat != 0.0) {
-        ++predictCount;
-        GPSAccKalmanUpdate(kfLon,
-                           LongitudeToMeters(sd.gpsLon),
-                           sd.velEast,
-                           NULL,
-                           sd.velError);
-        GPSAccKalmanUpdate(kfLat,
-                           LatitudeToMeters(sd.gpsLat),
-                           sd.velNorth,
-                           NULL,
-                           sd.velError);
-        GPSAccKalmanUpdate(kfAlt,
-                           sd.gpsAlt,
-                           -sd.velDown,
-                           &sd.altitudeError,
-                           sd.velError);
-
-        currentStateAlt = kfAlt->kf->currentState;
-        currentStateLat = kfLat->kf->currentState;
-        currentStateLon = kfLon->kf->currentState;
-      }
-      predictedPoint = MetersToGeopoint(
-                          currentStateLon->data[0][0],
-                          currentStateLat->data[0][0]);
-      predictedVE = currentStateLon->data[1][0];
-      predictedVN = currentStateLat->data[1][0];
-      resultantV = sqrt(pow(predictedVE, 2.0) + pow(predictedVN, 2.0));
-
-      sensorDataToFile( fout,
-                        &sd,
-                        currentStateAlt->data[0][0],
-                        predictedPoint.Longitude,
-                        predictedPoint.Latitude,
-                        MilesPerHour2MeterPerSecond(resultantV));
-    }
-
+    } //while (!fIn.atEnd())
     result = true;
   } while (0);
 
-  fclose(fin);
-  fclose(fout);
+  if (fIn.isOpen())
+    fIn.close();
+  if (fOut.isOpen())
+    fOut.close();
   return result;
 }

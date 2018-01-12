@@ -3,69 +3,37 @@ package com.example.lezh1k.sensordatacollector;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.GpsStatus;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 
-import net.sf.marineapi.nmea.parser.SentenceFactory;
-import net.sf.marineapi.nmea.sentence.GGASentence;
-import net.sf.marineapi.nmea.sentence.GLLSentence;
-import net.sf.marineapi.nmea.sentence.GSASentence;
-import net.sf.marineapi.nmea.sentence.GSVSentence;
-import net.sf.marineapi.nmea.sentence.RMCSentence;
-import net.sf.marineapi.nmea.sentence.Sentence;
-import net.sf.marineapi.nmea.sentence.VTGSentence;
-import net.sf.marineapi.nmea.util.Position;
+import com.elvishew.xlog.LogLevel;
+import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.AndroidPrinter;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
+import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
+import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
+import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
+import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
+import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
+import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
-enum InitSensorErrorFlag {
-    SUCCESS(0),
-    SENSOR_MANAGER_ERR(1),
-    MISSED_ACCELEROMETER(1 << 1),
-    MISSED_GYROSCOPE(1<<2),
-    MISSED_MAGNETOMETER(1<<3),
-    MISSED_ROTATION_SENSOR(1<<4),
-    MISSED_LIN_ACCELEROMETER(1 << 5);
+import java.io.File;
+import java.util.ArrayList;
 
-    public final long flag;
-    InitSensorErrorFlag(long statusFlagValue) {
-        this.flag = statusFlagValue;
-    }
-
-    public static String toString(long val) {
-        String res = "";
-        if (val == SUCCESS.flag) return "Success";
-        if ((val & SENSOR_MANAGER_ERR.flag) != 0)
-            res += "Sensor manager error";
-        if ((val & MISSED_ACCELEROMETER.flag) != 0)
-            res += "Missed accelerometer";
-        if ((val & MISSED_LIN_ACCELEROMETER.flag) != 0)
-            res += "Missed linear accelerometer";
-        if ((val & MISSED_GYROSCOPE.flag) != 0)
-            res += "Missed gyroscope";
-        if ((val & MISSED_MAGNETOMETER.flag) != 0)
-            res += "Missed magnetometer";
-        if ((val & MISSED_ROTATION_SENSOR.flag) != 0)
-            res += "Missed rotation sensor";
-        return res;
-    }
-}
-/*****************************************************************/
-
-public class MainActivity extends AppCompatActivity
-        implements SensorEventListener, LocationListener, GpsStatus.NmeaListener {
+public class MainActivity extends AppCompatActivity {
 
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
@@ -89,101 +57,131 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onProgressUpdate(Object... values) {
-            m_tvLocationData.setText(m_gma.debugString());
-            m_tvStatus.setText(String.format("mf:%f,af:%f,laf:%f,gf:%f",
-                    m_magDeviationCalculator.getFrequencyMean(),
-                    m_accDeviationCalculator.getFrequencyMean(),
-                    m_linAccDeviationCalculator.getFrequencyMean(),
-                    m_gyrDeviationCalculator.getFrequencyMean()));
+            TextView tvLinAcc = (TextView) findViewById(R.id.tvLinAccelerometer);
+            TextView tvLinAccData = (TextView) findViewById(R.id.tvLinAccelerometerData);
+            TextView tvLocationData = (TextView) findViewById(R.id.tvLocationData);
+            TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+            TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
+
+            tvLocationData.setText(String.format("Location:\n%s", m_gpsDataLogger.getLastLoggedGPSMessage()));
+
+            tvLinAccData.setText(String.format("Acceleration:\n" +
+                            "Lin:%s\n" +
+                            "Abs:%s",
+                    m_accDataLogger.getLastLinAccelerationString(),
+                    m_accDataLogger.getLastAbsAccelerationString()));
+
+            tvLinAcc.setText(String.format("Lin acc: %s\n%s",
+                    m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
+                    m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
+
+            tvDistance.setText(String.format("Distance : %fm", m_kalmanDistanceLogger.getDistance()));
+
+            if (m_sensorCalibrator.isInProgress()) {
+                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
+                if( m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
+                    set_isCalibrating(false, false);
+                }
+            }
         }
     }
     /*********************************************************/
 
-    private LocationManager m_locationManager = null;
-    private SensorManager m_sensorManager = null;
-    private RefreshTask m_refreshTask = null;
+    private GPSDataLogger m_gpsDataLogger = null;
+    private AccelerationLogger m_accDataLogger = null;
+    private SensorCalibrator m_sensorCalibrator = null;
+    private KalmanDistanceLogger m_kalmanDistanceLogger = null;
 
-    private FilterGMA m_gma = null;
-    private Sensor m_grAccelerometer = null;
-    private Sensor m_linAccelerometer = null;
-    private Sensor m_gyroscope = null;
-    private Sensor m_magnetometer = null;
-    private Sensor m_rotationSensor = null;
-
-    private DeviationCalculator m_accDeviationCalculator = null;
-    private DeviationCalculator m_linAccDeviationCalculator = null;
-    private DeviationCalculator m_gyrDeviationCalculator = null;
-    private DeviationCalculator m_magDeviationCalculator = null;
-
-    private TextView m_tvStatus = null;
-    private TextView m_tvAccelerometer = null;
-    private TextView m_tvAccelerometerData = null;
-    private TextView m_tvLinAccelerometer = null;
-    private TextView m_tvLinAccelerometerData = null;
-    private TextView m_tvGyroscope = null;
-    private TextView m_tvGyroscopeData = null;
-    private TextView m_tvMagnetometer = null;
-    private TextView m_tvMagnetometerData = null;
-    private TextView m_tvLocationData = null;
-
-    static String sensorDescription(Sensor s) {
-        String res = "";
-        res += "Res : " + s.getResolution() + "\n";
-        res += "Min Del : " + s.getMinDelay() + "\n";
-        return res;
-    }
-
-    private long initSensors() {
-        m_sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (m_sensorManager == null) {
-            return InitSensorErrorFlag.SENSOR_MANAGER_ERR.flag;
-        }
-
-        m_grAccelerometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        m_linAccelerometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        m_rotationSensor = m_sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-
-        m_gyroscope = m_sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        m_magnetometer = m_sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
-        Sensor toCheck[] = {m_grAccelerometer, m_linAccelerometer, m_rotationSensor,
-                m_gyroscope, m_magnetometer};
-        InitSensorErrorFlag toCheckRes[] = {
-                InitSensorErrorFlag.MISSED_ACCELEROMETER,
-                InitSensorErrorFlag.MISSED_LIN_ACCELEROMETER,
-                InitSensorErrorFlag.MISSED_GYROSCOPE,
-                InitSensorErrorFlag.MISSED_MAGNETOMETER};
-
-        long result = InitSensorErrorFlag.SUCCESS.flag;
-        for (int i = 0; i < toCheck.length; ++i) {
-            if (toCheck[i] != null) continue;
-            result |= toCheckRes[i].flag;
-        }
-        return result;
-    }
-
-    private static final int GpsMinTime = 3000;
-    private static final int GpsMinDistance = 2;
+    private boolean m_isLogging = false;
+    private boolean m_isCalibrating = false;
+    RefreshTask m_refreshTask = new RefreshTask(1000l);
 
     protected void onPause() {
         super.onPause();
-        m_sensorManager.unregisterListener(this);
-        m_locationManager.removeNmeaListener(this);
-        m_locationManager.removeUpdates(this);
         m_refreshTask.needTerminate = true;
+        m_refreshTask.cancel(true);
+        if (m_gpsDataLogger != null) {
+            m_gpsDataLogger.stop();
+        }
+        if (m_accDataLogger != null) {
+            m_accDataLogger.stop();
+        }
+        if (m_sensorCalibrator != null) {
+            m_sensorCalibrator.stop();
+        }
+
+        ServicesHelper.getLocationService(this, value -> value.stop());
+
+        m_isLogging = false;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            m_locationManager.removeNmeaListener(this);
-            m_locationManager.addNmeaListener(this);
-            m_locationManager.removeUpdates(this);
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    GpsMinTime, GpsMinDistance, this);
+    //todo change to state machine
+    private void set_isLogging(boolean isLogging) {
+        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
+        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        String btnStartStopText;
+        String btnTvStatusText;
+
+        if (isLogging) {
+            btnStartStopText = "Stop tracking";
+            btnTvStatusText = "Tracking is in progress";
+            m_gpsDataLogger.start();
+            m_accDataLogger.start();
+            m_kalmanDistanceLogger.reset();
+            ServicesHelper.getLocationService(this, value -> {
+                value.reset();
+                value.start();
+            });
+        } else {
+            btnStartStopText = "Start tracking";
+            btnTvStatusText = "Paused";
+            m_gpsDataLogger.stop();
+            m_accDataLogger.stop();
+            ServicesHelper.getLocationService(this, value -> {
+                value.stop();
+            });
         }
+
+        if (btnStartStop != null)
+            btnStartStop.setText(btnStartStopText);
+        if (tvStatus != null)
+            tvStatus.setText(btnTvStatusText);
+
+        btnCalibrate.setEnabled(!isLogging);
+        m_isLogging = isLogging;
+    }
+
+//    private TestServiceLogger tt = new TestServiceLogger();
+    //todo change to state machine
+    private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
+        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
+        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        String btnCalibrateText;
+        String tvStatusText;
+
+        if (isCalibrating) {
+            btnCalibrateText = "Stop calibration";
+            tvStatusText = "Calibrating";
+            m_sensorCalibrator.reset();
+            m_sensorCalibrator.start();
+        } else {
+            btnCalibrateText = "Start calibration";
+            tvStatusText = byUser ? "Calibration finished by user" : "Calibration finished";
+            m_sensorCalibrator.stop();
+        }
+
+        btnCalibrate.setText(btnCalibrateText);
+        tvStatus.setText(tvStatusText);
+        btnStartStop.setEnabled(!isCalibrating);
+        m_isCalibrating = isCalibrating;
     }
 
     @Override
@@ -191,228 +189,88 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        if (m_locationManager == null) return;
-        if (m_sensorManager == null) return;
-        if (m_refreshTask == null) return;
+        m_refreshTask = new RefreshTask(1000);
+        m_refreshTask.needTerminate = false;
+        m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
 
-        m_accDeviationCalculator =
-                new DeviationCalculator(400, 3, "acc");
-        m_linAccDeviationCalculator =
-                new DeviationCalculator(400, 3, "linAcc");
-        m_gyrDeviationCalculator =
-                new DeviationCalculator(400, 3, "gyr");
-        m_magDeviationCalculator =
-                new DeviationCalculator(100, 3, "mag");
+    public void btnStartStop_click(View v) {
+        set_isLogging(!m_isLogging);
+    }
 
-        m_gma = new FilterGMA(m_accDeviationCalculator, m_linAccDeviationCalculator,
-                m_gyrDeviationCalculator, m_magDeviationCalculator);
+    public void btnCalibrate_click(View v) {
+        set_isCalibrating(!m_isCalibrating, true);
+    }
 
-        m_sensorManager.registerListener(this, m_grAccelerometer,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_linAccelerometer,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_rotationSensor,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_gyroscope,
-                SensorManager.SENSOR_DELAY_GAME);
-        m_sensorManager.registerListener(this, m_magnetometer,
-                SensorManager.SENSOR_DELAY_NORMAL);
-
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+    private void initActivity() {
+        setContentView(R.layout.activity_main);
+        String[] interestedPermissions;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+            interestedPermissions = new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+            };
         } else {
-            m_locationManager.removeNmeaListener(this);
-            m_locationManager.addNmeaListener(this);
-            m_locationManager.removeUpdates(this);
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    GpsMinTime, GpsMinDistance, this);
+            interestedPermissions = new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            };
+        }
 
-            Location lkl = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (lkl != null) {
-                m_gma.setGpsPosition(lkl.getLatitude(), lkl.getLongitude(), lkl.getAltitude());
-                m_gma.setGpsSpeed(lkl.getSpeed());
+        ArrayList<String> lstPermissions = new ArrayList<>(interestedPermissions.length);
+        for (String perm : interestedPermissions) {
+            if (ActivityCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+                lstPermissions.add(perm);
             }
         }
 
-        m_tvAccelerometer.setText("Accelerometer :\n" + sensorDescription(m_grAccelerometer));
-        m_tvLinAccelerometer.setText("LinAccelerometer :\n" + sensorDescription(m_linAccelerometer));
-        m_refreshTask.needTerminate = false;
-        m_refreshTask.execute();
+        if (!lstPermissions.isEmpty()) {
+            ActivityCompat.requestPermissions(this, lstPermissions.toArray(new String[0]),
+                    100);
+        }
+
+        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if (sensorManager == null || locationManager == null) {
+            System.exit(1);
+        }
+
+        m_gpsDataLogger = new GPSDataLogger(locationManager, this);
+        m_accDataLogger = new AccelerationLogger(sensorManager);
+        m_sensorCalibrator = new SensorCalibrator(sensorManager);
+        m_kalmanDistanceLogger = new KalmanDistanceLogger();
+        set_isLogging(false);
+        set_isCalibrating(false, true);
+
+        File esd = Environment.getExternalStorageDirectory();
+        String storageState = Environment.getExternalStorageState();
+        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
+            String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
+            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
+            Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
+                    .Builder(logFolderPath)                            // Specify the path to save log file
+                    .fileNameGenerator(new DateFileNameGenerator())    // Date as file name
+                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
+                    .build();
+            XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
+            XLog.i("Application started!!!");
+            tvStatus.setText(logFolderPath);
+        } else {
+            System.exit(3);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initActivity();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        m_tvStatus = (TextView) findViewById(R.id.tvStatus);
-        m_tvAccelerometer = (TextView) findViewById(R.id.tvAccelerometer);
-        m_tvAccelerometerData = (TextView) findViewById(R.id.tvAccelerometerData);
-        m_tvLinAccelerometer = (TextView) findViewById(R.id.tvLinAccelerometer);
-        m_tvLinAccelerometerData = (TextView) findViewById(R.id.tvLinAccelerometerData);
-        m_tvLocationData = (TextView) findViewById(R.id.tvLocationData);
-
-        long ir = initSensors();
-        m_tvStatus.setText(InitSensorErrorFlag.toString(ir));
-        if (ir != InitSensorErrorFlag.SUCCESS.flag) {
-            return;
-        }
-
-        m_tvLocationData.setText("Don't know where we are");
-        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (m_locationManager == null) {
-            m_tvStatus.setText("Couldn't get location manager");
-            return;
-        }
-
-        if (m_refreshTask == null)
-            m_refreshTask = new RefreshTask(30);
     }
-    /*********************************************************/
-
-    @Override
-    public void onLocationChanged(Location loc) {
-        Log.d(Commons.AppName, String.format("lon:%f, lat:%f, alt:%f, speed:%f, accuracy:%f",
-                loc.getLongitude(), loc.getLatitude(),
-                loc.getAltitude(), loc.getSpeed(), loc.getAccuracy()));
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-    /*********************************************************/
-
-    @Override
-    public void onNmeaReceived(long timestamp, String msg) {
-        handleNMEAReceived(timestamp, msg);
-    }
-    private void handleNMEAReceived(long timeStamp, String msg) {
-        for (int i = 0; i < 2; ++i) {
-            char lc = msg.charAt(msg.length()-1);
-            if (lc == '\r' || lc == '\n') //do we need to check '\r' ?
-                msg = msg.substring(0, msg.length() - 1);
-        }
-
-        Position pos = null;
-        Double speed = null;
-        Double course = null;
-
-        try {
-            Sentence s = SentenceFactory.getInstance().createParser(msg);
-            switch (s.getSentenceId().toLowerCase()) {
-                case "gsa":
-                    GSASentence gsa = (GSASentence) s;
-                    m_gma.setGpsHorizontalDop(gsa.getHorizontalDOP());
-                    m_gma.setGpsVerticalDop(gsa.getVerticalDOP());
-                case "gga":
-                    GGASentence gga = (GGASentence) s;
-                    pos = gga.getPosition();
-                    m_gma.setGpsHorizontalDop(gga.getHorizontalDOP());
-                    break;
-                case "gll":
-                    GLLSentence gll = (GLLSentence) s;
-                    pos = gll.getPosition();
-                    break;
-                case "rmc":
-                    RMCSentence rmc = (RMCSentence) s;
-                    pos = rmc.getPosition();
-                    speed = rmc.getSpeed();
-                    course = rmc.getCourse();
-                    break;
-                case "vtg":
-                    VTGSentence vtg = (VTGSentence) s;
-                    speed = vtg.getSpeedKnots();
-                    course = vtg.getTrueCourse();
-                    break;
-                case "gsv":
-                    GSVSentence gsv = (GSVSentence) s;
-                    break;
-                default:
-                    //todo log messages that we don't handle for analyze
-                    m_tvStatus.setText(s.getSentenceId());
-                    break;
-            }
-        } catch (Exception exc) {
-            //we use exception here because net.sf.marineapi uses
-            //exceptions as result code %)
-        }
-
-        if (pos != null) {
-            m_gma.setGpsPosition(pos.getLatitude(), pos.getLongitude(), pos.getAltitude());
-        }
-
-        if (speed != null && course != null) {
-            m_gma.setGpsCourse(course.doubleValue());
-            m_gma.setGpsSpeed(course.doubleValue());
-        }
-    }
-    /*********************************************************/
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        TextView tv = null;
-        String format = null;
-        DeviationCalculator dc = null;
-        float values[] = event.values;
-
-        switch (event.sensor.getType()) {
-            case Sensor.TYPE_MAGNETIC_FIELD :
-                format = "Acc = %d, Mx = %f, My = %f, Mz = %f\n";
-                tv = m_tvMagnetometerData;
-                dc = m_magDeviationCalculator;
-                m_gma.setGeomagnetic(event.values, dc);
-                break;
-            case Sensor.TYPE_GRAVITY:
-                format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
-                tv = m_tvAccelerometerData;
-                dc = m_accDeviationCalculator;
-                m_gma.setGravity(event.values, dc);
-                break;
-            case Sensor.TYPE_GYROSCOPE:
-                format = "Acc = %d, Ax = %f, Ay = %f, Az = %f\n";
-                tv = m_tvGyroscopeData;
-                dc = m_gyrDeviationCalculator;
-                m_gma.setGyroscope(event.values, dc);
-                break;
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                format = "Acc = %d, Afb = %f, Alr = %f, Aud = %f\n";
-                dc = m_linAccDeviationCalculator;
-                tv = m_tvLinAccelerometerData;
-                if (dc.is_calculated()) {
-                    m_gma.init(dc.getSigmas());
-                }
-                m_gma.setLinAcc(event.values);
-                break;
-            case Sensor.TYPE_ROTATION_VECTOR:
-                m_gma.setRotation(event.values);
-                break;
-        }
-
-        if (dc != null) {
-            dc.Measure(event.values);
-        }
-
-        if (tv != null) {
-            tv.setText(String.format(format, event.accuracy,
-                    values[0], values[1], values[2]) + //todo change this
-                    dc.deviationInfoString());
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-    }
-    /*********************************************************/
 }

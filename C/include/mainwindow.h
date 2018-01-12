@@ -59,13 +59,17 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 public:
   explicit MainWindow(const QString& coordsFilePath,
+                      const QString& filteredFilePath,
                       QWidget *parent = nullptr);
 
 private:
   QWebEngineView *m_view;
   QString m_coordsFilePath;
+  QString m_filteredFilePath;
 
-  void initMap(QWebEnginePage *page, const QString &pathToCoordsFile);
+  void initMap(QWebEnginePage *page,
+               const QString &pathToCoordsFile,
+               const QString &filteredCoordsFile);
 
 };
 

@@ -9,7 +9,8 @@
 #include "Commons.h"
 #include "SensorController.h"
 
-std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
+
+std::vector<geopoint_t> CoordGetFromFile(const QString& filePath) {
   std::vector<geopoint_t> lstResult;
   QFile f(filePath);
   SensorData_t sd;
@@ -22,6 +23,8 @@ std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
     QString line = f.readLine();
     if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
       continue;
+    if (sd.gpsLat == 0.0 || sd.gpsLon == 0.0)
+      continue;
     lstResult.push_back(geopoint_t(sd.gpsLat, sd.gpsLon));
   }
 
@@ -31,37 +34,49 @@ std::vector<geopoint_t> GetCoordsFromFile(const QString& filePath) {
 //////////////////////////////////////////////////////////////////////////
 
 std::vector<geopoint_t>
-FilterByGeoHash(std::vector<geopoint_t> &lstSrc,
+CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
                 int precision,
                 int minPointCount) {
   struct cindex {
-    size_t index;
+    int index;
     int count;
+    double lon, lat;
   };
   static char buff[GEOHASH_MAX_PRECISION+1] = {0};
 
   std::vector<geopoint_t> lstRes;
   std::map<std::string, cindex> dctHashCount;
+  typedef std::map<std::string, cindex>::iterator dctIter;
 
-  for (geopoint_t coord : lstSrc) {
-    GeohashEncode(coord.Latitude, coord.Longitude, buff, precision);
+  int idx = 0;
+  for (auto ci = lstSrc.begin(); ci != lstSrc.end(); ++ci) {
+    GeohashEncode(ci->Latitude, ci->Longitude, buff, precision);
     std::string geohash(buff, precision);
-
-    if (dctHashCount.find(geohash) == dctHashCount.end())
-      dctHashCount[geohash].count = 0;
-
-    if (++dctHashCount[geohash].count == minPointCount) {
-      lstRes.push_back(coord);
-      dctHashCount[geohash].index = lstRes.size()-1;
-      continue;
+    dctIter it = dctHashCount.find(geohash);
+    if (it == dctHashCount.end()) {
+      cindex ni;
+      ni.count = 0;
+      ni.lat = 0.0;
+      ni.lon = 0.0;
+      ni.index = -1;
+      auto ir = dctHashCount.insert(std::pair<std::string, cindex>(geohash, ni));
+      it = ir.first;
     }
+    if (++it->second.count == minPointCount)
+      it->second.index = idx++;
+    it->second.lat += ci->Latitude;
+    it->second.lon += ci->Longitude;
+  }
 
-    if (dctHashCount[geohash].count > minPointCount) {
-      lstRes[dctHashCount[geohash].index].Latitude += coord.Latitude;
-      lstRes[dctHashCount[geohash].index].Latitude /= 2.0;
-      lstRes[dctHashCount[geohash].index].Longitude += coord.Longitude;
-      lstRes[dctHashCount[geohash].index].Longitude /= 2.0;
-    }
+  lstRes.reserve(idx);
+  lstRes.resize(idx);
+
+  for (auto it = dctHashCount.begin(); it != dctHashCount.end(); ++it) {
+    if (it->second.index == -1) continue;
+    geopoint_t np;
+    np.Latitude = it->second.lat / it->second.count;
+    np.Longitude = it->second.lon / it->second.count;
+    lstRes[it->second.index] = np;
   }
 
   return lstRes;
@@ -82,13 +97,13 @@ static double geoDistanceMeters(double lon1, double lat1,
 }
 //////////////////////////////////////////////////////////////////////////
 
-double LongitudeToMeters(double lon) {
+double CoordLongitudeToMeters(double lon) {
   double distance = geoDistanceMeters(lon, 0.0, 0.0, 0.0);
   return distance * (lon < 0.0 ? -1.0 : 1.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-double LatitudeToMeters(double lat) {
+double CoordLatitudeToMeters(double lat) {
   double distance = geoDistanceMeters(0.0, lat, 0.0, 0.0);
   return distance * (lat < 0.0 ? -1.0 : 1.0);
 }
@@ -127,7 +142,7 @@ static geopoint_t pointPlusDistanceNorth(geopoint_t point, double distance) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t MetersToGeopoint(double lonMeters,
+geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters) {
   geopoint_t point = {0.0, 0.0};
   geopoint_t pointEast = pointPlusDistanceEast(point, lonMeters);
@@ -137,6 +152,38 @@ geopoint_t MetersToGeopoint(double lonMeters,
 //////////////////////////////////////////////////////////////////////////
 
 double CoordDistanceBetweenPointsMeters(double lat1, double lon1,
-                                  double lat2, double lon2) {
+                                        double lat2, double lon2) {
   return geoDistanceMeters(lon1, lat1, lon2, lat2);
 }
+//////////////////////////////////////////////////////////////////////////
+
+double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision) {
+  double distance = 0.0;
+  double llon, llat;
+
+  if (lst.empty() || lst.size() == 1)
+    return 0.0;
+
+  llon = lst[0].Longitude;
+  llat = lst[0].Latitude;
+
+  for (auto pp = lst.begin()+1; pp != lst.end(); ++pp) {
+
+    if (GeohashComparePoints(llon, llat, pp->Longitude, pp->Latitude, precision) == 0)
+      continue;
+
+    distance += CoordDistanceBetweenPointsMeters(llat, llon,
+                                                 pp->Latitude, pp->Longitude);
+    llat = pp->Latitude;
+    llon = pp->Longitude;
+  }
+  return distance;
+}
+//////////////////////////////////////////////////////////////////////////
+
+double CoordGetDistanceWithGeohash(const std::vector<geopoint_t> &lst,
+                                   int precision,
+                                   int minPoints) {
+  return 0.0;
+}
+//////////////////////////////////////////////////////////////////////////
