@@ -61,7 +61,8 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
 
     @Override
     public void locationChanged(Location loc) {
-        GeoPoint pp = new GeoPoint(loc.getLatitude()+1.0, loc.getLongitude());
+
+        GeoPoint pp = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (!firstCoordinateReceived) {
             llat = loc.getLatitude();
             llon = loc.getLongitude();
@@ -70,10 +71,9 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
             return;
         }
 
-        pp.Latitude += 1.0;
         String geo0, geo1;
-        final int precision = 7;
-        final int minPoints = 3;
+        final int precision = 8;
+        final int minPoints = 2;
 
         geo0 = GeoHash.encode(llat, llon, precision);
         geo1 = GeoHash.encode(pp.Latitude, pp.Longitude, precision);

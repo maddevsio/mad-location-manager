@@ -49,7 +49,7 @@ public class GPSDataLogger implements LocationListener {
         if (ActivityCompat.checkSelfPermission(m_context,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeUpdates(this);
-            final int gpsMinTime = 1000;
+            final int gpsMinTime = 3000;
             final int gpsMinDistance = 0;
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                     gpsMinTime, gpsMinDistance, this);
@@ -67,9 +67,9 @@ public class GPSDataLogger implements LocationListener {
 
     @Override
     public void onLocationChanged(Location loc) {
-        double speedAccuracyMpS = 0.1;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            speedAccuracyMpS = loc.hasAccuracy() ? loc.getSpeedAccuracyMetersPerSecond() : 0.1;
+        double speedAccuracyMpS = 0.1 * loc.getAccuracy();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasAccuracy()) {
+            speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
         }
 
         m_lastLoggedGPSMessage = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",

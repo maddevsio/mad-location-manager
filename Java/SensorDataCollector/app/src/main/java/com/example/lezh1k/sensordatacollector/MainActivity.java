@@ -157,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
         btnCalibrate.setEnabled(!isLogging);
         m_isLogging = isLogging;
-        FusedLocationProviderClient prov;
     }
 
 //    private TestServiceLogger tt = new TestServiceLogger();

@@ -16,10 +16,9 @@ HEADERS += \
     include/SensorController.h \
     tests/include/SensorControllerTest.h \
     tests/include/CoordinatesTest.h \
-    include/GPSAccKalman.h \
     include/Kalman.h \
     include/MadgwickAHRS.h \
-    include/GPSAccKalman2.h
+    include/GPSAccKalman.h
 
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
@@ -31,10 +30,9 @@ SOURCES += src/main.cpp \
     src/SensorController.cpp \
     tests/src/SensorControllerTest.cpp \
     tests/src/CoordinatesTest.cpp \
-    src/GPSAccKalman.cpp \
     src/Kalman.cpp \
     src/MadgwickAHRS.cpp \
-    src/GPSAccKalman2.cpp
+    src/GPSAccKalman.cpp
 
 target.path = $$[QT_INSTALL_EXAMPLES]/webenginewidgets/maps
 INSTALLS += target
