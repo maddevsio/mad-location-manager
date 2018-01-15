@@ -39,8 +39,7 @@ public class AccelerationLogger implements SensorEventListener {
 
     public boolean start() {
         for (Sensor sensor : m_lstSensors) {
-            if (!m_sensorManager.registerListener(this, sensor,
-                    SensorManager.SENSOR_DELAY_GAME)) {
+            if (!m_sensorManager.registerListener(this, sensor, Commons.hertz2periodUs(10.0))) {
                 XLog.e("Couldn't register listener : %d", sensor.getType());
                 return false;
             }
@@ -79,7 +78,6 @@ public class AccelerationLogger implements SensorEventListener {
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
                 long now = System.currentTimeMillis();
-                /*todo use magnetic declination for acceleration course correction*/
                 lastAbsAccelerationString = String.format(" %d abs acc: %f %f %f",
                         now, accAxis[0], accAxis[1], accAxis[2]);
                 XLog.i(lastAbsAccelerationString);

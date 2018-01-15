@@ -44,7 +44,7 @@ public class KalmanFilter {
         this.Q = new Matrix(stateDimension, stateDimension);
         this.R = new Matrix(measureDimension, measureDimension);
 
-        this.B = new Matrix(stateDimension, 1);
+        this.B = new Matrix(stateDimension, controlDimension);
         this.Uk = new Matrix(controlDimension, 1);
 
         this.Zk = new Matrix(measureDimension, 1);
@@ -62,7 +62,7 @@ public class KalmanFilter {
         this.Pk_k = new Matrix(stateDimension, stateDimension);
         this.Yk_k = new Matrix(measureDimension, 1);
 
-        this.auxBxU = new Matrix(stateDimension, controlDimension);
+        this.auxBxU = new Matrix(stateDimension, 1);
         this.auxSDxSD = new Matrix(stateDimension, stateDimension);
         this.auxSDxMD = new Matrix(stateDimension, measureDimension);
     }

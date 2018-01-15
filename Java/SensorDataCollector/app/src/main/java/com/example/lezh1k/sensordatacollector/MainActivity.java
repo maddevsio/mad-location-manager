@@ -29,6 +29,7 @@ import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
+import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.io.File;
 import java.util.ArrayList;

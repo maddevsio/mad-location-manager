@@ -11,7 +11,7 @@ KalmanFilter_t *KalmanFilterCreate(int stateDimension,
   f->Q = MatrixAlloc(stateDimension, stateDimension);
   f->R = MatrixAlloc(measureDimension, measureDimension);
 
-  f->B = MatrixAlloc(stateDimension, 1);
+  f->B = MatrixAlloc(stateDimension, controlDimension);
   f->Uk = MatrixAlloc(controlDimension, 1);
 
   f->Zk = MatrixAlloc(measureDimension, 1);
@@ -29,7 +29,7 @@ KalmanFilter_t *KalmanFilterCreate(int stateDimension,
   f->Pk_k = MatrixAlloc(stateDimension, stateDimension);
   f->Yk_k = MatrixAlloc(measureDimension, 1);
 
-  f->auxBxU = MatrixAlloc(stateDimension, controlDimension);
+  f->auxBxU = MatrixAlloc(stateDimension, 1);
   f->auxSDxSD = MatrixAlloc(stateDimension, stateDimension);
   f->auxSDxMD = MatrixAlloc(stateDimension, measureDimension);
   return f;

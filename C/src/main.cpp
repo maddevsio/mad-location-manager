@@ -70,7 +70,6 @@ static void launchTests() {
 //////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]) {
-  qDebug() << CoordDistanceBetweenPointsMeters(42.0, 74.0, 43.0, 74.0);
   srand(time(NULL));
   launchTests();
   QString in("/home/lezh1k/gps_test_data/log1sorted"),

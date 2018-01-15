@@ -28,7 +28,6 @@ public class GPSAccKalmanFilter {
         //process noise.
         m_kf.Q.setIdentity();
         m_kf.Q.scale(m_accSigma);
-        m_kf.Uk.setData( 1.0);
     }
 
     private void rebuildF(double dtPredict) {
@@ -41,17 +40,17 @@ public class GPSAccKalmanFilter {
         m_kf.F.setData(f);
     }
 
-    private void rebuildB(double dtPredict,
-                          double xAcc,
+    private void rebuildU(double xAcc,
                           double yAcc) {
-        double dt05 = 0.5*dtPredict;
-        double dx = dtPredict*xAcc;
-        double dy = dtPredict*yAcc;
+        m_kf.Uk.setData(xAcc, yAcc);
+    }
+
+    private void rebuildB(double dtPredict) {
         double b[] = {
-                dt05 * dx,
-                dt05 * dy,
-                dx,
-                dy
+                0.5*dtPredict*dtPredict, 0.0,
+                0.0, 0.5*dtPredict*dtPredict,
+                dtPredict, 0.0,
+                0.0, dtPredict
         };
         m_kf.B.setData(b);
     }
@@ -78,7 +77,8 @@ public class GPSAccKalmanFilter {
         double dtPredict = (timeNowMs - m_timeStampMsPredict) / 1000.0;
         double dtUpdate = (timeNowMs - m_timeStampMsUpdate) / 1000.0;
         rebuildF(dtPredict);
-        rebuildB(dtPredict, xAcc, yAcc);
+        rebuildB(dtPredict);
+        rebuildU(xAcc, yAcc);
         rebuildQ(dtUpdate, m_accSigma); //empirical method. WARNING!!!
         m_timeStampMsPredict = timeNowMs;
         m_kf.predict();
