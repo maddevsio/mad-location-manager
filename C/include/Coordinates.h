@@ -4,6 +4,8 @@
 #include <vector>
 class QString;
 
+#define COORDINATES_HIGH_ACCURACY 0
+
 struct geopoint_t {
   double Latitude, Longitude;
   geopoint_t() : Latitude(0.0), Longitude(0.0) {
