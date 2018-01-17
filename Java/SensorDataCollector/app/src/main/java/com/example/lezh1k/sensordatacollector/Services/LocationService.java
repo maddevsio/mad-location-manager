@@ -1,8 +1,17 @@
 package com.example.lezh1k.sensordatacollector.Services;
 
 import android.app.Service;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.Binder;
+import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.util.Log;
 
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
 
@@ -30,6 +39,7 @@ public abstract class LocationService extends Service {
     public LocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
+        m_track = new ArrayList<>();
     }
 
     public void addInterface(LocationServiceInterface locationServiceInterface) {
@@ -76,5 +86,28 @@ public abstract class LocationService extends Service {
 //                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
             }
         }
+    }
+
+
+    /*Service implementation*/
+    public class LocalBinder extends Binder {
+        public LocationService getService() {
+            return LocationService.this;
+        }
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new LocationService.LocalBinder();
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        Log.d(TAG, "onTaskRemoved: " + rootIntent);
+        m_locationServiceInterfaces.clear();
+        m_locationServiceStatusInterfaces.clear();
+        stopSelf();
     }
 }

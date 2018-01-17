@@ -61,6 +61,10 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
 
     @Override
     public void locationChanged(Location loc) {
+        XLog.i("%d%d FKS : lat=%f, lon=%f, alt=%f",
+                Commons.LogMessageType.FILTERED_GPS_DATA.ordinal(),
+                loc.getTime(), loc.getLatitude(),
+                loc.getLongitude(), loc.getAltitude());
 
         GeoPoint pp = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (!firstCoordinateReceived) {

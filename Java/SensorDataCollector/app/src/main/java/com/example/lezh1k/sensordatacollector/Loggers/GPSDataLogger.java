@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 
 import com.elvishew.xlog.XLog;
+import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 
 import net.sf.marineapi.nmea.parser.SentenceFactory;
 import net.sf.marineapi.nmea.sentence.GGASentence;
@@ -49,10 +50,9 @@ public class GPSDataLogger implements LocationListener {
         if (ActivityCompat.checkSelfPermission(m_context,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             m_locationManager.removeUpdates(this);
-            final int gpsMinTime = 3000;
-            final int gpsMinDistance = 0;
+
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    gpsMinTime, gpsMinDistance, this);
+                    Commons.GPS_MIN_TIME, Commons.GPS_MIN_DISTANCE, this);
             return true;
         }
         return false;
@@ -72,7 +72,8 @@ public class GPSDataLogger implements LocationListener {
             speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
         }
 
-        m_lastLoggedGPSMessage = String.format("%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+        m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+                Commons.LogMessageType.GPS_DATA.ordinal(),
                 System.currentTimeMillis(), loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);

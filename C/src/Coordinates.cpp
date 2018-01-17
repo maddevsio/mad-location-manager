@@ -10,7 +10,8 @@
 #include "SensorController.h"
 
 
-std::vector<geopoint_t> CoordGetFromFile(const QString& filePath) {
+std::vector<geopoint_t> CoordGetFromFile(const QString& filePath,
+                                         int interested) {
   std::vector<geopoint_t> lstResult;
   QFile f(filePath);
   SensorData_t sd;
@@ -21,9 +22,8 @@ std::vector<geopoint_t> CoordGetFromFile(const QString& filePath) {
 
   while (!f.atEnd()) {
     QString line = f.readLine();
-    if (!SensorControllerParseDataString(line.toStdString().c_str(), &sd))
-      continue;
-    if (sd.gpsLat == 0.0 || sd.gpsLon == 0.0)
+    int pi = SensorControllerParseDataString(line.toStdString().c_str(), &sd);
+    if (pi != interested)
       continue;
     lstResult.push_back(geopoint_t(sd.gpsLat, sd.gpsLon));
   }
@@ -280,12 +280,5 @@ double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision) {
     llon = pp->Longitude;
   }
   return distance;
-}
-//////////////////////////////////////////////////////////////////////////
-
-double CoordGetDistanceWithGeohash(const std::vector<geopoint_t> &lst,
-                                   int precision,
-                                   int minPoints) {
-  return 0.0;
 }
 //////////////////////////////////////////////////////////////////////////

@@ -21,7 +21,7 @@ public class SensorGpsDataItem implements Comparable<SensorGpsDataItem>  {
     double posErr;
     double velErr;
 
-    public static final double NOT_INITIALIZED = -1.0;
+    public static final double NOT_INITIALIZED = 361.0;
 
     public SensorGpsDataItem(double timestamp,
                              double gpsLat, double gpsLon, double gpsAlt,

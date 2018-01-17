@@ -14,7 +14,7 @@ struct geopoint_t {
   }
 };
 
-std::vector<geopoint_t> CoordGetFromFile(const QString& filePath);
+std::vector<geopoint_t> CoordGetFromFile(const QString& filePath, int interested);
 std::vector<geopoint_t> CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
                                              int precision,
                                              int minPointCount);
@@ -30,8 +30,5 @@ geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters);
 
 double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision);
-double CoordGetDistanceWithGeohash(const std::vector<geopoint_t> &lst,
-                                   int precision,
-                                   int minPoints);
 
 #endif // COORDINATES_H

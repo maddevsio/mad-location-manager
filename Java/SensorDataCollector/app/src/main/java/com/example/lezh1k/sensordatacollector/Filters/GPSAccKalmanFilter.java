@@ -16,6 +16,7 @@ public class GPSAccKalmanFilter {
                               double xVel, double yVel,
                               double accDev, double posDev,
                               double timeStamp) {
+
         m_kf = new KalmanFilter(4, 4, 1);
         m_timeStampMsPredict = m_timeStampMsUpdate = timeStamp;
         m_accSigma = accDev;
@@ -24,10 +25,6 @@ public class GPSAccKalmanFilter {
         m_kf.H.setIdentity(); //state has 4d and measurement has 4d too. so here is identity
         m_kf.Pk_k.setIdentity();
         m_kf.Pk_k.scale(posDev);
-
-        //process noise.
-        m_kf.Q.setIdentity();
-        m_kf.Q.scale(m_accSigma);
     }
 
     private void rebuildF(double dtPredict) {
@@ -46,29 +43,28 @@ public class GPSAccKalmanFilter {
     }
 
     private void rebuildB(double dtPredict) {
+        double dt2 = 0.5*dtPredict*dtPredict;
         double b[] = {
-                0.5*dtPredict*dtPredict, 0.0,
-                0.0, 0.5*dtPredict*dtPredict,
+                dt2, 0.0,
+                0.0, dt2,
                 dtPredict, 0.0,
                 0.0, dtPredict
         };
         m_kf.B.setData(b);
     }
 
-    private void rebuildR(double posSigma,
-                          double velSigma) {
-        double R[] = {
-                posSigma, 0.0, 0.0, 0.0,
-                0.0, posSigma, 0.0, 0.0,
-                0.0, 0.0, velSigma, 0.0,
-                0.0, 0.0, 0.0, velSigma};
-        m_kf.R.setData(R);
+    private void rebuildR(double posSigma) {
+        m_kf.R.setIdentity();
+        m_kf.R.scale(posSigma);
     }
 
     private void rebuildQ(double dtUpdate,
                           double accSigma) {
         m_kf.Q.setIdentity();
         m_kf.Q.scale(accSigma * dtUpdate);
+        //  1st variant from Wiki. Shows bad results
+//  MatrixMultiplyByTranspose(f->kf->B, f->kf->B, f->kf->Q);
+//  MatrixScale(f->kf->Q, accSigma);
     }
 
     public void predict(double timeNowMs,
@@ -79,10 +75,12 @@ public class GPSAccKalmanFilter {
         rebuildF(dtPredict);
         rebuildB(dtPredict);
         rebuildU(xAcc, yAcc);
+
         rebuildQ(dtUpdate, m_accSigma); //empirical method. WARNING!!!
+
         m_timeStampMsPredict = timeNowMs;
         m_kf.predict();
-        Matrix.matrixClone(m_kf.Xk_km1, m_kf.Xk_k);
+        Matrix.matrixCopy(m_kf.Xk_km1, m_kf.Xk_k);
     }
 
     public void update(double timeStamp,
@@ -90,12 +88,11 @@ public class GPSAccKalmanFilter {
                        double y,
                        double xVel,
                        double yVel,
-                       double posDev,
-                       double velDev) {
+                       double posDev) {
         m_timeStampMsUpdate = timeStamp;
-        rebuildR(posDev, velDev);
+        rebuildR(posDev);
         m_kf.Zk.setData(x, y, xVel, yVel);
-        m_kf.predict();
+        m_kf.update();
     }
 
     public double getCurrentX() {

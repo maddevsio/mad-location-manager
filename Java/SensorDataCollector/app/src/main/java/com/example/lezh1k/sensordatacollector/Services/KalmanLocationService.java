@@ -1,7 +1,7 @@
 package com.example.lezh1k.sensordatacollector.Services;
 
 import android.Manifest;
-import android.app.Service;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
@@ -22,6 +22,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.elvishew.xlog.XLog;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Coordinates;
 import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
@@ -29,7 +30,6 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
-import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +40,10 @@ import java.util.concurrent.PriorityBlockingQueue;
  * Created by lezh1k on 1/11/18.
  */
 
-public class KalmanLocationService extends Service
+public class KalmanLocationService extends LocationService
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
     private static final String TAG = "KalmanLocationService";
-    private static final long UpdateMinTime = 3000;
-    private static final float UpdateMinDistance = 0;
 
     public static final int PermissionDenied = 0;
     public static final int StartLocationUpdates = 1;
@@ -53,8 +51,6 @@ public class KalmanLocationService extends Service
     public static final int Paused = 3;
 
     private LocationManager m_locationManager;
-    private List<LocationServiceInterface> m_locationServiceInterfaces;
-    private List<LocationServiceStatusInterface> m_locationServiceStatusInterfaces;
 
     private boolean m_gpsEnabled = false;
     private boolean m_sensorsEnabled = false;
@@ -64,9 +60,6 @@ public class KalmanLocationService extends Service
 
     private float m_lastLocationAccuracy = 0;
     private GpsStatus m_gpsStatus;
-
-    private Location m_lastLocation;
-    private List<Location> m_track;
 
     /**/
     private GPSAccKalmanFilter m_kalmanFilter;
@@ -101,6 +94,7 @@ public class KalmanLocationService extends Service
             this.owner = owner;
         }
 
+        @SuppressLint("DefaultLocale")
         @Override
         protected Object doInBackground(Object[] objects) {
             while (!needTerminate) {
@@ -115,18 +109,34 @@ public class KalmanLocationService extends Service
                 while ((sdi = m_sensorDataQueue.poll()) != null) {
                     //warning!!!
                     if (sdi.getGpsLat() == SensorGpsDataItem.NOT_INITIALIZED) {
+                        XLog.i("%d%d KalmanPredict : accX=%f, accY=%f",
+                                Commons.LogMessageType.KALMAN_PREDICT.ordinal(),
+                                (long)sdi.getTimestamp(),
+                                sdi.getAbsEastAcc(),
+                                sdi.getAbsNorthAcc());
                         m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
                     } else {
                         double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
                         double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
+                        XLog.i("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
+                                Commons.LogMessageType.KALMAN_UPDATE.ordinal(),
+                                (long)sdi.getTimestamp(),
+                                sdi.getGpsLon(),
+                                sdi.getGpsLat(),
+                                xVel,
+                                yVel,
+                                sdi.getPosErr(),
+                                sdi.getVelErr()
+                        );
+
                         m_kalmanFilter.update(
                                 sdi.getTimestamp(),
                                 Coordinates.longitudeToMeters(sdi.getGpsLon()),
                                 Coordinates.latitudeToMeters(sdi.getGpsLat()),
                                 xVel,
                                 yVel,
-                                sdi.getPosErr(),
-                                sdi.getVelErr());
+                                sdi.getPosErr()
+                        );
 
                         Location loc = new Location(TAG);
                         GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(), m_kalmanFilter.getCurrentY());
@@ -148,7 +158,6 @@ public class KalmanLocationService extends Service
         }
 
         void onLocationChangedImp(Location location) {
-//            Log.d(TAG, "onLocationChanged: " + location + " " + m_locationServiceInterfaces.size());
 
             if (location != null && location.getLatitude() != 0 &&
                     location.getLongitude() != 0 &&
@@ -191,66 +200,21 @@ public class KalmanLocationService extends Service
 
 
     public KalmanLocationService() {
+        //todo move this to LocationService abstract class
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
         m_track = new ArrayList<>();
+        //
+
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         m_kalmanFilter = null;
         this.accDev = 1.0;
-
-
     }
 
     public void reset() {
         m_kalmanFilter = null;
         m_track.clear();
-    }
-
-    public List<Location> getTrack() {
-        return m_track;
-    }
-
-    public void addInterface(LocationServiceInterface locationServiceInterface) {
-        if (m_locationServiceInterfaces.add(locationServiceInterface) && m_lastLocation != null) {
-            locationServiceInterface.locationChanged(m_lastLocation);
-        }
-    }
-
-    public void addInterfaces(List<LocationServiceInterface> locationServiceInterfaces) {
-        if (m_locationServiceInterfaces.addAll(locationServiceInterfaces) && m_lastLocation != null) {
-            for (LocationServiceInterface locationServiceInterface : locationServiceInterfaces) {
-                locationServiceInterface.locationChanged(m_lastLocation);
-            }
-        }
-    }
-
-    public void removeInterface(LocationServiceInterface locationServiceInterface) {
-        m_locationServiceInterfaces.remove(locationServiceInterface);
-    }
-
-    public void addStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
-        if (m_locationServiceStatusInterfaces.add(locationServiceStatusInterface)) {
-            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
-            locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
-            locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
-            locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
-        }
-    }
-
-    public void addStatusInterfaces(List<LocationServiceStatusInterface> locationServiceStatusInterfaces) {
-        if (m_locationServiceStatusInterfaces.addAll(locationServiceStatusInterfaces)) {
-            for (LocationServiceStatusInterface locationServiceStatusInterface : locationServiceStatusInterfaces) {
-                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
-                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
-                locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
-                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
-            }
-        }
-    }
-
-    public void removeStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
-        m_locationServiceStatusInterfaces.remove(locationServiceStatusInterface);
     }
 
     @Override
@@ -284,7 +248,8 @@ public class KalmanLocationService extends Service
             m_locationManager.removeGpsStatusListener(this);
             m_locationManager.addGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UpdateMinTime, UpdateMinDistance, this );
+            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    Commons.GPS_MIN_TIME, Commons.GPS_MIN_DISTANCE, this );
         }
 
         m_sensorsEnabled = true;
@@ -395,7 +360,7 @@ public class KalmanLocationService extends Service
         }
     }
 
-//    private FusedLocationProviderClient mFusedLocationClient;
+    //    private FusedLocationProviderClient mFusedLocationClient;
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         /*do nothing*/
@@ -405,16 +370,21 @@ public class KalmanLocationService extends Service
     /*LocationListener methods implementation*/
     @Override
     public void onLocationChanged(Location loc) {
-        double x, y, xVel, yVel, posDev;
+        double x, y, xVel, yVel, posDev, course, speed;
         long timeStamp;
+        speed = loc.getSpeed();
+        course = loc.getBearing();
         x = loc.getLongitude();
         y = loc.getLatitude();
-        xVel = loc.getSpeed() * Math.cos(loc.getBearing());
-        yVel = loc.getSpeed() * Math.sin(loc.getBearing());
+        xVel = speed * Math.cos(course);
+        yVel = speed * Math.sin(course);
         posDev = loc.getAccuracy();
         timeStamp = System.currentTimeMillis();
 
         if (m_kalmanFilter == null) {
+            XLog.i("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, accDev=%f, posDev=%f",
+                    Commons.LogMessageType.KALMAN_ALLOC.ordinal(),
+                    timeStamp, x, y, speed, course, accDev, posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
                     Coordinates.longitudeToMeters(x),
                     Coordinates.latitudeToMeters(y),
@@ -435,8 +405,6 @@ public class KalmanLocationService extends Service
                 (float)loc.getAltitude(),
                 timeStamp);
         m_magneticDeclination = f.getDeclination();
-
-        Log.d(TAG, String.format("lon : %f, lat : %f", loc.getLongitude(), loc.getLatitude()));
         SensorGpsDataItem sdi = new SensorGpsDataItem(
                 timeStamp, loc.getLatitude(), loc.getLongitude(), loc.getAltitude(),
                 SensorGpsDataItem.NOT_INITIALIZED,

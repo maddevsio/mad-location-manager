@@ -159,8 +159,8 @@ public class Matrix {
         return true;
     }
 
-    public static void matrixClone(Matrix mSrc,
-                                   Matrix mDst) {
+    public static void matrixCopy(Matrix mSrc,
+                                  Matrix mDst) {
         assert(mSrc != null);
         assert(mDst != null);
         assert(mSrc.rows == mDst.rows && mSrc.cols == mDst.cols);

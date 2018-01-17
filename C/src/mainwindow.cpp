@@ -3,6 +3,7 @@
 #include <QWebEngineProfile>
 #include "Coordinates.h"
 #include "Geohash.h"
+#include "SensorController.h"
 
 static const QString g_mapDiv = "megamap";
 static const QString g_baseHtml = "<!DOCTYPE html>\n"
@@ -36,11 +37,13 @@ static const QString g_baseHtml = "<!DOCTYPE html>\n"
 
 MainWindow::MainWindow(const QString &coordsFilePath,
                        const QString &filteredFilePath,
+                       const QString &filteredFilePath2,
                        QWidget *parent)
   : QMainWindow(parent),
     m_view(new QWebEngineView(this)),
     m_coordsFilePath(coordsFilePath),
-    m_filteredFilePath(filteredFilePath)
+    m_filteredFilePath(filteredFilePath),
+    m_filteredFilePath2(filteredFilePath2)
 {
   this->setGeometry(0, 0, 800, 750);
   setCentralWidget(m_view);  
@@ -66,7 +69,7 @@ MainWindow::MainWindow(const QString &coordsFilePath,
     }
   });
 
-  initMap(page, m_coordsFilePath, m_filteredFilePath);
+  initMap(page, m_coordsFilePath, m_filteredFilePath, m_filteredFilePath2);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -98,9 +101,12 @@ static QString jsCoordsString(const std::vector<geopoint_t>& lst,
 void
 MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
-                    const QString &filteredCoordsFile) {
-  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile);
-  std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile);
+                    const QString &filteredCoordsFile,
+                    const QString &filteredCoordsFile2) {
+//  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_GPS_DATA);
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
+  std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
+  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
 
   const int filterPrec = 7;
   const int minPoints = 3;
@@ -110,13 +116,15 @@ MainWindow::initMap(QWebEnginePage *page,
   //filter for display
   lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
   lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
 
   qDebug() << "2Src distance : " << CoordGetDistance(lstCoords, filterPrec);
   qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
 
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");
-  QString allCoordsStr = srcCoordsStr + geoCoordsStr;
+  QString javaCoordsStr = jsCoordsString(lstJavaFilter, "jkf", "#00FF00");
+  QString allCoordsStr = srcCoordsStr + geoCoordsStr + javaCoordsStr;
 
   double lat, lon;
   lat = lstCoords.empty() ? 42.87336 : lstCoords[0].Latitude;

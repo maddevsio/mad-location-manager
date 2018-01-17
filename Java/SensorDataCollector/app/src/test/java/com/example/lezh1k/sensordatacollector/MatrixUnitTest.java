@@ -253,7 +253,7 @@ public class MatrixUnitTest {
         }
 
         assertTrue(!Matrix.matrixEq(ma, mb, eps));
-        Matrix.matrixClone(ma, mb);
+        Matrix.matrixCopy(ma, mb);
         assertTrue(Matrix.matrixEq(ma, mb, eps));
     }
 }

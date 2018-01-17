@@ -30,7 +30,7 @@ public class AccelerationLogger implements SensorEventListener {
         for (Integer st : sensorTypes) {
             Sensor sensor = m_sensorManager.getDefaultSensor(st);
             if (sensor == null) {
-                Log.d(Commons.AppName, String.format("Couldn't get sensor %d", st));
+                Log.e(Commons.AppName, String.format("Couldn't get sensor %d", st));
                 continue;
             }
             m_lstSensors.add(sensor);
@@ -40,7 +40,7 @@ public class AccelerationLogger implements SensorEventListener {
     public boolean start() {
         for (Sensor sensor : m_lstSensors) {
             if (!m_sensorManager.registerListener(this, sensor, Commons.hertz2periodUs(10.0))) {
-                XLog.e("Couldn't register listener : %d", sensor.getType());
+                Log.e(Commons.AppName, String.format("Couldn't registerListener %d", sensor.getType()));
                 return false;
             }
         }
@@ -78,7 +78,8 @@ public class AccelerationLogger implements SensorEventListener {
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
                 long now = System.currentTimeMillis();
-                lastAbsAccelerationString = String.format(" %d abs acc: %f %f %f",
+                lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
+                        Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
                         now, accAxis[0], accAxis[1], accAxis[2]);
                 XLog.i(lastAbsAccelerationString);
                 break;
