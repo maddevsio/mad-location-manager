@@ -46,18 +46,12 @@ public class KalmanLocationService extends LocationService
     private static final String TAG = "KalmanLocationService";
 
     public static final int PermissionDenied = 0;
-    public static final int StartLocationUpdates = 1;
-    public static final int HaveLocation = 2;
-    public static final int Paused = 3;
-
     private LocationManager m_locationManager;
 
     private boolean m_gpsEnabled = false;
     private boolean m_sensorsEnabled = false;
 
-    private int m_serviceStatus = PermissionDenied;
     private int m_activeSatellites = 0;
-
     private float m_lastLocationAccuracy = 0;
     private GpsStatus m_gpsStatus;
 
@@ -66,7 +60,6 @@ public class KalmanLocationService extends LocationService
     private SensorDataEventLoopTask m_eventLoopTask;
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
-    private boolean m_inProgress = false;
     private double m_magneticDeclination = 0.0;
     private double accDev = 0.8;
 
@@ -88,8 +81,8 @@ public class KalmanLocationService extends LocationService
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaTMs;
-        KalmanLocationService owner;
-        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner) {
+        LocationService owner;
+        SensorDataEventLoopTask(long deltaTMs, LocationService owner) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
         }
@@ -158,7 +151,6 @@ public class KalmanLocationService extends LocationService
         }
 
         void onLocationChangedImp(Location location) {
-
             if (location != null && location.getLatitude() != 0 &&
                     location.getLongitude() != 0 &&
                     location.getProvider().equals(TAG)) {
@@ -192,29 +184,13 @@ public class KalmanLocationService extends LocationService
                 }
             }
         }
-
-//        @Override
-//        protected void onProgressUpdate(Object... values) {
-//        }
     }
 
-
     public KalmanLocationService() {
-        //todo move this to LocationService abstract class
-        m_locationServiceInterfaces = new ArrayList<>();
-        m_locationServiceStatusInterfaces = new ArrayList<>();
-        m_track = new ArrayList<>();
-        //
-
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         m_kalmanFilter = null;
         this.accDev = 1.0;
-    }
-
-    public void reset() {
-        m_kalmanFilter = null;
-        m_track.clear();
     }
 
     @Override
@@ -279,9 +255,9 @@ public class KalmanLocationService extends LocationService
         m_sensorDataQueue.clear();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            m_serviceStatus = PermissionDenied;
+            m_serviceStatus = ServiceStopped;
         } else {
-            m_serviceStatus = Paused;
+            m_serviceStatus = ServicePaused;
             m_locationManager.removeGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
         }
@@ -301,27 +277,9 @@ public class KalmanLocationService extends LocationService
         }
     }
 
-    /*Service implementation*/
-    public class LocalBinder extends Binder {
-        public KalmanLocationService getService() {
-            return KalmanLocationService.this;
-        }
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return new LocalBinder();
-    }
-
-    @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        super.onTaskRemoved(rootIntent);
-        Log.d(TAG, "onTaskRemoved: " + rootIntent);
-
-        m_locationServiceInterfaces.clear();
-        m_locationServiceStatusInterfaces.clear();
-        stopSelf();
+    public void reset() {
+        m_kalmanFilter = null;
+        m_track.clear();
     }
 
     /*SensorEventListener methods implementation*/
@@ -360,11 +318,9 @@ public class KalmanLocationService extends LocationService
         }
     }
 
-    //    private FusedLocationProviderClient mFusedLocationClient;
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         /*do nothing*/
-        ;
     }
 
     /*LocationListener methods implementation*/

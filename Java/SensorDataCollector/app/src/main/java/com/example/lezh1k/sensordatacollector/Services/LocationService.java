@@ -36,6 +36,12 @@ public abstract class LocationService extends Service {
     }
     public void clearTrack() {m_track.clear();}
 
+    public static final int ServiceStopped = 0;
+    public static final int StartLocationUpdates = 1;
+    public static final int HaveLocation = 2;
+    public static final int ServicePaused = 3;
+    protected int m_serviceStatus = ServiceStopped;
+
     public LocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
@@ -70,7 +76,7 @@ public abstract class LocationService extends Service {
 
     public void addStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         if (m_locationServiceStatusInterfaces.add(locationServiceStatusInterface)) {
-//            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
 //            locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
 //            locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
 //            locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
@@ -80,7 +86,7 @@ public abstract class LocationService extends Service {
     public void addStatusInterfaces(List<LocationServiceStatusInterface> locationServiceStatusInterfaces) {
         if (m_locationServiceStatusInterfaces.addAll(locationServiceStatusInterfaces)) {
             for (LocationServiceStatusInterface locationServiceStatusInterface : locationServiceStatusInterfaces) {
-//                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
 //                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
 //                locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
 //                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
