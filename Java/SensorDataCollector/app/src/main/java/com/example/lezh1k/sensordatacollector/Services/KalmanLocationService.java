@@ -68,7 +68,7 @@ public class KalmanLocationService extends LocationService
     private SensorManager m_sensorManager;
     private boolean m_inProgress = false;
     private double m_magneticDeclination = 0.0;
-    private double accDev = 1.0;
+    private double accDev = 0.8;
 
     /*accelerometer + rotation vector*/
     private static int[] sensorTypes = {
