@@ -65,11 +65,4 @@ public class GeoHash {
         }
         return geohash;
     }
-
-
-    public static double distance(List<GeoPoint> track, int precision) {
-        assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
-
-        return 0.0;
-    }
 }

@@ -103,31 +103,30 @@ MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
                     const QString &filteredCoordsFile,
                     const QString &filteredCoordsFile2) {
-//  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_GPS_DATA);
-  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
+  (void)filteredCoordsFile2;
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_GPS_DATA);
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
-  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
+  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 
-  const int filterPrec = 8;
-  const int minPoints = 2;
-  qDebug() << "Src distance : " << CoordGetDistance(lstCoords, filterPrec);
-  qDebug() << "Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
-  qDebug() << "Java distance : " << CoordGetDistance(lstJavaFilter, filterPrec);
+  const int filterPrec = 7;
+  const int minPoints = 3;
 
-  lstCoords.clear();
-  lstGeoFilter.clear();
+  qDebug() << "Src distance : " << CoordCaclulateDistance(lstCoords);
+  qDebug() << "Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
+  qDebug() << "Java distance : " << CoordCaclulateDistance(lstJavaFilter);
+
   //filter for display
   lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
   lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
   lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
 
-  qDebug() << "2Src distance : " << CoordGetDistance(lstCoords, filterPrec);
-  qDebug() << "2Filtered distance : " << CoordGetDistance(lstGeoFilter, filterPrec);
-  qDebug() << "2Java distance : " << CoordGetDistance(lstJavaFilter, filterPrec);
+  qDebug() << "2Src distance : " << CoordCaclulateDistance(lstCoords);
+  qDebug() << "2Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
+  qDebug() << "2Java distance : " << CoordCaclulateDistance(lstJavaFilter);
 
   QString srcCoordsStr = jsCoordsString(lstCoords, "src", "#FF0000");
   QString geoCoordsStr = jsCoordsString(lstGeoFilter, "geo", "#0000FF");
-  QString javaCoordsStr = jsCoordsString(lstJavaFilter, "jkf", "#00FF00");
+  QString javaCoordsStr = jsCoordsString(lstJavaFilter, "jkf", "#007700");
   QString allCoordsStr = srcCoordsStr + geoCoordsStr + javaCoordsStr;
 
   double lat, lon;

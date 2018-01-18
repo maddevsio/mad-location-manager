@@ -29,6 +29,6 @@ double CoordLatitudeToMeters(double lat);
 geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters);
 
-double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision);
+double CoordCaclulateDistance(const std::vector<geopoint_t> &lst);
 
 #endif // COORDINATES_H
