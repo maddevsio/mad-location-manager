@@ -89,7 +89,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
 
         tmp = Coordinates.filterByGeohash(track, precision, minPoints);
         double dd = Coordinates.calculateDistance(tmp);
-        m_distance += dd;
+        m_distance = dd;
         llat = pp.Latitude;
         llon = pp.Longitude;
     }
