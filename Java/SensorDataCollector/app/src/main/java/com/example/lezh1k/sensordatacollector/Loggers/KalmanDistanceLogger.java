@@ -11,6 +11,7 @@ import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterfac
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by lezh1k on 1/8/18.
@@ -18,12 +19,20 @@ import java.util.ArrayList;
 
 public class KalmanDistanceLogger implements LocationServiceInterface {
 
-    private boolean firstCoordinateReceived = false;
-    private double lastLat, lastLon;
     private ArrayList<GeoPoint> track = new ArrayList<>();
-    private double m_distance;
+    private double m_distance = 0.0;
+
+    private char geoBuffers[][];
+    private int count;
+    private GeoPoint tmpGeo;
+    private GeoPoint laGeo;
+    private static final double COORD_NOT_INITIALIZED = 361.0;
+    private static final int ppCompGeoHash = 0;
+    private static final int ppReadGeoHash = 1;
+    private boolean isFirstCoordinate = true;
 
     public KalmanDistanceLogger() {
+        reset();
         ServicesHelper.addLocationServiceInterface(this);
     }
 
@@ -32,10 +41,19 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
     }
 
     public void reset() {
+        char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
+        char[] buff2 = new char[GeoHash.GEOHASH_MAX_PRECISION];
+        geoBuffers = new char[][]{buff1, buff2};
+        count = 0;
+        laGeo = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
+        tmpGeo = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
         track.clear();
         m_distance = 0.0;
-        firstCoordinateReceived = false;
     }
+
+    //todo move to parameters
+    private final int prec = 8;
+    private final int minPointCount = 2;
 
     @Override
     public void locationChanged(Location loc) {
@@ -44,29 +62,43 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
                 loc.getTime(), loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude());
 
-        GeoPoint pp = new GeoPoint(loc.getLatitude(), loc.getLongitude());
-        if (!firstCoordinateReceived) {
-            lastLat = loc.getLatitude();
-            lastLon = loc.getLongitude();
-            firstCoordinateReceived = true;
-            track.add(pp);
+        GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
+        track.add(pi);
+
+        if (isFirstCoordinate) {
+            GeoHash.encode(pi.Latitude, pi.Longitude, geoBuffers[ppCompGeoHash], prec);
+            tmpGeo.Latitude = pi.Latitude;
+            tmpGeo.Longitude = pi.Longitude;
+            count = 1;
+            isFirstCoordinate = false;
             return;
         }
 
-        String geo0, geo1;
-        final int precision = 8;
-        final int minPoints = 2;
+        GeoHash.encode(pi.Latitude, pi.Longitude, geoBuffers[ppReadGeoHash], prec);
+        if (Arrays.equals(geoBuffers[ppCompGeoHash], geoBuffers[ppReadGeoHash])) {
+            if (count >= minPointCount) {
+                tmpGeo.Latitude /= count;
+                tmpGeo.Longitude /= count;
 
-        geo0 = GeoHash.encode(lastLat, lastLon, precision);
-        geo1 = GeoHash.encode(pp.Latitude, pp.Longitude, precision);
-        track.add(pp);
-
-        if (geo0.equals(geo1))
+                if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
+                    m_distance += Coordinates.geoDistanceMeters(laGeo.Longitude, laGeo.Latitude,
+                            tmpGeo.Longitude, tmpGeo.Latitude);
+                }
+                laGeo = tmpGeo;
+                tmpGeo.Latitude = tmpGeo.Longitude = 0.0;
+            }
+            count = 1;
+            tmpGeo.Latitude = pi.Latitude;
+            tmpGeo.Longitude = pi.Longitude;
+            //swap buffers
+            char[] swp = geoBuffers[ppCompGeoHash];
+            geoBuffers[ppCompGeoHash] = geoBuffers[ppReadGeoHash];
+            geoBuffers[ppReadGeoHash] = swp;
             return;
+        }
 
-        GeoPoint[] tmp = Coordinates.filterByGeohash(track, precision, minPoints);
-        m_distance = Coordinates.calculateDistance(tmp);
-        lastLat = pp.Latitude;
-        lastLon = pp.Longitude;
+        tmpGeo.Latitude += pi.Latitude;
+        tmpGeo.Longitude += pi.Longitude;
+        ++count;
     }
 }

@@ -98,6 +98,63 @@ static QString jsCoordsString(const std::vector<geopoint_t>& lst,
   return coordsStr;
 }
 
+static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
+                                     int prec,
+                                     int minPointCount) {
+  if (lst.empty() || lst.size() == 1) {
+    return 0.0;
+  }
+
+  double distance = 0.0;
+  char buff1[GEOHASH_MAX_PRECISION+1] = {0};
+  char buff2[GEOHASH_MAX_PRECISION+1] = {0};
+  char *pbuff1 = buff1;
+  char *pbuff2 = buff2;
+  char **ppReadGeohash = &pbuff1;
+  char **ppCompGeohash = &pbuff2;
+
+  int count;
+  geopoint_t tmpGeo, laGeo;
+  auto pi = lst.begin();
+
+  static const double COORD_NOT_INITIALIZED = 361.0;
+  laGeo.Latitude = laGeo.Longitude = COORD_NOT_INITIALIZED;
+  GeohashEncode(pi->Latitude, pi->Longitude, *ppCompGeohash, prec);
+  tmpGeo.Latitude = pi->Latitude;
+  tmpGeo.Longitude = pi->Longitude;
+  count = 1;
+
+  for (++pi; pi != lst.end(); ++pi) {
+    GeohashEncode(pi->Latitude, pi->Longitude, *ppReadGeohash, prec);
+
+    if (memcmp(*ppCompGeohash, *ppReadGeohash, prec)) {
+      if (count >= minPointCount) {
+        tmpGeo.Latitude /= count;
+        tmpGeo.Longitude /= count;
+
+        if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
+          distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
+                                                       tmpGeo.Latitude, tmpGeo.Longitude);
+        }
+        laGeo = tmpGeo;
+        tmpGeo.Latitude = tmpGeo.Longitude = 0.0;
+      }
+
+      count = 1;
+      tmpGeo.Latitude = pi->Latitude;
+      tmpGeo.Longitude = pi->Longitude;
+      std::swap(*ppCompGeohash, *ppReadGeohash);
+      continue;
+    }
+
+    tmpGeo.Latitude += pi->Latitude;
+    tmpGeo.Longitude += pi->Longitude;
+    ++count;
+  }
+
+  return distance;
+}
+
 void
 MainWindow::initMap(QWebEnginePage *page,
                     const QString &pathToCoordsFile,
@@ -108,8 +165,16 @@ MainWindow::initMap(QWebEnginePage *page,
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
   std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 
-  const int filterPrec = 7;
-  const int minPoints = 3;
+  const int filterPrec = 8;
+  const int minPoints = 2;
+
+  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, 10, 1);
+  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, 10, 1);
+  qDebug() << "RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, 10, 1);
+
+  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, filterPrec, minPoints);
+  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, filterPrec, minPoints);
+  qDebug() << "RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, filterPrec, minPoints);
 
   qDebug() << "Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);

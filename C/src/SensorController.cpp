@@ -187,6 +187,7 @@ FilterInputFile(const QString &inputFile,
                                   accDev,
                                   sd.posErr,
                                   sd.timestamp);
+    sensorDataToFile(fOut, &sd);
 
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();

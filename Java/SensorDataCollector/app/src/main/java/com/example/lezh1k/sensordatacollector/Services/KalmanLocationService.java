@@ -337,6 +337,13 @@ public class KalmanLocationService extends LocationService
         posDev = loc.getAccuracy();
         timeStamp = System.currentTimeMillis();
 
+        GeomagneticField f = new GeomagneticField(
+                (float)loc.getLatitude(),
+                (float)loc.getLongitude(),
+                (float)loc.getAltitude(),
+                timeStamp);
+        m_magneticDeclination = f.getDeclination();
+
         if (m_kalmanFilter == null) {
             XLog.i("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, accDev=%f, posDev=%f",
                     Commons.LogMessageType.KALMAN_ALLOC.ordinal(),
@@ -349,18 +356,11 @@ public class KalmanLocationService extends LocationService
                     accDev,
                     posDev,
                     timeStamp);
-            return;
         }
 
         //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
         // and loc.getSpeedAccuracyMetersPerSecond() requare API 26
         double velErr = loc.getAccuracy() * 0.1;
-        GeomagneticField f = new GeomagneticField(
-                (float)loc.getLatitude(),
-                (float)loc.getLongitude(),
-                (float)loc.getAltitude(),
-                timeStamp);
-        m_magneticDeclination = f.getDeclination();
         SensorGpsDataItem sdi = new SensorGpsDataItem(
                 timeStamp, loc.getLatitude(), loc.getLongitude(), loc.getAltitude(),
                 SensorGpsDataItem.NOT_INITIALIZED,

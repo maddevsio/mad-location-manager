@@ -4,7 +4,10 @@ import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertTrue;
 
@@ -58,11 +61,15 @@ public class GeoHashUnitTest {
         };
 
         for (EncodeTestItem ti : posTests) {
-            assertEquals(ti.expected, GeoHash.encode(ti.lat, ti.lon, ti.precision));
+            char buff[] = new char[ti.precision];
+            GeoHash.encode(ti.lat, ti.lon, buff, ti.precision);
+            assertTrue(Arrays.equals(ti.expected.toCharArray(), buff));
         }
 
         for (EncodeTestItem ti : negTests) {
-            assertNotSame(ti.expected, GeoHash.encode(ti.lat, ti.lon, ti.precision));
+            char buff[] = new char[ti.precision];
+            GeoHash.encode(ti.lat, ti.lon, buff, ti.precision);
+            assertFalse(Arrays.equals(ti.expected.toCharArray(), buff));
         }
     }
 }

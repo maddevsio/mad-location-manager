@@ -19,7 +19,8 @@ public class Commons {
         KALMAN_UPDATE,
         GPS_DATA,
         ABS_ACC_DATA,
-        FILTERED_GPS_DATA
+        FILTERED_GPS_DATA,
+        DISTANCE_CALCULATION
     }
 }
 

@@ -75,7 +75,7 @@ public class Coordinates {
         return getPointAhead(point, distance, 0.0);
     }
 
-    public static GeoPoint[] filterByGeohash(List<GeoPoint> lstSrc,
+    public static GeoPoint[] filterByGeoHash(List<GeoPoint> lstSrc,
                                              int precision,
                                              int minPointCount) {
         final int NOT_VALID_INDEX  = -1;
@@ -90,11 +90,13 @@ public class Coordinates {
             }
         }
 
+        char buff[] = new char[precision];
         HashMap<String, AuxItem> dctHashCount = new HashMap<>();
 
         int idx = 0;
         for (GeoPoint ci : lstSrc) {
-            String geoHash = GeoHash.encode(ci.Latitude, ci.Longitude, precision);
+            GeoHash.encode(ci.Latitude, ci.Longitude, buff, precision);
+            String geoHash = new String(buff);
             AuxItem it;
             if (!dctHashCount.containsKey(geoHash)) {
                 it = new AuxItem();
@@ -123,6 +125,7 @@ public class Coordinates {
     public static double calculateDistance(GeoPoint track[]) {
         double distance = 0.0;
         double lastLon, lastLat;
+        //WARNING! I didn't find array.length type. Seems it's int, so we can use next comparison:
         if (track == null || track.length - 1 <= 0) //track.length == 0 || track.length == 1
             return 0.0;
 

@@ -18,7 +18,7 @@ public class GeoHash {
             's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
     public static final int GEOHASH_MAX_PRECISION = 12;
 
-    public static String encode(double srcLat, double srcLon, int precision) {
+    public static void encode(double srcLat, double srcLon, char buff[], int precision) {
         class Interval {
             private double min, max;
 
@@ -28,7 +28,6 @@ public class GeoHash {
             }
         }
 
-        String geohash = "";
         Interval lat = new Interval(-90.0, 90.0);
         Interval lon = new Interval(-180.0, 180.0);
         Interval ci;
@@ -36,6 +35,7 @@ public class GeoHash {
         double mid, cd;
         int idx = 0; // index into base32 map
         int bit = 0; // each char holds 5 bits
+        int bi = 0; //buffer index
 
         while (precision > 0) {
             if (isEven) {
@@ -58,11 +58,10 @@ public class GeoHash {
             isEven = !isEven;
 
             if (++bit == 5) {
-                geohash += base32Table[idx];
+                buff[bi++] = base32Table[idx];
                 idx = bit = 0;
                 --precision;
             }
         }
-        return geohash;
     }
 }

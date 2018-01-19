@@ -39,9 +39,10 @@ CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
                 int minPointCount) {
 #define NOT_VALID_POINT_INDEX -1
   struct AuxItem {
-    int index;
-    int count;
-    double lon, lat;
+    double lon;
+    double lat;
+    int32_t index;
+    int32_t count;
   };
   static char buff[GEOHASH_MAX_PRECISION+1] = {0};
 
