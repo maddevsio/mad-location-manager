@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
 
   if (!FilterInputFile(in, out))
     return 1;
-//  if (!JavaFilter(in, out2))
-//    return 2;
+  if (!JavaFilter(in, out2))
+    return 2;
 
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);

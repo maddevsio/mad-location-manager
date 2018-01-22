@@ -132,12 +132,13 @@ public class KalmanLocationService extends LocationService
                         );
 
                         Location loc = new Location(TAG);
-                        GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(), m_kalmanFilter.getCurrentY());
+                        GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(),
+                                m_kalmanFilter.getCurrentY());
                         loc.setLatitude(pp.Latitude);
                         loc.setLongitude(pp.Longitude);
                         loc.setAltitude(sdi.getGpsAlt());
-                        xVel = m_kalmanFilter.getCurrentX();
-                        yVel = m_kalmanFilter.getCurrentY();
+                        xVel = m_kalmanFilter.getCurrentXVel();
+                        yVel = m_kalmanFilter.getCurrentYVel();
                         double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
                         //todo calculate bearing!
                         loc.setSpeed((float) speed);
@@ -217,6 +218,7 @@ public class KalmanLocationService extends LocationService
     }
 
     public void start() {
+        m_sensorDataQueue.clear();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = PermissionDenied;
         } else {
@@ -241,19 +243,12 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        if (m_eventLoopTask != null) {
-            m_eventLoopTask.cancel(true);
-        }
-
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        m_sensorDataQueue.clear();
     }
 
     public void stop() {
-        m_sensorDataQueue.clear();
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = ServiceStopped;
         } else {
@@ -273,8 +268,10 @@ public class KalmanLocationService extends LocationService
         }
 
         if (m_eventLoopTask != null) {
+            m_eventLoopTask.needTerminate = true;
             m_eventLoopTask.cancel(true);
         }
+        m_sensorDataQueue.clear();
     }
 
     public void reset() {

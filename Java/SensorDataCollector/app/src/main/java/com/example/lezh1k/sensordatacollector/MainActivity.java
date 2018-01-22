@@ -22,7 +22,7 @@ import com.elvishew.xlog.printer.AndroidPrinter;
 import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
-import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
+import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
@@ -31,7 +31,10 @@ import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -63,7 +66,9 @@ public class MainActivity extends AppCompatActivity {
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
 
-            tvLocationData.setText(String.format("Location:\n%s", m_gpsDataLogger.getLastLoggedGPSMessage()));
+            tvLocationData.setText(String.format("Location:\n%s\n%s",
+                    m_gpsDataLogger.getLastLoggedGPSMessage(),
+                    m_kalmanDistanceLogger.getLastFilteredLocationString()));
 
             tvLinAccData.setText(String.format("Acceleration:\n" +
                             "Lin:%s\n" +
@@ -133,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
         String btnTvStatusText;
 
         if (isLogging) {
+            initXlogPrintersFileName();
             btnStartStopText = "Stop tracking";
             btnTvStatusText = "Tracking is in progress";
             m_gpsDataLogger.start();
@@ -205,6 +211,45 @@ public class MainActivity extends AppCompatActivity {
         set_isCalibrating(!m_isCalibrating, true);
     }
 
+    private Printer xLogFilePrinter;
+    private String xLogFolderPath;
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    class ChangableFileNameGenerator implements FileNameGenerator {
+        private String fileName;
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public ChangableFileNameGenerator() {
+        }
+        @Override
+        public boolean isFileNameChangeable() {
+            return true;
+        }
+        @Override
+        public String generateFileName(int logLevel, long timestamp) {
+            return fileName;
+        }
+    }
+    ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+    private void initXlogPrintersFileName() {
+        sdf.setTimeZone(TimeZone.getDefault());
+        String dateStr = sdf.format(System.currentTimeMillis());
+        String fileName = dateStr;
+        for (int i = 0; i < 10000; ++i) {
+            fileName = String.format("%s_%d", dateStr, i);
+            File f = new File(xLogFolderPath, fileName);
+            if (!f.exists())
+                break;
+        }
+        xLogFileNameGenerator.setFileName(fileName);
+    }
+
     private void initActivity() {
         setContentView(R.layout.activity_main);
         String[] interestedPermissions;
@@ -251,16 +296,17 @@ public class MainActivity extends AppCompatActivity {
         String storageState = Environment.getExternalStorageState();
         TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
         if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
-            String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
+            xLogFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
             Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
-            Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
-                    .Builder(logFolderPath)                            // Specify the path to save log file
-                    .fileNameGenerator(new DateFileNameGenerator())    // Date as file name
+            initXlogPrintersFileName();
+            xLogFilePrinter = new FilePrinter
+                    .Builder(xLogFolderPath)
+                    .fileNameGenerator(xLogFileNameGenerator)
                     .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
                     .build();
-            XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
+            XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
             XLog.i("Application started!!!");
-            tvStatus.setText(logFolderPath);
+            tvStatus.setText(xLogFolderPath);
         } else {
             System.exit(3);
         }
