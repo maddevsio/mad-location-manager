@@ -305,7 +305,6 @@ public class MainActivity extends AppCompatActivity {
                     .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
                     .build();
             XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
-            XLog.i("Application started!!!");
             tvStatus.setText(xLogFolderPath);
         } else {
             System.exit(3);

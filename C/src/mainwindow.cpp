@@ -181,9 +181,9 @@ MainWindow::initMap(QWebEnginePage *page,
   qDebug() << "Java distance : " << CoordCaclulateDistance(lstJavaFilter);
 
   //filter for display
-//  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
-//  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
-//  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
+  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
 
   qDebug() << "2Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "2Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
