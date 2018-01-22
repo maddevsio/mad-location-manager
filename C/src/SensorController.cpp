@@ -174,7 +174,7 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 0.8;
+    static const double accDev = 1.0;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);

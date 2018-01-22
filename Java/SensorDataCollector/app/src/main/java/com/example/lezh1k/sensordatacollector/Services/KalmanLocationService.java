@@ -189,7 +189,7 @@ public class KalmanLocationService extends LocationService
     public KalmanLocationService() {
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
-        m_kalmanFilter = null;
+        reset();
         this.accDev = 1.0;
     }
 
@@ -356,6 +356,7 @@ public class KalmanLocationService extends LocationService
                     accDev,
                     posDev,
                     timeStamp);
+            return;
         }
 
         //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()

@@ -19,8 +19,8 @@ import java.util.Arrays;
 
 public class KalmanDistanceLogger implements LocationServiceInterface {
 
-    private ArrayList<GeoPoint> track = new ArrayList<>();
-    private double m_distance = 0.0;
+    private double m_distanceGeoFiltered = 0.0;
+    private double m_distanceAsIs = 0.0;
 
     private char geoBuffers[][];
     private int count;
@@ -36,9 +36,10 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
         ServicesHelper.addLocationServiceInterface(this);
     }
 
-    public double getDistance() {
-        return m_distance;
+    public double getDistanceGeoFiltered() {
+        return m_distanceGeoFiltered;
     }
+    public double getDistanceAsIs() { return m_distanceAsIs; }
 
     public void reset() {
         char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
@@ -47,14 +48,17 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
         count = 0;
         laGeo = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
         tmpGeo = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
-        track.clear();
-        m_distance = 0.0;
+        lastGeoPointAsIs = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
+        m_distanceGeoFiltered = 0.0;
+        m_distanceAsIs = 0.0;
+        isFirstCoordinate = true;
     }
 
     //todo move to parameters
     private final int prec = 8;
     private final int minPointCount = 2;
 
+    private GeoPoint lastGeoPointAsIs;
     @Override
     public void locationChanged(Location loc) {
         XLog.i("%d%d FKS : lat=%f, lon=%f, alt=%f",
@@ -63,25 +67,34 @@ public class KalmanDistanceLogger implements LocationServiceInterface {
                 loc.getLongitude(), loc.getAltitude());
 
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
-        track.add(pi);
 
         if (isFirstCoordinate) {
             GeoHash.encode(pi.Latitude, pi.Longitude, geoBuffers[ppCompGeoHash], prec);
             tmpGeo.Latitude = pi.Latitude;
             tmpGeo.Longitude = pi.Longitude;
+            lastGeoPointAsIs.Latitude = pi.Latitude;
+            lastGeoPointAsIs.Longitude = pi.Longitude;
             count = 1;
             isFirstCoordinate = false;
             return;
         }
 
+        m_distanceAsIs += Coordinates.geoDistanceMeters(lastGeoPointAsIs.Longitude,
+                lastGeoPointAsIs.Latitude,
+                pi.Longitude,
+                pi.Latitude);
+
+        lastGeoPointAsIs.Longitude = loc.getLongitude();
+        lastGeoPointAsIs.Latitude = loc.getLatitude();
+
         GeoHash.encode(pi.Latitude, pi.Longitude, geoBuffers[ppReadGeoHash], prec);
-        if (Arrays.equals(geoBuffers[ppCompGeoHash], geoBuffers[ppReadGeoHash])) {
+        if (!Arrays.equals(geoBuffers[ppCompGeoHash], geoBuffers[ppReadGeoHash])) {
             if (count >= minPointCount) {
                 tmpGeo.Latitude /= count;
                 tmpGeo.Longitude /= count;
 
                 if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-                    m_distance += Coordinates.geoDistanceMeters(laGeo.Longitude, laGeo.Latitude,
+                    m_distanceGeoFiltered += Coordinates.geoDistanceMeters(laGeo.Longitude, laGeo.Latitude,
                             tmpGeo.Longitude, tmpGeo.Latitude);
                 }
                 laGeo = tmpGeo;

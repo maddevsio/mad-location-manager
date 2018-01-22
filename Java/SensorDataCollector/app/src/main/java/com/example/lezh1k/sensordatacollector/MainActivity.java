@@ -29,7 +29,6 @@ import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
-import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -76,7 +75,10 @@ public class MainActivity extends AppCompatActivity {
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
 
-            tvDistance.setText(String.format("Distance : %fm", m_kalmanDistanceLogger.getDistance()));
+            tvDistance.setText(String.format("Distance (geo): %fm\n" +
+                            "Distance as is : %fm",
+                    m_kalmanDistanceLogger.getDistanceGeoFiltered(),
+                    m_kalmanDistanceLogger.getDistanceAsIs()));
 
             if (m_sensorCalibrator.isInProgress()) {
                 tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
