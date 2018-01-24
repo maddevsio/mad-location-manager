@@ -16,6 +16,7 @@ static bool parseKalmanAllocData(const char *str, SensorData_t *sd);
 static bool parseKalmanPredict(const char *str, SensorData_t *sd);
 static bool parseKalmanUpdate(const char *str, SensorData_t *sd);
 static bool parseFilteredGpsData(const char *str, SensorData_t *sd);
+static bool parseFinalDistance(const char *str, SensorData_t *sd);
 typedef bool (*pf_parser)(const char*, SensorData_t*);
 
 //don't change order here. it's related to LogMessageType
@@ -26,6 +27,7 @@ static pf_parser parsers[] = {
   parseGpsData,
   parseAbsAccData,
   parseFilteredGpsData,
+  parseFinalDistance,
 };
 
 bool parseAbsAccData(const char *str, SensorData_t *sd) {
@@ -95,6 +97,20 @@ bool parseFilteredGpsData(const char *str, SensorData_t *sd) {
               &sd->gpsLon,
               &sd->gpsAlt);
   return tt == 4;
+}
+
+bool parseFinalDistance(const char *str, SensorData_t *sd) {
+  int tt;
+  tt = sscanf(str, "%lf Distance as is : %lf\n"
+                   "Distance as is HP : %lf\n"
+                   "Distance(geo) : %lf\n"
+                   "Distance(geo) HP : %lf",
+              &sd->timestamp,
+              &sd->distanceAsIs,
+              &sd->distanceAsIsHP,
+              &sd->distanceGeo,
+              &sd->distanceGeoHP);
+  return tt == 5;
 }
 //////////////////////////////////////////////////////////////////////////
 

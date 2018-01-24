@@ -20,7 +20,7 @@ public class Commons {
         GPS_DATA,
         ABS_ACC_DATA,
         FILTERED_GPS_DATA,
-        DISTANCE_CALCULATION
+        FINAL_DISTANCE
     }
 }
 

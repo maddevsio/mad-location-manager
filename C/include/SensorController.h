@@ -13,6 +13,7 @@ enum LogMessageType {
   LMT_GPS_DATA,
   LMT_ABS_ACC_DATA,
   LMT_FILTERED_GPS_DATA,
+  LMT_FINAL_DISTANCE,
   LMT_UNKNOWN
 };
 //////////////////////////////////////////////////////////////////////////
@@ -32,6 +33,11 @@ typedef struct SensorData {
   double yVel;
   double velErr;
   double posErr;
+
+  double distanceAsIs;
+  double distanceAsIsHP;
+  double distanceGeo;
+  double distanceGeoHP;
 } SensorData_t;
 
 LogMessageType SensorControllerParseDataString(const char *str, SensorData_t *sd);

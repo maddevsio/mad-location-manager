@@ -42,6 +42,10 @@ public abstract class LocationService extends Service {
     public static final int ServicePaused = 3;
     protected int m_serviceStatus = ServiceStopped;
 
+    public boolean IsRunning() {
+        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused;
+    }
+
     public LocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();

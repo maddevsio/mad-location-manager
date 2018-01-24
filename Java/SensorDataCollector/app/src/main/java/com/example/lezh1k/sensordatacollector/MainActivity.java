@@ -28,6 +28,7 @@ import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
+import com.example.lezh1k.sensordatacollector.Services.KalmanLocationService;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
 import java.io.File;
@@ -41,7 +42,9 @@ public class MainActivity extends AppCompatActivity {
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaT;
-        RefreshTask(long deltaTMs) {
+        Context owner;
+        RefreshTask(long deltaTMs, Context owner) {
+            this.owner = owner;
             this.deltaT = deltaTMs;
         }
 
@@ -66,10 +69,6 @@ public class MainActivity extends AppCompatActivity {
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
 
-            tvLocationData.setText(String.format("Location:\n%s\n%s",
-                    m_gpsDataLogger.getLastLoggedGPSMessage(),
-                    m_kalmanDistanceLogger.getLastFilteredLocationString()));
-
             tvLinAccData.setText(String.format("Acceleration:\n" +
                             "Lin:%s\n" +
                             "Abs:%s",
@@ -80,10 +79,21 @@ public class MainActivity extends AppCompatActivity {
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
 
-            tvDistance.setText(String.format("Distance (geo): %fm\n" +
-                            "Distance as is : %fm",
-                    m_kalmanDistanceLogger.getDistanceGeoFiltered(),
-                    m_kalmanDistanceLogger.getDistanceAsIs()));
+            ServicesHelper.getLocationService(owner, value -> {
+                KalmanLocationService kls = (KalmanLocationService) value;
+                KalmanDistanceLogger kdl = kls.getDistanceLogger();
+                tvDistance.setText(String.format("Distance (geo): %fm\n" +
+                                "Distance (geo) HP: %fm\n" +
+                                "Distance as is : %fm\n" +
+                                "Distance as is HP: %fm",
+                        kdl.getDistanceGeoFiltered(),
+                        kdl.getDistanceGeoFilteredHP(),
+                        kdl.getDistanceAsIs(),
+                        kdl.getDistanceAsIsHP()));
+                tvLocationData.setText(String.format("Location:\n%s\n%s",
+                        m_gpsDataLogger.getLastLoggedGPSMessage(),
+                        kdl.getLastFilteredLocationString()));
+            });
 
             if (m_sensorCalibrator.isInProgress()) {
                 tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
@@ -99,11 +109,10 @@ public class MainActivity extends AppCompatActivity {
     private GPSDataLogger m_gpsDataLogger = null;
     private AccelerationLogger m_accDataLogger = null;
     private SensorCalibrator m_sensorCalibrator = null;
-    private KalmanDistanceLogger m_kalmanDistanceLogger = null;
 
     private boolean m_isLogging = false;
     private boolean m_isCalibrating = false;
-    RefreshTask m_refreshTask = new RefreshTask(1000l);
+    RefreshTask m_refreshTask = new RefreshTask(1000l, this);
 
     protected void onPause() {
         super.onPause();
@@ -118,9 +127,6 @@ public class MainActivity extends AppCompatActivity {
         if (m_sensorCalibrator != null) {
             m_sensorCalibrator.stop();
         }
-
-        ServicesHelper.getLocationService(this, value -> value.stop());
-
         m_isLogging = false;
     }
 
@@ -138,16 +144,20 @@ public class MainActivity extends AppCompatActivity {
         String btnTvStatusText;
 
         if (isLogging) {
-            initXlogPrintersFileName();
+            ServicesHelper.getLocationService(this, value -> {
+                if (value.IsRunning())
+                    return;
+                KalmanLocationService kls = (KalmanLocationService) value;
+                kls.initXlogPrintersFileName();
+                value.stop();
+                value.reset();
+                value.start();
+            });
             btnStartStopText = "Stop tracking";
             btnTvStatusText = "Tracking is in progress";
             m_gpsDataLogger.start();
             m_accDataLogger.start();
-            m_kalmanDistanceLogger.reset();
-            ServicesHelper.getLocationService(this, value -> {
-                value.reset();
-                value.start();
-            });
+
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
@@ -167,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
         m_isLogging = isLogging;
     }
 
-//    private TestServiceLogger tt = new TestServiceLogger();
     //todo change to state machine
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
@@ -198,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        m_refreshTask = new RefreshTask(1000);
+        m_refreshTask = new RefreshTask(1000, this);
         m_refreshTask.needTerminate = false;
         m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
@@ -209,45 +218,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void btnCalibrate_click(View v) {
         set_isCalibrating(!m_isCalibrating, true);
-    }
-
-    private Printer xLogFilePrinter;
-    private String xLogFolderPath;
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    class ChangableFileNameGenerator implements FileNameGenerator {
-        private String fileName;
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public ChangableFileNameGenerator() {
-        }
-        @Override
-        public boolean isFileNameChangeable() {
-            return true;
-        }
-        @Override
-        public String generateFileName(int logLevel, long timestamp) {
-            return fileName;
-        }
-    }
-    ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
-    private void initXlogPrintersFileName() {
-        sdf.setTimeZone(TimeZone.getDefault());
-        String dateStr = sdf.format(System.currentTimeMillis());
-        String fileName = dateStr;
-        for (int i = 0; i < 10000; ++i) {
-            fileName = String.format("%s_%d", dateStr, i);
-            File f = new File(xLogFolderPath, fileName);
-            if (!f.exists())
-                break;
-        }
-        xLogFileNameGenerator.setFileName(fileName);
     }
 
     private void initActivity() {
@@ -288,27 +258,11 @@ public class MainActivity extends AppCompatActivity {
         m_gpsDataLogger = new GPSDataLogger(locationManager, this);
         m_accDataLogger = new AccelerationLogger(sensorManager);
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
-        m_kalmanDistanceLogger = new KalmanDistanceLogger();
-        set_isLogging(false);
-        set_isCalibrating(false, true);
 
-        File esd = Environment.getExternalStorageDirectory();
-        String storageState = Environment.getExternalStorageState();
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
-            xLogFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
-            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
-            initXlogPrintersFileName();
-            xLogFilePrinter = new FilePrinter
-                    .Builder(xLogFolderPath)
-                    .fileNameGenerator(xLogFileNameGenerator)
-                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
-                    .build();
-            XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
-            tvStatus.setText(xLogFolderPath);
-        } else {
-            System.exit(3);
-        }
+        ServicesHelper.getLocationService(this, value -> {
+            set_isLogging(value.IsRunning());
+        });
+        set_isCalibrating(false, true);
     }
 
     @Override

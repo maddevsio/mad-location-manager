@@ -17,12 +17,20 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.TextView;
 
+import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.AndroidPrinter;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
+import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Coordinates;
 import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
@@ -30,10 +38,16 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
+import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
+import com.example.lezh1k.sensordatacollector.R;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
+import java.util.TimeZone;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
@@ -43,6 +57,13 @@ import java.util.concurrent.PriorityBlockingQueue;
 public class KalmanLocationService extends LocationService
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
+    private KalmanDistanceLogger m_kalmanDistanceLogger = null;
+
+    public KalmanDistanceLogger getDistanceLogger() {
+        return m_kalmanDistanceLogger;
+    }
+
+    /**/
     private static final String TAG = "KalmanLocationService";
 
     public static final int PermissionDenied = 0;
@@ -194,14 +215,72 @@ public class KalmanLocationService extends LocationService
         this.accDev = 1.0;
     }
 
+    private String xLogFolderPath;
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    class ChangableFileNameGenerator implements FileNameGenerator {
+        private String fileName;
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public ChangableFileNameGenerator() {
+        }
+        @Override
+        public boolean isFileNameChangeable() {
+            return true;
+        }
+        @Override
+        public String generateFileName(int logLevel, long timestamp) {
+            return fileName;
+        }
+    }
+
+    ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+    public void initXlogPrintersFileName() {
+        sdf.setTimeZone(TimeZone.getDefault());
+        String dateStr = sdf.format(System.currentTimeMillis());
+        String fileName = dateStr;
+        for (int i = 0; i < 10000; ++i) {
+            fileName = String.format("%s_%d", dateStr, i);
+            File f = new File(xLogFolderPath, fileName);
+            if (!f.exists())
+                break;
+        }
+        xLogFileNameGenerator.setFileName(fileName);
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
-        if (m_sensorManager == null)
+        File esd = Environment.getExternalStorageDirectory();
+        String storageState = Environment.getExternalStorageState();
+        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
+            xLogFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
+            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
+            initXlogPrintersFileName();
+            Printer xLogFilePrinter = new FilePrinter
+                    .Builder(xLogFolderPath)
+                    .fileNameGenerator(xLogFileNameGenerator)
+                    .backupStrategy(new FileSizeBackupStrategy(1024 * 1024 * 100)) //100MB for backup files
+                    .build();
+            XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
+        } else {
+            //todo set some status
+        }
+
+        if (m_sensorManager == null) {
+            m_sensorsEnabled = false;
             return; //todo handle somehow
+        }
+
         for (Integer st : sensorTypes) {
             Sensor sensor = m_sensorManager.getDefaultSensor(st);
             if (sensor == null) {
@@ -210,6 +289,8 @@ public class KalmanLocationService extends LocationService
             }
             m_lstSensors.add(sensor);
         }
+
+        m_kalmanDistanceLogger = new KalmanDistanceLogger();
     }
 
     @Override
@@ -243,6 +324,7 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
+        m_kalmanDistanceLogger.reset();
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
