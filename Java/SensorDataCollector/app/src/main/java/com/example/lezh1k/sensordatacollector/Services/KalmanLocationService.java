@@ -38,6 +38,8 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
+import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
+import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import com.example.lezh1k.sensordatacollector.R;
 
@@ -58,10 +60,14 @@ public class KalmanLocationService extends LocationService
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
     private KalmanDistanceLogger m_kalmanDistanceLogger = null;
+    private GPSDataLogger m_gpsDataLogger = null;
+    private AccelerationLogger m_accDataLogger = null;
 
     public KalmanDistanceLogger getDistanceLogger() {
         return m_kalmanDistanceLogger;
     }
+    public GPSDataLogger getGpsDataLogger() {return m_gpsDataLogger;}
+    public AccelerationLogger getAccDataLogger() {return m_accDataLogger;}
 
     /**/
     private static final String TAG = "KalmanLocationService";
@@ -82,7 +88,7 @@ public class KalmanLocationService extends LocationService
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
     private double m_magneticDeclination = 0.0;
-    private double accDev = 0.8;
+    private double accDev;
 
     /*accelerometer + rotation vector*/
     private static int[] sensorTypes = {
@@ -208,11 +214,29 @@ public class KalmanLocationService extends LocationService
         }
     }
 
+    //uncaught exceptions
+    private Thread.UncaughtExceptionHandler defaultUEH;
+    // handler listener
+    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread thread, Throwable ex) {
+            try {
+                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
+            } catch (Exception e) {
+                Log.i(Commons.AppName, String.format("Megaunhandled exception : %s, %s, %s",
+                        e.toString(), ex.toString(), ex.getStackTrace()));
+            }
+            defaultUEH.uncaughtException(thread, ex);
+        }
+    };
+
     public KalmanLocationService() {
+        this.accDev = 0.9;
+        defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         reset();
-        this.accDev = 1.0;
     }
 
     private String xLogFolderPath;
@@ -291,6 +315,8 @@ public class KalmanLocationService extends LocationService
         }
 
         m_kalmanDistanceLogger = new KalmanDistanceLogger();
+        m_gpsDataLogger = new GPSDataLogger(m_locationManager, this);
+        m_accDataLogger = new AccelerationLogger(m_sensorManager);
     }
 
     @Override
@@ -324,6 +350,8 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
+        m_gpsDataLogger.start();
+        m_accDataLogger.start();
         m_kalmanDistanceLogger.reset();
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
@@ -331,6 +359,11 @@ public class KalmanLocationService extends LocationService
     }
 
     public void stop() {
+        if (m_gpsDataLogger != null)
+            m_gpsDataLogger.stop();
+        if (m_accDataLogger != null)
+            m_accDataLogger.stop();
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = ServiceStopped;
         } else {
@@ -375,7 +408,8 @@ public class KalmanLocationService extends LocationService
                         0, linAcc, 0);
                 if (m_kalmanFilter == null)
                     break;
-                long now = System.currentTimeMillis();
+//                long now = System.currentTimeMillis();
+                long now = android.os.SystemClock.elapsedRealtime();
                 SensorGpsDataItem sdi = new SensorGpsDataItem(now,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
@@ -414,7 +448,8 @@ public class KalmanLocationService extends LocationService
         xVel = speed * Math.cos(course);
         yVel = speed * Math.sin(course);
         posDev = loc.getAccuracy();
-        timeStamp = System.currentTimeMillis();
+//        timeStamp = System.currentTimeMillis();
+        timeStamp = loc.getElapsedRealtimeNanos() / 1000000; //to millis
 
         GeomagneticField f = new GeomagneticField(
                 (float)loc.getLatitude(),

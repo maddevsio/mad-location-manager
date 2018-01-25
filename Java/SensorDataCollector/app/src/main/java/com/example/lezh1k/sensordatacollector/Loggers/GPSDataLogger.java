@@ -9,6 +9,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 
 import com.elvishew.xlog.XLog;
@@ -72,9 +73,11 @@ public class GPSDataLogger implements LocationListener {
             speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
         }
 
+//        long now = System.currentTimeMillis();
+        long now = loc.getElapsedRealtimeNanos() / 1000000;
         m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Commons.LogMessageType.GPS_DATA.ordinal(),
-                System.currentTimeMillis(), loc.getLatitude(),
+                now, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);
         XLog.i(m_lastLoggedGPSMessage);

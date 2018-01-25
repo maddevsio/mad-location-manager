@@ -4,6 +4,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.elvishew.xlog.XLog;
@@ -77,7 +78,8 @@ public class AccelerationLogger implements SensorEventListener {
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
-                long now = System.currentTimeMillis();
+//                long now = System.currentTimeMillis();
+                long now = SystemClock.elapsedRealtime();
                 lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
                         Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
                         now, accAxis[0], accAxis[1], accAxis[2]);

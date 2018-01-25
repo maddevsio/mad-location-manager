@@ -21,7 +21,7 @@
     <TextView
         android:id="@+id/tvLocationData"
         android:layout_width="218dp"
-        android:layout_height="166dp"
+        android:layout_height="156dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="12dp"
@@ -44,7 +44,7 @@
     <TextView
         android:id="@+id/tvLinAccelerometerData"
         android:layout_width="218dp"
-        android:layout_height="81dp"
+        android:layout_height="71dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -85,7 +85,7 @@
     <TextView
         android:id="@+id/tvDistance"
         android:layout_width="218dp"
-        android:layout_height="71dp"
+        android:layout_height="120dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Distance:"

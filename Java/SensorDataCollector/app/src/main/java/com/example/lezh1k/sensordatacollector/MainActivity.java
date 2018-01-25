@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -69,12 +70,6 @@ public class MainActivity extends AppCompatActivity {
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
 
-            tvLinAccData.setText(String.format("Acceleration:\n" +
-                            "Lin:%s\n" +
-                            "Abs:%s",
-                    m_accDataLogger.getLastLinAccelerationString(),
-                    m_accDataLogger.getLastAbsAccelerationString()));
-
             tvLinAcc.setText(String.format("Lin acc: %s\n%s",
                     m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
                     m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
@@ -90,8 +85,15 @@ public class MainActivity extends AppCompatActivity {
                         kdl.getDistanceGeoFilteredHP(),
                         kdl.getDistanceAsIs(),
                         kdl.getDistanceAsIsHP()));
+
+                tvLinAccData.setText(String.format("Acceleration:\n" +
+                                "Lin:%s\n" +
+                                "Abs:%s",
+                        kls.getAccDataLogger().getLastLinAccelerationString(),
+                        kls.getAccDataLogger().getLastAbsAccelerationString()));
+
                 tvLocationData.setText(String.format("Location:\n%s\n%s",
-                        m_gpsDataLogger.getLastLoggedGPSMessage(),
+                        kls.getGpsDataLogger().getLastLoggedGPSMessage(),
                         kdl.getLastFilteredLocationString()));
             });
 
@@ -106,8 +108,6 @@ public class MainActivity extends AppCompatActivity {
     }
     /*********************************************************/
 
-    private GPSDataLogger m_gpsDataLogger = null;
-    private AccelerationLogger m_accDataLogger = null;
     private SensorCalibrator m_sensorCalibrator = null;
 
     private boolean m_isLogging = false;
@@ -118,12 +118,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         m_refreshTask.needTerminate = true;
         m_refreshTask.cancel(true);
-        if (m_gpsDataLogger != null) {
-            m_gpsDataLogger.stop();
-        }
-        if (m_accDataLogger != null) {
-            m_accDataLogger.stop();
-        }
         if (m_sensorCalibrator != null) {
             m_sensorCalibrator.stop();
         }
@@ -155,14 +149,11 @@ public class MainActivity extends AppCompatActivity {
             });
             btnStartStopText = "Stop tracking";
             btnTvStatusText = "Tracking is in progress";
-            m_gpsDataLogger.start();
-            m_accDataLogger.start();
+
 
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
-            m_gpsDataLogger.stop();
-            m_accDataLogger.stop();
             ServicesHelper.getLocationService(this, value -> {
                 value.stop();
             });
@@ -255,8 +246,7 @@ public class MainActivity extends AppCompatActivity {
             System.exit(1);
         }
 
-        m_gpsDataLogger = new GPSDataLogger(locationManager, this);
-        m_accDataLogger = new AccelerationLogger(sensorManager);
+
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
 
         ServicesHelper.getLocationService(this, value -> {
@@ -271,8 +261,26 @@ public class MainActivity extends AppCompatActivity {
         initActivity();
     }
 
+    //uncaught exceptions
+    private Thread.UncaughtExceptionHandler defaultUEH;
+    // handler listener
+    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread thread, Throwable ex) {
+            try {
+                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
+            } catch (Exception e) {
+                Log.i(Commons.AppName, String.format("Megaunhandled exception : %s, %s, %s",
+                        e.toString(), ex.toString(), ex.getStackTrace()));
+            }
+            defaultUEH.uncaughtException(thread, ex);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
     }
 }
