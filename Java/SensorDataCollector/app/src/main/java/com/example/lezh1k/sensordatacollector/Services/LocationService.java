@@ -115,6 +115,7 @@ public abstract class LocationService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        stop();
         Log.d(TAG, "onTaskRemoved: " + rootIntent);
         m_locationServiceInterfaces.clear();
         m_locationServiceStatusInterfaces.clear();

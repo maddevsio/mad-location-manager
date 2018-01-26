@@ -190,7 +190,7 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 0.8;
+    static const double accDev = 1.0;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
@@ -219,7 +219,7 @@ FilterInputFile(const QString &inputFile,
           continue;
         gps_count = GPS_COUNT;
 
-//        patchSdWithNoise(&sd);
+        patchSdWithNoise(&sd);
         xVel = sd.speed * cos(sd.course);
         yVel = sd.speed * sin(sd.course);
         GPSAccKalmanUpdate(kf2,

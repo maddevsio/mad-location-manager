@@ -66,6 +66,11 @@ static void rebuildR(GPSAccKalmanFilter_t *f,
                      double posSigma) {
   MatrixSetIdentity(f->kf->R);
   MatrixScale(f->kf->R, posSigma);
+//  MatrixSet(f->kf->R,
+//            posSigma, 0.0, 0.0, 0.0,
+//            0.0, posSigma, 0.0, 0.0,
+//            0.0, 0.0, posSigma*0.1, 0.0,
+//            0.0, 0.0, 0.0, posSigma*0.1);
 }
 //////////////////////////////////////////////////////////////////////////
 

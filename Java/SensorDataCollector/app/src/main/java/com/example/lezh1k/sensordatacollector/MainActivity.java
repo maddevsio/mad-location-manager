@@ -87,13 +87,11 @@ public class MainActivity extends AppCompatActivity {
                         kdl.getDistanceAsIsHP()));
 
                 tvLinAccData.setText(String.format("Acceleration:\n" +
-                                "Lin:%s\n" +
                                 "Abs:%s",
-                        kls.getAccDataLogger().getLastLinAccelerationString(),
-                        kls.getAccDataLogger().getLastAbsAccelerationString()));
+                        kls.getLastAbsAccelerationString()));
 
                 tvLocationData.setText(String.format("Location:\n%s\n%s",
-                        kls.getGpsDataLogger().getLastLoggedGPSMessage(),
+                        kls.getLastLoggedGPSMessage(),
                         kdl.getLastFilteredLocationString()));
             });
 

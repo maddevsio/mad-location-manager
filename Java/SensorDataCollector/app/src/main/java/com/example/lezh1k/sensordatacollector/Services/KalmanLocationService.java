@@ -2,7 +2,6 @@ package com.example.lezh1k.sensordatacollector.Services;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
@@ -15,14 +14,11 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.IBinder;
-import android.support.annotation.Nullable;
+import android.os.PowerManager;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.widget.TextView;
 
 import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
@@ -41,7 +37,6 @@ import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusIn
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
-import com.example.lezh1k.sensordatacollector.R;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -62,18 +57,30 @@ public class KalmanLocationService extends LocationService
     private KalmanDistanceLogger m_kalmanDistanceLogger = null;
     private GPSDataLogger m_gpsDataLogger = null;
     private AccelerationLogger m_accDataLogger = null;
-
     public KalmanDistanceLogger getDistanceLogger() {
         return m_kalmanDistanceLogger;
     }
+
     public GPSDataLogger getGpsDataLogger() {return m_gpsDataLogger;}
     public AccelerationLogger getAccDataLogger() {return m_accDataLogger;}
 
+    private String m_lastLoggedGPSMessage;
+    private String m_lastAbsAccelerationString;
+    public String getLastLoggedGPSMessage() {
+        return m_lastLoggedGPSMessage;
+    }
+
+    public String getLastAbsAccelerationString() {
+        return m_lastAbsAccelerationString;
+    }
     /**/
     private static final String TAG = "KalmanLocationService";
 
     public static final int PermissionDenied = 0;
     private LocationManager m_locationManager;
+
+    private PowerManager m_powerManager;
+    private PowerManager.WakeLock m_wakeLock;
 
     private boolean m_gpsEnabled = false;
     private boolean m_sensorsEnabled = false;
@@ -114,6 +121,57 @@ public class KalmanLocationService extends LocationService
             this.owner = owner;
         }
 
+        private void handlePredict(SensorGpsDataItem sdi) {
+            XLog.i("%d%d KalmanPredict : accX=%f, accY=%f",
+                    Commons.LogMessageType.KALMAN_PREDICT.ordinal(),
+                    (long)sdi.getTimestamp(),
+                    sdi.getAbsEastAcc(),
+                    sdi.getAbsNorthAcc());
+            m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
+        }
+
+        private void handleUpdate(SensorGpsDataItem sdi) {
+            double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
+            double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
+            XLog.i("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
+                    Commons.LogMessageType.KALMAN_UPDATE.ordinal(),
+                    (long)sdi.getTimestamp(),
+                    sdi.getGpsLon(),
+                    sdi.getGpsLat(),
+                    xVel,
+                    yVel,
+                    sdi.getPosErr(),
+                    sdi.getVelErr()
+            );
+
+            m_kalmanFilter.update(
+                    sdi.getTimestamp(),
+                    Coordinates.longitudeToMeters(sdi.getGpsLon()),
+                    Coordinates.latitudeToMeters(sdi.getGpsLat()),
+                    xVel,
+                    yVel,
+                    sdi.getPosErr()
+            );
+        }
+
+        private Location locationAfterUpdateStep(SensorGpsDataItem sdi) {
+            double xVel, yVel;
+            Location loc = new Location(TAG);
+            GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(),
+                    m_kalmanFilter.getCurrentY());
+            loc.setLatitude(pp.Latitude);
+            loc.setLongitude(pp.Longitude);
+            loc.setAltitude(sdi.getGpsAlt());
+            xVel = m_kalmanFilter.getCurrentXVel();
+            yVel = m_kalmanFilter.getCurrentYVel();
+            double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
+            //todo calculate bearing!
+            loc.setSpeed((float) speed);
+            loc.setTime((long) sdi.getTimestamp());
+            loc.setAccuracy((float) sdi.getPosErr());
+            return loc;
+        }
+
         @SuppressLint("DefaultLocale")
         @Override
         protected Object doInBackground(Object[] objects) {
@@ -126,53 +184,21 @@ public class KalmanLocationService extends LocationService
                 }
 
                 SensorGpsDataItem sdi;
+                double lastTimeStamp = 0.0;
                 while ((sdi = m_sensorDataQueue.poll()) != null) {
+                    if (sdi.getTimestamp() < lastTimeStamp) {
+                        Log.d(Commons.AppName, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                        continue;
+                    }
                     //warning!!!
                     if (sdi.getGpsLat() == SensorGpsDataItem.NOT_INITIALIZED) {
-                        XLog.i("%d%d KalmanPredict : accX=%f, accY=%f",
-                                Commons.LogMessageType.KALMAN_PREDICT.ordinal(),
-                                (long)sdi.getTimestamp(),
-                                sdi.getAbsEastAcc(),
-                                sdi.getAbsNorthAcc());
-                        m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
+                        handlePredict(sdi);
                     } else {
-                        double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
-                        double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
-                        XLog.i("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
-                                Commons.LogMessageType.KALMAN_UPDATE.ordinal(),
-                                (long)sdi.getTimestamp(),
-                                sdi.getGpsLon(),
-                                sdi.getGpsLat(),
-                                xVel,
-                                yVel,
-                                sdi.getPosErr(),
-                                sdi.getVelErr()
-                        );
-
-                        m_kalmanFilter.update(
-                                sdi.getTimestamp(),
-                                Coordinates.longitudeToMeters(sdi.getGpsLon()),
-                                Coordinates.latitudeToMeters(sdi.getGpsLat()),
-                                xVel,
-                                yVel,
-                                sdi.getPosErr()
-                        );
-
-                        Location loc = new Location(TAG);
-                        GeoPoint pp = Coordinates.metersToGeoPoint(m_kalmanFilter.getCurrentX(),
-                                m_kalmanFilter.getCurrentY());
-                        loc.setLatitude(pp.Latitude);
-                        loc.setLongitude(pp.Longitude);
-                        loc.setAltitude(sdi.getGpsAlt());
-                        xVel = m_kalmanFilter.getCurrentXVel();
-                        yVel = m_kalmanFilter.getCurrentYVel();
-                        double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
-                        //todo calculate bearing!
-                        loc.setSpeed((float) speed);
-                        loc.setTime((long) sdi.getTimestamp());
-                        loc.setAccuracy((float) sdi.getPosErr());
+                        handleUpdate(sdi);
+                        Location loc = locationAfterUpdateStep(sdi);
                         onLocationChangedImp(loc);
                     }
+                    lastTimeStamp = sdi.getTimestamp();
                 }
             }
             return null;
@@ -231,7 +257,7 @@ public class KalmanLocationService extends LocationService
     };
 
     public KalmanLocationService() {
-        this.accDev = 0.9;
+        this.accDev = 1.0;
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
@@ -283,6 +309,8 @@ public class KalmanLocationService extends LocationService
         super.onCreate();
         m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        m_wakeLock = m_powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
 
         File esd = Environment.getExternalStorageDirectory();
         String storageState = Environment.getExternalStorageState();
@@ -325,6 +353,7 @@ public class KalmanLocationService extends LocationService
     }
 
     public void start() {
+        m_wakeLock.acquire();
         m_sensorDataQueue.clear();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = PermissionDenied;
@@ -350,8 +379,8 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_gpsDataLogger.start();
-        m_accDataLogger.start();
+//        m_gpsDataLogger.start();
+//        m_accDataLogger.start();
         m_kalmanDistanceLogger.reset();
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
@@ -359,6 +388,9 @@ public class KalmanLocationService extends LocationService
     }
 
     public void stop() {
+        if (m_wakeLock.isHeld())
+            m_wakeLock.release();
+
         if (m_gpsDataLogger != null)
             m_gpsDataLogger.stop();
         if (m_accDataLogger != null)
@@ -401,15 +433,22 @@ public class KalmanLocationService extends LocationService
         final int north = 1;
         final int up = 2;
 
+//                long now = System.currentTimeMillis();
+        long now = android.os.SystemClock.elapsedRealtime();
+        m_lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
+                Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
+                now, accAxis[0], accAxis[1], accAxis[2]);
+        XLog.i(m_lastAbsAccelerationString);
+
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
-                if (m_kalmanFilter == null)
+                if (m_kalmanFilter == null) {
                     break;
-//                long now = System.currentTimeMillis();
-                long now = android.os.SystemClock.elapsedRealtime();
+                }
+
                 SensorGpsDataItem sdi = new SensorGpsDataItem(now,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
@@ -448,8 +487,16 @@ public class KalmanLocationService extends LocationService
         xVel = speed * Math.cos(course);
         yVel = speed * Math.sin(course);
         posDev = loc.getAccuracy();
-//        timeStamp = System.currentTimeMillis();
         timeStamp = loc.getElapsedRealtimeNanos() / 1000000; //to millis
+        //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
+        // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
+        double velErr = loc.getAccuracy() * 0.1;
+        m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+                Commons.LogMessageType.GPS_DATA.ordinal(),
+                timeStamp, loc.getLatitude(),
+                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
+                loc.getSpeed(), loc.getBearing(), velErr);
+        XLog.i(m_lastLoggedGPSMessage);
 
         GeomagneticField f = new GeomagneticField(
                 (float)loc.getLatitude(),
@@ -473,9 +520,6 @@ public class KalmanLocationService extends LocationService
             return;
         }
 
-        //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
-        // and loc.getSpeedAccuracyMetersPerSecond() requare API 26
-        double velErr = loc.getAccuracy() * 0.1;
         SensorGpsDataItem sdi = new SensorGpsDataItem(
                 timeStamp, loc.getLatitude(), loc.getLongitude(), loc.getAltitude(),
                 SensorGpsDataItem.NOT_INITIALIZED,

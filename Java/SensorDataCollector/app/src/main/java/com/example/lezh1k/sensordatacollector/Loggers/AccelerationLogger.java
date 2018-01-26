@@ -59,16 +59,10 @@ public class AccelerationLogger implements SensorEventListener {
     private float[] accAxis = new float[4];
     private float[] linAcc = new float[4];
     private String lastAbsAccelerationString = "";
-    private String lastLinAccelerationString = "";
 
     //related to absolut North-East-Up
     public String getLastAbsAccelerationString() {
         return lastAbsAccelerationString;
-    }
-
-    //related to relative xyz phone
-    public String getLastLinAccelerationString() {
-        return lastLinAccelerationString;
     }
 
     @Override
