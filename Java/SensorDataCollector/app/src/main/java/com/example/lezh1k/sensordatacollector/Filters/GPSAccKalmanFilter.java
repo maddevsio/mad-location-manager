@@ -54,6 +54,7 @@ public class GPSAccKalmanFilter {
     }
 
     private void rebuildR(double posSigma) {
+        //todo test with posSigma * 0.1 for speed.
         m_kf.R.setIdentity();
         m_kf.R.scale(posSigma);
     }
