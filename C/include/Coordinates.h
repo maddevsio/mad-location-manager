@@ -4,7 +4,7 @@
 #include <vector>
 class QString;
 
-#define COORDINATES_HIGH_ACCURACY 1
+#define COORDINATES_HIGH_ACCURACY 0
 
 struct geopoint_t {
   double Latitude, Longitude;

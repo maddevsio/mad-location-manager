@@ -19,6 +19,7 @@ import android.os.Environment;
 import android.os.PowerManager;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
@@ -37,6 +38,7 @@ import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusIn
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
+import com.example.lezh1k.sensordatacollector.R;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -187,7 +189,6 @@ public class KalmanLocationService extends LocationService
                 double lastTimeStamp = 0.0;
                 while ((sdi = m_sensorDataQueue.poll()) != null) {
                     if (sdi.getTimestamp() < lastTimeStamp) {
-                        Log.d(Commons.AppName, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                         continue;
                     }
                     //warning!!!
@@ -196,12 +197,17 @@ public class KalmanLocationService extends LocationService
                     } else {
                         handleUpdate(sdi);
                         Location loc = locationAfterUpdateStep(sdi);
-                        onLocationChangedImp(loc);
+                        publishProgress(loc);
                     }
                     lastTimeStamp = sdi.getTimestamp();
                 }
             }
             return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            onLocationChangedImp((Location) values[0]);
         }
 
         void onLocationChangedImp(Location location) {
