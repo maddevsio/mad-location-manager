@@ -11,7 +11,9 @@ import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterfac
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by lezh1k on 1/8/18.
@@ -37,13 +39,14 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
 
     private boolean isFirstCoordinate = true;
 
-    private String lastFilteredLocationString;
+    private List<Location> m_geoFilteredTrack;
 
-    public String getLastFilteredLocationString() {
-        return lastFilteredLocationString;
+    public List<Location> getGeoFilteredTrack() {
+        return m_geoFilteredTrack;
     }
 
     public KalmanDistanceLogger() {
+        m_geoFilteredTrack = new ArrayList<>();
         reset();
         ServicesHelper.addLocationServiceInterface(this);
         ServicesHelper.addLocationServiceStatusInterface(this);
@@ -52,20 +55,18 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
     public double getDistanceGeoFiltered() {
         return m_distanceGeoFiltered;
     }
-
     public double getDistanceGeoFilteredHP() {
         return m_distanceGeoFilteredHP;
     }
-
     public double getDistanceAsIs() {
         return m_distanceAsIs;
     }
-
     public double getDistanceAsIsHP() {
         return m_distanceAsIsHP;
     }
 
     public void reset() {
+        m_geoFilteredTrack.clear();
         char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
         char[] buff2 = new char[GeoHash.GEOHASH_MAX_PRECISION];
         geoHashBuffers = new char[][]{buff1, buff2};
@@ -91,12 +92,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
                 Commons.LogMessageType.FILTERED_GPS_DATA.ordinal(),
                 loc.getTime(),
                 loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
-        lastFilteredLocationString = String.format("Lat: %f, Lon : %f, speed : %f",
-                loc.getLatitude(),
-                loc.getLongitude(),
-                loc.getSpeed());
 
         if (isFirstCoordinate) {
             GeoHash.encode(pi.Latitude, pi.Longitude, geoHashBuffers[ppCompGeoHash], precision);
@@ -152,6 +148,11 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
                 }
                 lastApprovedGeoPoint.Longitude = currentGeoPoint.Longitude;
                 lastApprovedGeoPoint.Latitude = currentGeoPoint.Latitude;
+                Location laLoc = new Location("GeoFiltered");
+                laLoc.setLatitude(lastApprovedGeoPoint.Latitude);
+                laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
+                laLoc.setAltitude(loc.getAltitude()); //hack.
+                m_geoFilteredTrack.add(laLoc);
                 currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
             }
 
@@ -168,6 +169,37 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
         currentGeoPoint.Latitude += pi.Latitude;
         currentGeoPoint.Longitude += pi.Longitude;
         ++pointsInCurrentGeohashCount;
+    }
+
+    public void stop() {
+        if (pointsInCurrentGeohashCount >= minPointCount) {
+            currentGeoPoint.Latitude /= pointsInCurrentGeohashCount;
+            currentGeoPoint.Longitude /= pointsInCurrentGeohashCount;
+
+            if (lastApprovedGeoPoint.Latitude != COORD_NOT_INITIALIZED) {
+                double dd1 = Coordinates.geoDistanceMeters(
+                        lastApprovedGeoPoint.Longitude,
+                        lastApprovedGeoPoint.Latitude,
+                        currentGeoPoint.Longitude,
+                        currentGeoPoint.Latitude);
+                m_distanceGeoFiltered += dd1;
+                Location.distanceBetween(
+                        lastApprovedGeoPoint.Latitude,
+                        lastApprovedGeoPoint.Longitude,
+                        currentGeoPoint.Latitude,
+                        currentGeoPoint.Longitude,
+                        hpResBuffGeo);
+                double dd2 = hpResBuffGeo[0];
+                m_distanceGeoFilteredHP += dd2;
+            }
+            lastApprovedGeoPoint.Longitude = currentGeoPoint.Longitude;
+            lastApprovedGeoPoint.Latitude = currentGeoPoint.Latitude;
+            Location laLoc = new Location("GeoFiltered");
+            laLoc.setLatitude(lastApprovedGeoPoint.Latitude);
+            laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
+            m_geoFilteredTrack.add(laLoc);
+            currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
+        }
     }
 
     @Override

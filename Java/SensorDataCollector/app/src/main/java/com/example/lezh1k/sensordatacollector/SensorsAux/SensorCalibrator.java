@@ -63,7 +63,7 @@ public class SensorCalibrator implements SensorEventListener {
         inProgress = true;
         for (Sensor sensor : m_lstSensors) {
             if (!m_sensorManager.registerListener(this, sensor,
-                    Commons.hertz2periodUs(10.0))) {
+                    Commons.hertz2periodUs(30.0))) {
                 return false;
             }
         }

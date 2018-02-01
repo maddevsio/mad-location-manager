@@ -10,7 +10,7 @@ import java.util.List;
  */
 
 public interface MapInterface {
-    void showRoute(List<LatLng> route);
+    void showRoute(List<LatLng> route, int hack);
     void moveCamera(CameraPosition position);
     void setAllGesturesEnabled(boolean enabled);
 }

@@ -19,7 +19,6 @@ import android.os.Environment;
 import android.os.PowerManager;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.widget.TextView;
 
 import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
@@ -38,7 +37,6 @@ import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusIn
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
-import com.example.lezh1k.sensordatacollector.R;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -68,13 +66,7 @@ public class KalmanLocationService extends LocationService
 
     private String m_lastLoggedGPSMessage;
     private String m_lastAbsAccelerationString;
-    public String getLastLoggedGPSMessage() {
-        return m_lastLoggedGPSMessage;
-    }
 
-    public String getLastAbsAccelerationString() {
-        return m_lastAbsAccelerationString;
-    }
     /**/
     private static final String TAG = "KalmanLocationService";
 
@@ -313,6 +305,7 @@ public class KalmanLocationService extends LocationService
     @Override
     public void onCreate() {
         super.onCreate();
+        m_gpsTrack = new ArrayList<>();
         m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -359,6 +352,7 @@ public class KalmanLocationService extends LocationService
     }
 
     public void start() {
+        m_gpsTrack.clear();
         m_wakeLock.acquire();
         m_sensorDataQueue.clear();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -425,6 +419,9 @@ public class KalmanLocationService extends LocationService
             m_eventLoopTask.cancel(true);
         }
         m_sensorDataQueue.clear();
+
+        if (m_kalmanDistanceLogger != null)
+            m_kalmanDistanceLogger.stop();
     }
 
     public void reset() {
@@ -481,6 +478,10 @@ public class KalmanLocationService extends LocationService
         /*do nothing*/
     }
 
+    private List<Location> m_gpsTrack;
+    public List<Location> getGpsTrack() {
+        return m_gpsTrack;
+    }
     /*LocationListener methods implementation*/
     @Override
     public void onLocationChanged(Location loc) {
@@ -497,6 +498,7 @@ public class KalmanLocationService extends LocationService
         //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;
+        m_gpsTrack.add(loc);
         m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Commons.LogMessageType.GPS_DATA.ordinal(),
                 timeStamp, loc.getLatitude(),

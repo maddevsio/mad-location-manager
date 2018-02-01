@@ -2,16 +2,12 @@ package com.example.lezh1k.sensordatacollector.Services;
 
 import android.app.Service;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
 
@@ -30,11 +26,13 @@ public abstract class LocationService extends Service {
 
     protected Location m_lastLocation;
     protected List<Location> m_track;
-
     public List<Location> getTrack() {
         return m_track;
     }
-    public void clearTrack() {m_track.clear();}
+
+    public void clearTracks() {
+        m_track.clear();
+    }
 
     public static final int ServiceStopped = 0;
     public static final int StartLocationUpdates = 1;

@@ -6,6 +6,7 @@ import android.location.Location;
 import android.util.Log;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
+import com.example.lezh1k.sensordatacollector.Services.KalmanLocationService;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -35,11 +36,30 @@ public class MapPresenter {
 
     public void getRoute() {
         ServicesHelper.getLocationService(context, value -> {
-            List<LatLng> route = new ArrayList<>();
+            KalmanLocationService kls = (KalmanLocationService) value;
+            
+            List<LatLng> routeAsIs = new ArrayList<>(value.getTrack().size());
+            List<LatLng> routeFilteredWithGeoHash =
+                    new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack().size());
+            List<LatLng> routGpsAsIs =
+                    new ArrayList<>(kls.getGpsTrack().size());
+
             for (Location location : new ArrayList<>(value.getTrack())) {
-                route.add(new LatLng(location.getLatitude(), location.getLongitude()));
+                routeAsIs.add(new LatLng(location.getLatitude(), location.getLongitude()));
             }
-            mapInterface.showRoute(route);
+
+            for (Location location : new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack())) {
+                routeFilteredWithGeoHash.add(new LatLng(location.getLatitude(),
+                        location.getLongitude()));
+            }
+
+            for (Location location : new ArrayList<>(kls.getGpsTrack())) {
+                routGpsAsIs.add(new LatLng(location.getLatitude(), location.getLongitude()));
+            }
+
+            mapInterface.showRoute(routeAsIs, 0);
+            mapInterface.showRoute(routeFilteredWithGeoHash, 1);
+            mapInterface.showRoute(routGpsAsIs, 2);
         });
     }
 
@@ -56,7 +76,7 @@ public class MapPresenter {
             sendIntent.setType("text/plain");
             context.startActivity(sendIntent);
 
-            value.clearTrack();
+            value.clearTracks();
         });
     }
 
@@ -803,7 +823,7 @@ public class MapPresenter {
         for (Location location : track) {
             route.add(new LatLng(location.getLatitude(), location.getLongitude()));
         }
-        mapInterface.showRoute(route);
+        mapInterface.showRoute(route, 0);
     }
 
 }

@@ -4,6 +4,7 @@
 #include "Coordinates.h"
 #include "Geohash.h"
 #include "SensorController.h"
+#include <QFile>
 
 static const QString g_mapDiv = "megamap";
 static const QString g_baseHtml = "<!DOCTYPE html>\n"
@@ -151,6 +152,17 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
     ++count;
   }
 
+  //last coordinates need to be used
+  if (count >= minPointCount) {
+    tmpGeo.Latitude /= count;
+    tmpGeo.Longitude /= count;
+
+    if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
+      distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
+                                                   tmpGeo.Latitude, tmpGeo.Longitude);
+    }
+  }
+
   return distance;
 }
 
@@ -166,7 +178,7 @@ MainWindow::initMap(QWebEnginePage *page,
 //  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
 
   const int filterPrec = 8;
-  const int minPoints = 2;
+  const int minPoints = 3;
 
   qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
   qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
@@ -199,4 +211,12 @@ MainWindow::initMap(QWebEnginePage *page,
   lon = lstCoords.empty() ? 74.61873 : lstCoords[0].Longitude;
   QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(lat).arg(lon);
   page->setHtml(html);
+
+  if (0) {
+    QFile sf("/home/lezh1k/route.html");
+    if (sf.open(QFile::ReadWrite)) {
+      sf.write(html.toUtf8());
+      sf.close();
+    }
+  }
 }

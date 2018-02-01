@@ -96,7 +96,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     /*********************************************************/
 
     MapPresenter m_presenter;
-    Polyline m_route;
+    Polyline m_routeKalmanOnly;
+    Polyline m_routeKalmanWithGeo;
+    Polyline m_routeGps;
+
     MapboxMap m_map;
     MapView m_mapView;
 
@@ -252,18 +255,42 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     @Override
-    public void showRoute(List<LatLng> route) {
+    public void showRoute(List<LatLng> route, int hack) {
         if (m_map != null) {
             runOnUiThread(() ->
                     m_mapView.post(() -> {
-                        if (this.m_route != null) {
-                            m_map.removeAnnotation(this.m_route);
-                        }
+                        if (hack == 0) {
+                            if (this.m_routeKalmanOnly != null) {
+                                m_map.removeAnnotation(this.m_routeKalmanOnly);
+                            }
 
-                        this.m_route = m_map.addPolyline(new PolylineOptions()
-                                .addAll(route)
-                                .color(ContextCompat.getColor(this, R.color.colorAccent))
-                                .width(4));
+                            this.m_routeKalmanOnly = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.colorAccent))
+                                    .width(2));
+                        }
+                        if (hack == 1) {
+                            if (this.m_routeKalmanWithGeo != null) {
+                                m_map.removeAnnotation(this.m_routeKalmanWithGeo);
+                            }
+
+                            this.m_routeKalmanWithGeo = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.mapbox_blue))
+                                    .width(2));
+
+                        }
+                        if (hack == 2) {
+                            if (this.m_routeGps != null) {
+                                m_map.removeAnnotation(this.m_routeGps);
+                            }
+
+                            this.m_routeGps = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.green))
+                                    .width(2));
+
+                        }
                     }));
         }
     }
@@ -312,8 +339,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
             m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
 
-            if (m_route != null) {
-                m_route.setMapboxMap(m_map);
+            if (m_routeKalmanOnly != null) {
+                m_routeKalmanOnly.setMapboxMap(m_map);
             }
 
             ServicesHelper.addLocationServiceInterface(this);
