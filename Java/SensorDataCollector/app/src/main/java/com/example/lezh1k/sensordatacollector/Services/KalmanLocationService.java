@@ -32,6 +32,7 @@ import com.example.lezh1k.sensordatacollector.CommonClasses.Coordinates;
 import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
 import com.example.lezh1k.sensordatacollector.CommonClasses.SensorGpsDataItem;
 import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
+import com.example.lezh1k.sensordatacollector.Filters.MeanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
 import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
@@ -41,8 +42,10 @@ import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.TimeZone;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -105,6 +108,8 @@ public class KalmanLocationService extends LocationService
 
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
             new PriorityBlockingQueue<SensorGpsDataItem>();
+//    private Queue<SensorGpsDataItem> m_sensorDataQueue =
+//        new PriorityQueue<SensorGpsDataItem>();
 
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
@@ -183,6 +188,8 @@ public class KalmanLocationService extends LocationService
                     if (sdi.getTimestamp() < lastTimeStamp) {
                         continue;
                     }
+                    lastTimeStamp = sdi.getTimestamp();
+
                     //warning!!!
                     if (sdi.getGpsLat() == SensorGpsDataItem.NOT_INITIALIZED) {
                         handlePredict(sdi);
@@ -191,7 +198,6 @@ public class KalmanLocationService extends LocationService
                         Location loc = locationAfterUpdateStep(sdi);
                         publishProgress(loc);
                     }
-                    lastTimeStamp = sdi.getTimestamp();
                 }
             }
             return null;
@@ -255,7 +261,7 @@ public class KalmanLocationService extends LocationService
     };
 
     public KalmanLocationService() {
-        this.accDev = 1.0;
+        this.accDev = 0.6;
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
@@ -425,10 +431,13 @@ public class KalmanLocationService extends LocationService
     }
 
     public void reset() {
+        m_meanFilter.reset();
         m_kalmanFilter = null;
         m_track.clear();
     }
 
+    private float[] m_meanAbsAcc = new float[4];
+    private MeanFilter m_meanFilter = new MeanFilter(0.2f, 4);
     /*SensorEventListener methods implementation*/
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -437,28 +446,37 @@ public class KalmanLocationService extends LocationService
         final int up = 2;
 
 //                long now = System.currentTimeMillis();
-        long now = android.os.SystemClock.elapsedRealtime();
-        m_lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
-                Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
-                now, accAxis[0], accAxis[1], accAxis[2]);
-        XLog.i(m_lastAbsAccelerationString);
-
+        long now = android.os.SystemClock.elapsedRealtimeNanos();
+        long nowMs = (long) (now / 1.0E6f);
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
+                m_meanFilter.filter(accAxis, now, m_meanAbsAcc);
+
+                m_lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
+                        Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
+                        nowMs, accAxis[east], accAxis[north], accAxis[up]);
+                XLog.i(m_lastAbsAccelerationString);
+                XLog.i("%d%d abs mean acc: %f %f %f",
+                        Commons.LogMessageType.ABS_ACC_MEAN_DATA.ordinal(),
+                        nowMs, m_meanAbsAcc[east], m_meanAbsAcc[north], m_meanAbsAcc[up]);
+
                 if (m_kalmanFilter == null) {
                     break;
                 }
 
-                SensorGpsDataItem sdi = new SensorGpsDataItem(now,
+                SensorGpsDataItem sdi = new SensorGpsDataItem(nowMs,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
-                        accAxis[north],
-                        accAxis[east],
-                        accAxis[up],
+//                        accAxis[north],
+//                        accAxis[east],
+//                        accAxis[up],
+                        m_meanAbsAcc[north],
+                        m_meanAbsAcc[east],
+                        m_meanAbsAcc[up],
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
@@ -494,7 +512,7 @@ public class KalmanLocationService extends LocationService
         xVel = speed * Math.cos(course);
         yVel = speed * Math.sin(course);
         posDev = loc.getAccuracy();
-        timeStamp = loc.getElapsedRealtimeNanos() / 1000000; //to millis
+        timeStamp = (long) (loc.getElapsedRealtimeNanos() / 1.0E6F); //to millis
         //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;

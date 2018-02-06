@@ -64,13 +64,13 @@ static void rebuildB(GPSAccKalmanFilter_t *f,
 
 static void rebuildR(GPSAccKalmanFilter_t *f,
                      double posSigma) {
-  MatrixSetIdentity(f->kf->R);
-  MatrixScale(f->kf->R, posSigma);
-//  MatrixSet(f->kf->R,
-//            posSigma, 0.0, 0.0, 0.0,
-//            0.0, posSigma, 0.0, 0.0,
-//            0.0, 0.0, posSigma*0.1, 0.0,
-//            0.0, 0.0, 0.0, posSigma*0.1);
+//  MatrixSetIdentity(f->kf->R);
+//  MatrixScale(f->kf->R, posSigma);
+  MatrixSet(f->kf->R,
+            posSigma, 0.0, 0.0, 0.0,
+            0.0, posSigma, 0.0, 0.0,
+            0.0, 0.0, posSigma*0.1, 0.0,
+            0.0, 0.0, 0.0, posSigma*0.1);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -79,7 +79,7 @@ static void rebuildQ(GPSAccKalmanFilter_t *f,
                      double accSigma) {
   UNUSED_ARG(dt);
   MatrixSetIdentity(f->kf->Q);
-  MatrixScale(f->kf->Q, accSigma * dt);
+  MatrixScale(f->kf->Q, accSigma * dt*dt);
 
   //  1st variant from Wiki. Shows bad results
 //  MatrixMultiplyByTranspose(f->kf->B, f->kf->B, f->kf->Q);
@@ -112,6 +112,11 @@ void GPSAccKalmanUpdate(GPSAccKalmanFilter_t *k,
                         double xVel,
                         double yVel,
                         double posDev) {
+//  double dt1 = (timeNow - k->predictTime) / 1000.0;
+//  double dt2 = (timeNow - k->updateTime)  / 1000.0;
+
+//  if (dt2 > 2.0)
+//    asm("int $0x03");
   k->updateTime = timeNow;
   rebuildR(k, posDev);
   MatrixSet(k->kf->Zk, x, y, xVel, yVel);

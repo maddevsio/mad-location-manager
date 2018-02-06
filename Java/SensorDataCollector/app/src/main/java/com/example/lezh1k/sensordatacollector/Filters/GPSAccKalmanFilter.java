@@ -15,10 +15,10 @@ public class GPSAccKalmanFilter {
     public GPSAccKalmanFilter(double x, double y,
                               double xVel, double yVel,
                               double accDev, double posDev,
-                              double timeStamp) {
+                              double timeStampMs) {
 
         m_kf = new KalmanFilter(4, 4, 1);
-        m_timeStampMsPredict = m_timeStampMsUpdate = timeStamp;
+        m_timeStampMsPredict = m_timeStampMsUpdate = timeStampMs;
         m_accSigma = accDev;
         m_kf.Xk_k.setData(x, y, xVel, yVel);
 

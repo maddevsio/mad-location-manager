@@ -17,6 +17,8 @@ static bool parseKalmanPredict(const char *str, SensorData_t *sd);
 static bool parseKalmanUpdate(const char *str, SensorData_t *sd);
 static bool parseFilteredGpsData(const char *str, SensorData_t *sd);
 static bool parseFinalDistance(const char *str, SensorData_t *sd);
+static bool parseAbsAccMeanData(const char *str, SensorData_t *sd);
+
 typedef bool (*pf_parser)(const char*, SensorData_t*);
 
 //don't change order here. it's related to LogMessageType
@@ -28,6 +30,7 @@ static pf_parser parsers[] = {
   parseAbsAccData,
   parseFilteredGpsData,
   parseFinalDistance,
+  parseAbsAccMeanData
 };
 
 bool parseAbsAccData(const char *str, SensorData_t *sd) {
@@ -112,7 +115,12 @@ bool parseFinalDistance(const char *str, SensorData_t *sd) {
               &sd->distanceGeoHP);
   return tt == 5;
 }
+
+static bool parseAbsAccMeanData(const char *str, SensorData_t *sd) {
+  return false;
+}
 //////////////////////////////////////////////////////////////////////////
+
 
 LogMessageType
 SensorControllerParseDataString(const char *str, SensorData_t *sd) {
@@ -190,6 +198,9 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
+
+    static const int LINE_COUNT = 5;
+    int line_count = LINE_COUNT;
     static const double accDev = 1.0;
 
     double xVel = sd.speed * cos(sd.course);
@@ -209,11 +220,11 @@ FilterInputFile(const QString &inputFile,
     double x, y, vx, vy;
     x = y = 0.0;
     vx = sd.speed * cos(sd.course);
-    vy = sd.speed * sin(sd.course);
-    vx = vy = 0.0;
+    vy = sd.speed * sin(sd.course);    
     double dtmax = 0.0;
     double dxmax = 0.0;
     double dymax = 0.0;
+
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       int pi = SensorControllerParseDataString(line.toStdString().c_str(), &sd);
@@ -233,8 +244,15 @@ FilterInputFile(const QString &inputFile,
         dtmax = std::max(dtmax, dt);
         dxmax = std::max(abs(dxmax), abs(dx));
         dymax = std::max(abs(dymax), abs(dy));
+
         GPSAccKalmanPredict(kf2, sd.timestamp,
                             sd.absEastAcc, sd.absNorthAcc);
+
+        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
+                                              GPSAccKalmanGetY(kf2));
+        sd.gpsLat = pp.Latitude;
+        sd.gpsLon = pp.Longitude;
+        sensorDataToFile(fOut, &sd);
       } else {
         if (--gps_count)
           continue;
@@ -250,11 +268,11 @@ FilterInputFile(const QString &inputFile,
                            xVel,
                            yVel,
                            sd.posErr);
-        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
-                                              GPSAccKalmanGetY(kf2));
-        sd.gpsLat = pp.Latitude;
-        sd.gpsLon = pp.Longitude;
-        sensorDataToFile(fOut, &sd);
+//        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
+//                                              GPSAccKalmanGetY(kf2));
+//        sd.gpsLat = pp.Latitude;
+//        sd.gpsLon = pp.Longitude;
+//        sensorDataToFile(fOut, &sd);
       }
     } //while (!fIn.atEnd())
     qDebug() << "x : " << x;

@@ -14,6 +14,7 @@ enum LogMessageType {
   LMT_ABS_ACC_DATA,
   LMT_FILTERED_GPS_DATA,
   LMT_FINAL_DISTANCE,
+  LMT_ABS_ACC_MEAN_DATA,
   LMT_UNKNOWN
 };
 //////////////////////////////////////////////////////////////////////////

@@ -70,25 +70,32 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         protected void onProgressUpdate(Object... values) {
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
-            ServicesHelper.getLocationService(owner, value -> {
-                KalmanLocationService kls = (KalmanLocationService) value;
-                KalmanDistanceLogger kdl = kls.getDistanceLogger();
-                tvDistance.setText(String.format("Distance (geo): %fm\n" +
-                                "Distance (geo) HP: %fm\n" +
-                                "Distance as is : %fm\n" +
-                                "Distance as is HP: %fm",
-                        kdl.getDistanceGeoFiltered(),
-                        kdl.getDistanceGeoFilteredHP(),
-                        kdl.getDistanceAsIs(),
-                        kdl.getDistanceAsIsHP()));
+            if (m_isLogging) {
+                ServicesHelper.getLocationService(owner, value -> {
+                    KalmanLocationService kls = (KalmanLocationService) value;
+                    KalmanDistanceLogger kdl = kls.getDistanceLogger();
+                    tvDistance.setText(String.format("Distance (geo): %fm\n" +
+                                    "Distance (geo) HP: %fm\n" +
+                                    "Distance as is : %fm\n" +
+                                    "Distance as is HP: %fm",
+                            kdl.getDistanceGeoFiltered(),
+                            kdl.getDistanceGeoFilteredHP(),
+                            kdl.getDistanceAsIs(),
+                            kdl.getDistanceAsIsHP()));
 
-            });
+                });
+            } else {
+                if (m_sensorCalibrator.isInProgress()) {
+                    tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
+                    if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                            m_sensorCalibrator.getDcLinearAcceleration().isCalculated() &&
+                            m_sensorCalibrator.getDcMeanLinearAcceleration().isCalculated()) {
+                        set_isCalibrating(false, false);
+                        tvDistance.setText(/*m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString() +*/
+                            m_sensorCalibrator.getDcMeanLinearAcceleration().deviationInfoString());
+                    }
 
-            if (m_sensorCalibrator.isInProgress()) {
-                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
-                if( m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
-                    set_isCalibrating(false, false);
+
                 }
             }
         }

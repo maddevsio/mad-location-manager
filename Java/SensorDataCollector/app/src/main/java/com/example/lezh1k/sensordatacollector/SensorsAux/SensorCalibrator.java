@@ -7,9 +7,12 @@ import android.hardware.SensorManager;
 import android.util.Log;
 
 import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
+import com.example.lezh1k.sensordatacollector.Filters.MeanFilter;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.os.SystemClock.elapsedRealtimeNanos;
 
 /**
  * Created by lezh1k on 12/20/17.
@@ -19,8 +22,10 @@ public class SensorCalibrator implements SensorEventListener {
 
     private DeviationCalculator m_dcLinearAcceleration;
     private DeviationCalculator m_dcAbsLinearAcceleration;
+    private DeviationCalculator m_dcMeanLinearAcceleration;
     private List<Sensor> m_lstSensors = new ArrayList<Sensor>();
     private SensorManager m_sensorManager;
+    private MeanFilter m_meanFilter = new MeanFilter(0.4f, 4);
 
     public DeviationCalculator getDcLinearAcceleration() {
         return m_dcLinearAcceleration;
@@ -28,6 +33,7 @@ public class SensorCalibrator implements SensorEventListener {
     public DeviationCalculator getDcAbsLinearAcceleration() {
         return m_dcAbsLinearAcceleration;
     }
+    public DeviationCalculator getDcMeanLinearAcceleration() {return m_dcMeanLinearAcceleration; }
 
     private static int[] sensorTypes = {
             Sensor.TYPE_LINEAR_ACCELERATION,
@@ -35,8 +41,11 @@ public class SensorCalibrator implements SensorEventListener {
     };
 
     public SensorCalibrator(SensorManager sensorManager) {
-        m_dcAbsLinearAcceleration = new DeviationCalculator(4000, 3);
-        m_dcLinearAcceleration = new DeviationCalculator(4000, 3);
+        final int measurementCalibrationCount = 1000;
+        final int valuesCount = 3;
+        m_dcAbsLinearAcceleration = new DeviationCalculator(measurementCalibrationCount, valuesCount);
+        m_dcLinearAcceleration = new DeviationCalculator(measurementCalibrationCount, valuesCount);
+        m_dcMeanLinearAcceleration = new DeviationCalculator(measurementCalibrationCount, valuesCount);
 
         m_sensorManager = sensorManager;
         for (Integer st : sensorTypes) {
@@ -52,6 +61,7 @@ public class SensorCalibrator implements SensorEventListener {
     public void reset() {
         m_dcAbsLinearAcceleration.reset();
         m_dcLinearAcceleration.reset();
+        m_dcMeanLinearAcceleration.reset();
     }
 
     boolean inProgress = false;
@@ -60,10 +70,10 @@ public class SensorCalibrator implements SensorEventListener {
     }
 
     public boolean start() {
+        m_meanFilter.reset();
         inProgress = true;
         for (Sensor sensor : m_lstSensors) {
-            if (!m_sensorManager.registerListener(this, sensor,
-                    Commons.hertz2periodUs(30.0))) {
+            if (!m_sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)) {
                 return false;
             }
         }
@@ -78,9 +88,10 @@ public class SensorCalibrator implements SensorEventListener {
     }
 
     public String getCalibrationStatus()  {
-        return String.format("abs:%f%%, lin::%f%%",
+        return String.format("abs:%f%%, lin::%f%%, absmean::%f%%\n",
                 m_dcAbsLinearAcceleration.getCompletePercentage(),
-                m_dcLinearAcceleration.getCompletePercentage());
+                m_dcLinearAcceleration.getCompletePercentage(),
+                m_dcMeanLinearAcceleration.getCompletePercentage());
     }
 
     private float[] R = new float[16];
@@ -88,6 +99,7 @@ public class SensorCalibrator implements SensorEventListener {
     private float[] accAxis = new float[4];
     private float[] linAcc = new float[4];
 
+    private float[] tmp = new float[4];
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
@@ -97,6 +109,9 @@ public class SensorCalibrator implements SensorEventListener {
                         0, linAcc, 0);
                 m_dcLinearAcceleration.Measure(event.values);
                 m_dcAbsLinearAcceleration.Measure(accAxis);
+                long ts = elapsedRealtimeNanos();
+                m_meanFilter.filter(accAxis, ts, tmp);
+                m_dcMeanLinearAcceleration.Measure(tmp);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(R, event.values);
