@@ -201,7 +201,7 @@ FilterInputFile(const QString &inputFile,
 
     static const int LINE_COUNT = 5;
     int line_count = LINE_COUNT;
-    static const double accDev = 1.0;
+    static const double accDev = 1.0e+1;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);

@@ -69,42 +69,43 @@ public class KalmanFilter {
 
     public void predict() {
         //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
-        Matrix.matrixMultiply(this.F, this.Xk_k, this.Xk_km1);
-        Matrix.matrixMultiply(this.B, this.Uk, this.auxBxU);
-        Matrix.matrixAdd(this.Xk_km1, this.auxBxU, this.Xk_km1);
+        Matrix.matrixMultiply(F, Xk_k, Xk_km1);
+        Matrix.matrixMultiply(B, Uk, auxBxU);
+        Matrix.matrixAdd(Xk_km1, auxBxU, Xk_km1);
 
         //Pk|k-1 = Fk*Pk-1|k-1*Fk(t) + Qk
-        Matrix.matrixMultiply(this.F, this.Pk_k, this.auxSDxSD);
-        Matrix.matrixMultiplyByTranspose(this.auxSDxSD, this.F, this.Pk_km1);
-        Matrix.matrixAdd(this.Pk_km1, this.Q, this.Pk_km1);
+        Matrix.matrixMultiply(F, Pk_k, auxSDxSD);
+        Matrix.matrixMultiplyByTranspose(auxSDxSD, F, Pk_km1);
+        Matrix.matrixAdd(Pk_km1, Q, Pk_km1);
     }
 
     public void update() {
         //Yk = Zk - Hk*Xk|k-1
-        Matrix.matrixMultiply(this.H, this.Xk_km1, this.Yk);
-        Matrix.matrixSubtract(this.Zk, this.Yk, this.Yk);
+        Matrix.matrixMultiply(H, Xk_km1, Yk);
+        Matrix.matrixSubtract(Zk, Yk, Yk);
 
         //Sk = Rk + Hk*Pk|k-1*Hk(t)
-        Matrix.matrixMultiplyByTranspose(this.Pk_km1, this.H, this.auxSDxMD);
-        Matrix.matrixMultiply(this.H, this.auxSDxMD, this.Sk);
-        Matrix.matrixAdd(this.R, this.Sk, this.Sk);
+        Matrix.matrixMultiplyByTranspose(Pk_km1, H, auxSDxMD);
+        Matrix.matrixMultiply(H, auxSDxMD, Sk);
+        Matrix.matrixAdd(R, Sk, Sk);
 
         //Kk = Pk|k-1*Hk(t)*Sk(inv)
-        if (!(Matrix.matrixDestructiveInvert(this.Sk, this.SkInv)))
+        if (!(Matrix.matrixDestructiveInvert(Sk, SkInv)))
             return; //matrix hasn't inversion
-        Matrix.matrixMultiply(this.auxSDxMD, this.SkInv, this.K);
+        Matrix.matrixMultiply(auxSDxMD, SkInv, K);
 
         //xk|k = xk|k-1 + Kk*Yk
-        Matrix.matrixMultiply(this.K, this.Yk, this.Xk_k);
-        Matrix.matrixAdd(this.Xk_km1, this.Xk_k, this.Xk_k);
+        Matrix.matrixMultiply(K, Yk, Xk_k);
+        Matrix.matrixAdd(Xk_km1, Xk_k, Xk_k);
 
         //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
-        Matrix.matrixMultiply(this.K, this.H, this.auxSDxSD);
-        Matrix.matrixSubtractFromIdentity(this.auxSDxSD);
-        Matrix.matrixMultiply(this.auxSDxSD, this.Pk_km1, this.Pk_k);
+        Matrix.matrixMultiply(K, H, auxSDxSD);
+        Matrix.matrixSubtractFromIdentity(auxSDxSD);
+        Matrix.matrixMultiply(auxSDxSD, Pk_km1, Pk_k);
 
+        //we don't use this :
         //Yk|k = Zk - Hk*Xk|k
-        Matrix.matrixMultiply(this.H, this.Xk_k, this.Yk_k);
-        Matrix.matrixSubtract(this.Zk, this.Yk_k, this.Yk_k);
+//        Matrix.matrixMultiply(H, Xk_k, Yk_k);
+//        Matrix.matrixSubtract(Zk, Yk_k, Yk_k);
     }
 }

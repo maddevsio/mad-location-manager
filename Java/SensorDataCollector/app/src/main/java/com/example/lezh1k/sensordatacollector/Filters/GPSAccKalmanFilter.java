@@ -53,10 +53,15 @@ public class GPSAccKalmanFilter {
         m_kf.B.setData(b);
     }
 
-    private void rebuildR(double posSigma) {
+    private void rebuildR(double posSigma, double velSigma) {
         //todo test with posSigma * 0.1 for speed.
-        m_kf.R.setIdentity();
-        m_kf.R.scale(posSigma);
+        double R[] = {
+                posSigma, 0.0, 0.0, 0.0,
+                0.0, posSigma, 0.0, 0.0,
+                0.0, 0.0, velSigma, 0.0,
+                0.0, 0.0, 0.0, velSigma
+        };
+        m_kf.R.setData(R);
     }
 
     private void rebuildQ(double dtUpdate,
@@ -89,9 +94,10 @@ public class GPSAccKalmanFilter {
                        double y,
                        double xVel,
                        double yVel,
-                       double posDev) {
+                       double posDev,
+                       double velErr) {
         m_timeStampMsUpdate = timeStamp;
-        rebuildR(posDev);
+        rebuildR(posDev, velErr);
         m_kf.Zk.setData(x, y, xVel, yVel);
         m_kf.update();
     }

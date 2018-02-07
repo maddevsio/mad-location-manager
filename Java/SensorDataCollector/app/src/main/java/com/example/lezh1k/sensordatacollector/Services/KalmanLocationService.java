@@ -35,17 +35,13 @@ import com.example.lezh1k.sensordatacollector.Filters.GPSAccKalmanFilter;
 import com.example.lezh1k.sensordatacollector.Filters.MeanFilter;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
-import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
-import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.TimeZone;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -57,15 +53,11 @@ import java.util.concurrent.PriorityBlockingQueue;
 public class KalmanLocationService extends LocationService
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
+    private static final double ACC_DEFAULT_DEVIATION = 1.0; //todo remove after tests
     private KalmanDistanceLogger m_kalmanDistanceLogger = null;
-    private GPSDataLogger m_gpsDataLogger = null;
-    private AccelerationLogger m_accDataLogger = null;
     public KalmanDistanceLogger getDistanceLogger() {
         return m_kalmanDistanceLogger;
     }
-
-    public GPSDataLogger getGpsDataLogger() {return m_gpsDataLogger;}
-    public AccelerationLogger getAccDataLogger() {return m_accDataLogger;}
 
     private String m_lastLoggedGPSMessage;
     private String m_lastAbsAccelerationString;
@@ -100,6 +92,9 @@ public class KalmanLocationService extends LocationService
             Sensor.TYPE_ROTATION_VECTOR,
     };
 
+    private float[] m_meanAbsAcc = new float[4];
+    private MeanFilter m_meanFilter = new MeanFilter(0.2f, 4);
+
     private float[] R = new float[16];
     private float[] RI = new float[16];
     private float[] accAxis = new float[4];
@@ -108,8 +103,6 @@ public class KalmanLocationService extends LocationService
 
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
             new PriorityBlockingQueue<SensorGpsDataItem>();
-//    private Queue<SensorGpsDataItem> m_sensorDataQueue =
-//        new PriorityQueue<SensorGpsDataItem>();
 
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
@@ -149,7 +142,8 @@ public class KalmanLocationService extends LocationService
                     Coordinates.latitudeToMeters(sdi.getGpsLat()),
                     xVel,
                     yVel,
-                    sdi.getPosErr()
+                    sdi.getPosErr(),
+                    sdi.getVelErr()
             );
         }
 
@@ -261,7 +255,7 @@ public class KalmanLocationService extends LocationService
     };
 
     public KalmanLocationService() {
-        this.accDev = 0.6;
+        this.accDev = ACC_DEFAULT_DEVIATION;
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
@@ -273,15 +267,9 @@ public class KalmanLocationService extends LocationService
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
     class ChangableFileNameGenerator implements FileNameGenerator {
         private String fileName;
-
-        public String getFileName() {
-            return fileName;
-        }
-
         public void setFileName(String fileName) {
             this.fileName = fileName;
         }
-
         public ChangableFileNameGenerator() {
         }
         @Override
@@ -299,7 +287,8 @@ public class KalmanLocationService extends LocationService
         sdf.setTimeZone(TimeZone.getDefault());
         String dateStr = sdf.format(System.currentTimeMillis());
         String fileName = dateStr;
-        for (int i = 0; i < 10000; ++i) {
+        final int secondsIn24Hour = 86400; //I don't think that it's possible to press button more frequently
+        for (int i = 0; i < secondsIn24Hour; ++i) {
             fileName = String.format("%s_%d", dateStr, i);
             File f = new File(xLogFolderPath, fileName);
             if (!f.exists())
@@ -348,8 +337,6 @@ public class KalmanLocationService extends LocationService
         }
 
         m_kalmanDistanceLogger = new KalmanDistanceLogger();
-        m_gpsDataLogger = new GPSDataLogger(m_locationManager, this);
-        m_accDataLogger = new AccelerationLogger(m_sensorManager);
     }
 
     @Override
@@ -376,7 +363,7 @@ public class KalmanLocationService extends LocationService
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    SensorManager.SENSOR_DELAY_GAME);
+                    Commons.hertz2periodUs(20));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
@@ -385,8 +372,6 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-//        m_gpsDataLogger.start();
-//        m_accDataLogger.start();
         m_kalmanDistanceLogger.reset();
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
@@ -396,11 +381,6 @@ public class KalmanLocationService extends LocationService
     public void stop() {
         if (m_wakeLock.isHeld())
             m_wakeLock.release();
-
-        if (m_gpsDataLogger != null)
-            m_gpsDataLogger.stop();
-        if (m_accDataLogger != null)
-            m_accDataLogger.stop();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = ServiceStopped;
@@ -436,8 +416,7 @@ public class KalmanLocationService extends LocationService
         m_track.clear();
     }
 
-    private float[] m_meanAbsAcc = new float[4];
-    private MeanFilter m_meanFilter = new MeanFilter(0.2f, 4);
+
     /*SensorEventListener methods implementation*/
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -445,9 +424,8 @@ public class KalmanLocationService extends LocationService
         final int north = 1;
         final int up = 2;
 
-//                long now = System.currentTimeMillis();
         long now = android.os.SystemClock.elapsedRealtimeNanos();
-        long nowMs = (long) (now / 1.0E6f);
+        long nowMs = Commons.nano2milli(now);
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
@@ -512,10 +490,11 @@ public class KalmanLocationService extends LocationService
         xVel = speed * Math.cos(course);
         yVel = speed * Math.sin(course);
         posDev = loc.getAccuracy();
-        timeStamp = (long) (loc.getElapsedRealtimeNanos() / 1.0E6F); //to millis
+        timeStamp = Commons.nano2milli(loc.getElapsedRealtimeNanos());
         //WARNING!!! here should be speed accuracy, but loc.hasSpeedAccuracy()
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;
+
         m_gpsTrack.add(loc);
         m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Commons.LogMessageType.GPS_DATA.ordinal(),

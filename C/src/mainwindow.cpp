@@ -212,7 +212,7 @@ MainWindow::initMap(QWebEnginePage *page,
   QString html = g_baseHtml.arg(g_mapDiv).arg(allCoordsStr).arg(lat).arg(lon);
   page->setHtml(html);
 
-  if (0) {
+  if (1) {
     QFile sf("/home/lezh1k/route.html");
     if (sf.open(QFile::ReadWrite)) {
       sf.write(html.toUtf8());
