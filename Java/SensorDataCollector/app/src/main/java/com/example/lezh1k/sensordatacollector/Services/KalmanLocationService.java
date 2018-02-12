@@ -363,7 +363,7 @@ public class KalmanLocationService extends LocationService
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    Commons.hertz2periodUs(20));
+                    Commons.hertz2periodUs(Commons.SENSOR_DEFAULT_FREQ_HZ));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
@@ -449,12 +449,12 @@ public class KalmanLocationService extends LocationService
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
-//                        accAxis[north],
-//                        accAxis[east],
-//                        accAxis[up],
-                        m_meanAbsAcc[north],
-                        m_meanAbsAcc[east],
-                        m_meanAbsAcc[up],
+                        accAxis[north],
+                        accAxis[east],
+                        accAxis[up],
+//                        m_meanAbsAcc[north],
+//                        m_meanAbsAcc[east],
+//                        m_meanAbsAcc[up],
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,

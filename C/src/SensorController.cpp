@@ -117,7 +117,13 @@ bool parseFinalDistance(const char *str, SensorData_t *sd) {
 }
 
 static bool parseAbsAccMeanData(const char *str, SensorData_t *sd) {
-  return false;
+  int tt;
+  tt = sscanf(str, "%lf abs mean acc: %lf %lf %lf",
+              &sd->timestamp,
+              &sd->absEastAcc,
+              &sd->absNorthAcc,
+              &sd->absUpAcc);
+  return tt == 4;
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -198,10 +204,9 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
+    static const double accDev = 1.0e+0;
 
-    static const int LINE_COUNT = 5;
-    int line_count = LINE_COUNT;
-    static const double accDev = 1.0e+1;
+    double writeDt = sd.timestamp;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
@@ -216,15 +221,7 @@ FilterInputFile(const QString &inputFile,
                                   sd.timestamp);
     sensorDataToFile(fOut, &sd);
 
-    double tnow = sd.timestamp;
-    double x, y, vx, vy;
-    x = y = 0.0;
-    vx = sd.speed * cos(sd.course);
-    vy = sd.speed * sin(sd.course);    
-    double dtmax = 0.0;
-    double dxmax = 0.0;
-    double dymax = 0.0;
-
+    bool usePredicted = false ;
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       int pi = SensorControllerParseDataString(line.toStdString().c_str(), &sd);
@@ -232,19 +229,6 @@ FilterInputFile(const QString &inputFile,
         continue;
 
       if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
-        double dt = (sd.timestamp - tnow) / 1000.0;
-        double dt2 = 0.5*dt*dt;
-        double dx = vx*dt + dt2*sd.absEastAcc;
-        double dy = vy*dt + dt2*sd.absNorthAcc;
-        tnow = sd.timestamp;
-        x += dx;
-        y += dy;
-        vx += sd.absEastAcc*dt;
-        vy += sd.absNorthAcc*dt;
-        dtmax = std::max(dtmax, dt);
-        dxmax = std::max(abs(dxmax), abs(dx));
-        dymax = std::max(abs(dymax), abs(dy));
-
         GPSAccKalmanPredict(kf2, sd.timestamp,
                             sd.absEastAcc, sd.absNorthAcc);
 
@@ -252,7 +236,13 @@ FilterInputFile(const QString &inputFile,
                                               GPSAccKalmanGetY(kf2));
         sd.gpsLat = pp.Latitude;
         sd.gpsLon = pp.Longitude;
-        sensorDataToFile(fOut, &sd);
+
+        if (sd.timestamp - writeDt > 1.0) {
+          if (usePredicted)
+            sensorDataToFile(fOut, &sd);
+          writeDt = sd.timestamp;
+        }
+
       } else {
         if (--gps_count)
           continue;
@@ -268,21 +258,14 @@ FilterInputFile(const QString &inputFile,
                            xVel,
                            yVel,
                            sd.posErr);
-//        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
-//                                              GPSAccKalmanGetY(kf2));
-//        sd.gpsLat = pp.Latitude;
-//        sd.gpsLon = pp.Longitude;
-//        sensorDataToFile(fOut, &sd);
+        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
+                                              GPSAccKalmanGetY(kf2));
+        sd.gpsLat = pp.Latitude;
+        sd.gpsLon = pp.Longitude;
+        if (!usePredicted)
+          sensorDataToFile(fOut, &sd);
       }
     } //while (!fIn.atEnd())
-    qDebug() << "x : " << x;
-    qDebug() << "y : " << y;
-    qDebug() << "vx : " << vx;
-    qDebug() << "vy : " << vy;
-
-    qDebug() << "dtmax : " << dtmax;
-    qDebug() << "dxmax : " << dxmax;
-    qDebug() << "dymax : " << dymax;
     result = true;
   } while (0);
 

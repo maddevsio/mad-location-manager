@@ -28,13 +28,15 @@ public class MeanFilter {
     }
 
     public void filter(float[] data, long timestamp, float[] mean) {
+        this.timestamp = timestamp;
+        ++this.count;
         if(this.startTime == 0L) {
             this.startTime = timestamp;
             System.arraycopy(data, 0, mean, 0, dataItemsCount);
+            return;
         }
 
-        this.timestamp = timestamp;
-        float hz = (float)(++this.count) / ((float)(this.timestamp - this.startTime) / 1.0E9F);
+        float hz = (float)(this.count) / ((float)(this.timestamp - this.startTime) / 1.0E9F);
         int filterWindow = (int)Math.ceil((double)(hz * this.timeConstant));
         this.values.addLast(Arrays.copyOf(data, data.length));
         while(this.values.size() > filterWindow) {
@@ -44,8 +46,7 @@ public class MeanFilter {
         this.getMean(this.values, mean);
     }
 
-    private float[] getMean(ArrayDeque<float[]> data, float[] mean) {
-//        float[] mean = new float[dataItemsCount];
+    private void getMean(ArrayDeque<float[]> data, float[] mean) {
         Iterator var3 = data.iterator();
 
         while(var3.hasNext()) {
@@ -59,8 +60,6 @@ public class MeanFilter {
         for(int i = 0; i < mean.length; ++i) {
             mean[i] /= (float)data.size();
         }
-
-        return mean;
     }
 
     public void setTimeConstant(float timeConstant) {

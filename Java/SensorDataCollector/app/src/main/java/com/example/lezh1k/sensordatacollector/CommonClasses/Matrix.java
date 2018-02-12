@@ -33,14 +33,18 @@ public class Matrix {
         }
     }
 
-    public void setIdentity() {
-        assert(rows == cols);
+    public void setIdentityDiag() {
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
                 data[r][c] = 0.0;
             }
             data[r][r] = 1.0;
         }
+    }
+
+    public void setIdentity() {
+        assert(rows == cols);
+        setIdentityDiag();
     }
 
     public static void matrixAdd(Matrix ma,
