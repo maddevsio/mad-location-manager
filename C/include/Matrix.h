@@ -68,4 +68,6 @@ bool MatrixDestructiveInvert(matrix_t *input,
 
 /* Turn m into an identity matrix. */
 void MatrixSetIdentity(matrix_t *m);
+
+void MatrixSetIdentityDiag(matrix_t *m);
 #endif // MATRIX_H

@@ -102,7 +102,7 @@ public class DeviationCalculator {
     public String deviationInfoString() {
         String res = "";
         for (int i = 0; i < m_valuesCount; ++i) {
-            res += String.format("\n%d:sigma=%f\nmean=%f", i, m_sigmas[i], m_means[i]);
+            res += String.format("%d:sigma=%f,mean=%f|||", i, m_sigmas[i], m_means[i]);
         }
         res += String.format("\nFrequency:%f", m_freqMean);
         return res;

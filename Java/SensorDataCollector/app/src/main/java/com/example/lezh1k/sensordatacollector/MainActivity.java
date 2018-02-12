@@ -4,42 +4,52 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
-import com.elvishew.xlog.printer.AndroidPrinter;
-import com.elvishew.xlog.printer.Printer;
-import com.elvishew.xlog.printer.file.FilePrinter;
-import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
-import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
-import com.example.lezh1k.sensordatacollector.Loggers.AccelerationLogger;
-import com.example.lezh1k.sensordatacollector.Loggers.GPSDataLogger;
+import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
+import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
+import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
 import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
+import com.example.lezh1k.sensordatacollector.Services.KalmanLocationService;
 import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
-import com.google.android.gms.location.FusedLocationProviderClient;
 
-import java.io.File;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Polyline;
+import com.mapbox.mapboxsdk.annotations.PolylineOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+
 import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface {
 
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaT;
-        RefreshTask(long deltaTMs) {
+        Context owner;
+        RefreshTask(long deltaTMs, Context owner) {
+            this.owner = owner;
             this.deltaT = deltaTMs;
         }
 
@@ -58,64 +68,52 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onProgressUpdate(Object... values) {
-            TextView tvLinAcc = (TextView) findViewById(R.id.tvLinAccelerometer);
-            TextView tvLinAccData = (TextView) findViewById(R.id.tvLinAccelerometerData);
-            TextView tvLocationData = (TextView) findViewById(R.id.tvLocationData);
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
+            if (m_isLogging) {
+                ServicesHelper.getLocationService(owner, value -> {
+                    KalmanLocationService kls = (KalmanLocationService) value;
+                    KalmanDistanceLogger kdl = kls.getDistanceLogger();
+                    tvDistance.setText(String.format("Distance (geo): %fm\n" +
+                                    "Distance (geo) HP: %fm\n" +
+                                    "Distance as is : %fm\n" +
+                                    "Distance as is HP: %fm",
+                            kdl.getDistanceGeoFiltered(),
+                            kdl.getDistanceGeoFilteredHP(),
+                            kdl.getDistanceAsIs(),
+                            kdl.getDistanceAsIsHP()));
 
-            tvLocationData.setText(String.format("Location:\n%s", m_gpsDataLogger.getLastLoggedGPSMessage()));
+                });
+            } else {
+                if (m_sensorCalibrator.isInProgress()) {
+                    tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
+                    if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                            m_sensorCalibrator.getDcLinearAcceleration().isCalculated() &&
+                            m_sensorCalibrator.getDcMeanLinearAcceleration().isCalculated()) {
+                        set_isCalibrating(false, false);
+                        tvDistance.setText(/*m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString() +*/
+                            m_sensorCalibrator.getDcMeanLinearAcceleration().deviationInfoString());
+                    }
 
-            tvLinAccData.setText(String.format("Acceleration:\n" +
-                            "Lin:%s\n" +
-                            "Abs:%s",
-                    m_accDataLogger.getLastLinAccelerationString(),
-                    m_accDataLogger.getLastAbsAccelerationString()));
 
-            tvLinAcc.setText(String.format("Lin acc: %s\n%s",
-                    m_sensorCalibrator.getDcAbsLinearAcceleration().deviationInfoString(),
-                    m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString()));
-
-            tvDistance.setText(String.format("Distance : %fm", m_kalmanDistanceLogger.getDistance()));
-
-            if (m_sensorCalibrator.isInProgress()) {
-                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
-                if( m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
-                    set_isCalibrating(false, false);
                 }
             }
         }
     }
     /*********************************************************/
 
-    private GPSDataLogger m_gpsDataLogger = null;
-    private AccelerationLogger m_accDataLogger = null;
-    private SensorCalibrator m_sensorCalibrator = null;
-    private KalmanDistanceLogger m_kalmanDistanceLogger = null;
+    MapPresenter m_presenter;
+    Polyline m_routeKalmanOnly;
+    Polyline m_routeKalmanWithGeo;
+    Polyline m_routeGps;
 
+    MapboxMap m_map;
+    MapView m_mapView;
+
+    private SensorCalibrator m_sensorCalibrator = null;
     private boolean m_isLogging = false;
     private boolean m_isCalibrating = false;
-    RefreshTask m_refreshTask = new RefreshTask(1000l);
-
-    protected void onPause() {
-        super.onPause();
-        m_refreshTask.needTerminate = true;
-        m_refreshTask.cancel(true);
-        if (m_gpsDataLogger != null) {
-            m_gpsDataLogger.stop();
-        }
-        if (m_accDataLogger != null) {
-            m_accDataLogger.stop();
-        }
-        if (m_sensorCalibrator != null) {
-            m_sensorCalibrator.stop();
-        }
-
-        ServicesHelper.getLocationService(this, value -> value.stop());
-
-        m_isLogging = false;
-    }
+    RefreshTask m_refreshTask = new RefreshTask(1000l, this);
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -131,20 +129,22 @@ public class MainActivity extends AppCompatActivity {
         String btnTvStatusText;
 
         if (isLogging) {
-            btnStartStopText = "Stop tracking";
-            btnTvStatusText = "Tracking is in progress";
-            m_gpsDataLogger.start();
-            m_accDataLogger.start();
-            m_kalmanDistanceLogger.reset();
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             ServicesHelper.getLocationService(this, value -> {
+                if (value.IsRunning())
+                    return;
+                KalmanLocationService kls = (KalmanLocationService) value;
+                kls.initXlogPrintersFileName();
+                value.stop();
                 value.reset();
                 value.start();
             });
+            btnStartStopText = "Stop tracking";
+            btnTvStatusText = "Tracking is in progress";
+
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
-            m_gpsDataLogger.stop();
-            m_accDataLogger.stop();
             ServicesHelper.getLocationService(this, value -> {
                 value.stop();
             });
@@ -159,7 +159,6 @@ public class MainActivity extends AppCompatActivity {
         m_isLogging = isLogging;
     }
 
-//    private TestServiceLogger tt = new TestServiceLogger();
     //todo change to state machine
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
@@ -185,26 +184,15 @@ public class MainActivity extends AppCompatActivity {
         m_isCalibrating = isCalibrating;
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        m_refreshTask = new RefreshTask(1000);
-        m_refreshTask.needTerminate = false;
-        m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
-
     public void btnStartStop_click(View v) {
         set_isLogging(!m_isLogging);
     }
-
     public void btnCalibrate_click(View v) {
         set_isCalibrating(!m_isCalibrating, true);
     }
 
     private void initActivity() {
-        setContentView(R.layout.activity_main);
+
         String[] interestedPermissions;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
             interestedPermissions = new String[]{
@@ -238,40 +226,209 @@ public class MainActivity extends AppCompatActivity {
             System.exit(1);
         }
 
-        m_gpsDataLogger = new GPSDataLogger(locationManager, this);
-        m_accDataLogger = new AccelerationLogger(sensorManager);
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
-        m_kalmanDistanceLogger = new KalmanDistanceLogger();
-        set_isLogging(false);
+        ServicesHelper.getLocationService(this, value -> {
+            set_isLogging(value.IsRunning());
+        });
         set_isCalibrating(false, true);
+    }
 
-        File esd = Environment.getExternalStorageDirectory();
-        String storageState = Environment.getExternalStorageState();
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
-            String logFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), Commons.AppName);
-            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
-            Printer filePrinter = new FilePrinter                      // Printer that print the log to the file system
-                    .Builder(logFolderPath)                            // Specify the path to save log file
-                    .fileNameGenerator(new DateFileNameGenerator())    // Date as file name
-                    .backupStrategy(new FileSizeBackupStrategy(1024*1024*100)) //100MB for backup files
-                    .build();
-            XLog.init(LogLevel.ALL, androidPrinter, filePrinter);
-            XLog.i("Application started!!!");
-            tvStatus.setText(logFolderPath);
-        } else {
-            System.exit(3);
+    //uncaught exceptions
+    private Thread.UncaughtExceptionHandler defaultUEH;
+    // handler listener
+    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread thread, Throwable ex) {
+            try {
+                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
+            } catch (Exception e) {
+                Log.i(Commons.AppName, String.format("Megaunhandled exception : %s, %s, %s",
+                        e.toString(), ex.toString(), ex.getStackTrace()));
+            }
+            defaultUEH.uncaughtException(thread, ex);
         }
+    };
+
+    @Override
+    public void locationChanged(Location location) {
+        if (m_map != null && m_presenter != null) {
+            if (!m_map.isMyLocationEnabled()) {
+                m_map.setMyLocationEnabled(true);
+                m_map.getMyLocationViewSettings().setForegroundTintColor(ContextCompat.getColor(this, R.color.red));
+            }
+
+            m_presenter.onLocationChanged(location, m_map.getCameraPosition());
+        }
+    }
+
+    @Override
+    public void showRoute(List<LatLng> route, int hack) {
+        if (m_map != null) {
+            runOnUiThread(() ->
+                    m_mapView.post(() -> {
+                        if (hack == 0) {
+                            if (this.m_routeKalmanOnly != null) {
+                                m_map.removeAnnotation(this.m_routeKalmanOnly);
+                            }
+
+                            this.m_routeKalmanOnly = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.colorAccent))
+                                    .width(2));
+                        }
+                        if (hack == 1) {
+                            if (this.m_routeKalmanWithGeo != null) {
+                                m_map.removeAnnotation(this.m_routeKalmanWithGeo);
+                            }
+
+                            this.m_routeKalmanWithGeo = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.mapbox_blue))
+                                    .width(2));
+
+                        }
+                        if (hack == 2) {
+                            if (this.m_routeGps != null) {
+                                m_map.removeAnnotation(this.m_routeGps);
+                            }
+
+                            this.m_routeGps = m_map.addPolyline(new PolylineOptions()
+                                    .addAll(route)
+                                    .color(ContextCompat.getColor(this, R.color.green))
+                                    .width(2));
+
+                        }
+                    }));
+        }
+    }
+
+    @Override
+    public void moveCamera(CameraPosition position) {
+        runOnUiThread(() ->
+                m_mapView.postDelayed(() -> {
+                    if (m_map != null) {
+                        m_map.animateCamera(CameraUpdateFactory.newCameraPosition(position));
+                    }
+                }, 100));
+    }
+
+    @Override
+    public void setAllGesturesEnabled(boolean enabled) {
+        if (enabled) {
+            m_mapView.postDelayed(() -> {
+                m_map.getUiSettings().setScrollGesturesEnabled(true);
+                m_map.getUiSettings().setZoomGesturesEnabled(true);
+                m_map.getUiSettings().setDoubleTapGesturesEnabled(true);
+            }, 500);
+        } else {
+            m_map.getUiSettings().setScrollGesturesEnabled(false);
+            m_map.getUiSettings().setZoomGesturesEnabled(false);
+            m_map.getUiSettings().setDoubleTapGesturesEnabled(false);
+        }
+    }
+
+    public void setupMap(@Nullable Bundle savedInstanceState) {
+        m_mapView = (MapView) findViewById(R.id.mapView);
+        m_mapView.onCreate(savedInstanceState);
+
+        m_presenter = new MapPresenter(this, this);
+        m_mapView.getMapAsync(mapboxMap -> {
+            m_map = mapboxMap;
+            m_map.setStyleUrl(BuildConfig.lightMapStyle);
+
+            m_map.getUiSettings().setLogoEnabled(false);
+            m_map.getUiSettings().setAttributionEnabled(false);
+            m_map.getUiSettings().setTiltGesturesEnabled(false);
+
+            int leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+            int topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56, getResources().getDisplayMetrics());
+            int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+            int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+            m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+
+            if (m_routeKalmanOnly != null) {
+                m_routeKalmanOnly.setMapboxMap(m_map);
+            }
+
+            ServicesHelper.addLocationServiceInterface(this);
+            m_presenter.getRoute();
+        });
+
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
+        Mapbox.getInstance(this, BuildConfig.access_token);
+        setContentView(R.layout.activity_main);
+        setupMap(savedInstanceState);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         initActivity();
+        if (m_mapView != null) {
+            m_mapView.onStart();
+        }
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onStop() {
+        super.onStop();
+        if (m_mapView != null) {
+            m_mapView.onStop();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (m_mapView != null) {
+            m_mapView.onResume();
+        }
+        m_refreshTask = new RefreshTask(1000, this);
+        m_refreshTask.needTerminate = false;
+        m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (m_mapView != null) {
+            m_mapView.onPause();
+        }
+
+        m_refreshTask.needTerminate = true;
+        m_refreshTask.cancel(true);
+        if (m_sensorCalibrator != null) {
+            m_sensorCalibrator.stop();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (m_mapView != null) {
+            m_mapView.onSaveInstanceState(outState);
+        }
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (m_mapView != null) {
+            m_mapView.onLowMemory();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (m_mapView != null) {
+            m_mapView.onDestroy();
+        }
     }
 }

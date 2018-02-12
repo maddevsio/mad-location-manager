@@ -17,9 +17,10 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
   /*initialization*/
   f->predictTime = f->updateTime = timeStamp;
   f->accDev = accDev;
+
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
-  MatrixSetIdentity(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
+  MatrixSetIdentityDiag(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
   MatrixSetIdentity(f->kf->Pk_k);
   MatrixScale(f->kf->Pk_k, posDev); //todo get speed accuracy if possible
   return f;
@@ -66,27 +67,32 @@ static void rebuildR(GPSAccKalmanFilter_t *f,
                      double posSigma) {
   MatrixSetIdentity(f->kf->R);
   MatrixScale(f->kf->R, posSigma);
+//  double velSigma = posSigma * 1.0e-01;
+//  MatrixSet(f->kf->R,
+//            posSigma, 0.0, 0.0, 0.0,
+//            0.0, posSigma, 0.0, 0.0,
+//            0.0, 0.0, velSigma, 0.0,
+//            0.0, 0.0, 0.0, velSigma);
 }
 //////////////////////////////////////////////////////////////////////////
 
 static void rebuildQ(GPSAccKalmanFilter_t *f,
                      double dt,
                      double accSigma) {
-  UNUSED_ARG(dt);
   MatrixSetIdentity(f->kf->Q);
   MatrixScale(f->kf->Q, accSigma * dt);
 
   //  1st variant from Wiki. Shows bad results
 //  MatrixMultiplyByTranspose(f->kf->B, f->kf->B, f->kf->Q);
-//  MatrixScale(f->kf->Q, accSigma);
+//  MatrixScale(f->kf->Q, accSigma*accSigma);
 }
 
 void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
                          double timeNow,
                          double xAcc,
                          double yAcc) {
-  double dt1 = (timeNow - k->predictTime) / 1000.0;
-  double dt2 = (timeNow - k->updateTime)  / 1000.0;
+  double dt1 = (timeNow - k->predictTime) / 1.0e+3;
+  double dt2 = (timeNow - k->updateTime)  / 1.0e+3;
 
   rebuildF(k, dt1);
   rebuildB(k, dt1);
@@ -107,6 +113,7 @@ void GPSAccKalmanUpdate(GPSAccKalmanFilter_t *k,
                         double xVel,
                         double yVel,
                         double posDev) {
+//  double dt = timeNow - k->updateTime;
   k->updateTime = timeNow;
   rebuildR(k, posDev);
   MatrixSet(k->kf->Zk, x, y, xVel, yVel);

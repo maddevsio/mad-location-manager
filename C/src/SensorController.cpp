@@ -16,6 +16,9 @@ static bool parseKalmanAllocData(const char *str, SensorData_t *sd);
 static bool parseKalmanPredict(const char *str, SensorData_t *sd);
 static bool parseKalmanUpdate(const char *str, SensorData_t *sd);
 static bool parseFilteredGpsData(const char *str, SensorData_t *sd);
+static bool parseFinalDistance(const char *str, SensorData_t *sd);
+static bool parseAbsAccMeanData(const char *str, SensorData_t *sd);
+
 typedef bool (*pf_parser)(const char*, SensorData_t*);
 
 //don't change order here. it's related to LogMessageType
@@ -26,6 +29,8 @@ static pf_parser parsers[] = {
   parseGpsData,
   parseAbsAccData,
   parseFilteredGpsData,
+  parseFinalDistance,
+  parseAbsAccMeanData
 };
 
 bool parseAbsAccData(const char *str, SensorData_t *sd) {
@@ -96,7 +101,32 @@ bool parseFilteredGpsData(const char *str, SensorData_t *sd) {
               &sd->gpsAlt);
   return tt == 4;
 }
+
+bool parseFinalDistance(const char *str, SensorData_t *sd) {
+  int tt;
+  tt = sscanf(str, "%lf Distance as is : %lf\n"
+                   "Distance as is HP : %lf\n"
+                   "Distance(geo) : %lf\n"
+                   "Distance(geo) HP : %lf",
+              &sd->timestamp,
+              &sd->distanceAsIs,
+              &sd->distanceAsIsHP,
+              &sd->distanceGeo,
+              &sd->distanceGeoHP);
+  return tt == 5;
+}
+
+static bool parseAbsAccMeanData(const char *str, SensorData_t *sd) {
+  int tt;
+  tt = sscanf(str, "%lf abs mean acc: %lf %lf %lf",
+              &sd->timestamp,
+              &sd->absEastAcc,
+              &sd->absNorthAcc,
+              &sd->absUpAcc);
+  return tt == 4;
+}
 //////////////////////////////////////////////////////////////////////////
+
 
 LogMessageType
 SensorControllerParseDataString(const char *str, SensorData_t *sd) {
@@ -174,7 +204,9 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 0.8;
+    static const double accDev = 1.0e+0;
+
+    double writeDt = sd.timestamp;
 
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
@@ -187,7 +219,9 @@ FilterInputFile(const QString &inputFile,
                                   accDev,
                                   sd.posErr,
                                   sd.timestamp);
+    sensorDataToFile(fOut, &sd);
 
+    bool usePredicted = false ;
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       int pi = SensorControllerParseDataString(line.toStdString().c_str(), &sd);
@@ -197,6 +231,18 @@ FilterInputFile(const QString &inputFile,
       if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
         GPSAccKalmanPredict(kf2, sd.timestamp,
                             sd.absEastAcc, sd.absNorthAcc);
+
+        geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
+                                              GPSAccKalmanGetY(kf2));
+        sd.gpsLat = pp.Latitude;
+        sd.gpsLon = pp.Longitude;
+
+        if (sd.timestamp - writeDt > 1.0) {
+          if (usePredicted)
+            sensorDataToFile(fOut, &sd);
+          writeDt = sd.timestamp;
+        }
+
       } else {
         if (--gps_count)
           continue;
@@ -212,14 +258,12 @@ FilterInputFile(const QString &inputFile,
                            xVel,
                            yVel,
                            sd.posErr);
-
         geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
                                               GPSAccKalmanGetY(kf2));
-
         sd.gpsLat = pp.Latitude;
         sd.gpsLon = pp.Longitude;
-
-        sensorDataToFile(fOut, &sd);
+        if (!usePredicted)
+          sensorDataToFile(fOut, &sd);
       }
     } //while (!fIn.atEnd())
     result = true;

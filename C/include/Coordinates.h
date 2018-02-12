@@ -4,7 +4,7 @@
 #include <vector>
 class QString;
 
-#define COORDINATES_HIGH_ACCURACY 0
+#define COORDINATES_HIGH_ACCURACY 1
 
 struct geopoint_t {
   double Latitude, Longitude;
@@ -29,6 +29,6 @@ double CoordLatitudeToMeters(double lat);
 geopoint_t CoordMetersToGeopoint(double lonMeters,
                             double latMeters);
 
-double CoordGetDistance(const std::vector<geopoint_t> &lst, int precision);
+double CoordCaclulateDistance(const std::vector<geopoint_t> &lst);
 
 #endif // COORDINATES_H

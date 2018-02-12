@@ -33,14 +33,18 @@ public class Matrix {
         }
     }
 
-    public void setIdentity() {
-        assert(rows == cols);
+    public void setIdentityDiag() {
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
                 data[r][c] = 0.0;
             }
             data[r][r] = 1.0;
         }
+    }
+
+    public void setIdentity() {
+        assert(rows == cols);
+        setIdentityDiag();
     }
 
     public static void matrixAdd(Matrix ma,
@@ -96,11 +100,14 @@ public class Matrix {
         assert(ma.rows == mc.rows);
         assert(mb.cols == mc.cols);
         int r, c, rc;
+        final int mcrows = mc.rows;
+        final int mccols = mc.cols;
+        final int macols = ma.cols;
 
-        for (r = 0; r < mc.rows; ++r) {
-            for (c = 0; c < mc.cols; ++c) {
+        for (r = 0; r < mcrows; ++r) {
+            for (c = 0; c < mccols; ++c) {
                 mc.data[r][c] = 0.0;
-                for (rc = 0; rc < ma.cols; ++rc) {
+                for (rc = 0; rc < macols; ++rc) {
                     mc.data[r][c] += ma.data[r][rc]*mb.data[rc][c];
                 }
             } //for col

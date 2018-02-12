@@ -2,16 +2,12 @@ package com.example.lezh1k.sensordatacollector.Services;
 
 import android.app.Service;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
 import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceStatusInterface;
 
@@ -30,11 +26,23 @@ public abstract class LocationService extends Service {
 
     protected Location m_lastLocation;
     protected List<Location> m_track;
-
     public List<Location> getTrack() {
         return m_track;
     }
-    public void clearTrack() {m_track.clear();}
+
+    public void clearTracks() {
+        m_track.clear();
+    }
+
+    public static final int ServiceStopped = 0;
+    public static final int StartLocationUpdates = 1;
+    public static final int HaveLocation = 2;
+    public static final int ServicePaused = 3;
+    protected int m_serviceStatus = ServiceStopped;
+
+    public boolean IsRunning() {
+        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused;
+    }
 
     public LocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
@@ -70,7 +78,7 @@ public abstract class LocationService extends Service {
 
     public void addStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         if (m_locationServiceStatusInterfaces.add(locationServiceStatusInterface)) {
-//            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
 //            locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
 //            locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
 //            locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
@@ -80,7 +88,7 @@ public abstract class LocationService extends Service {
     public void addStatusInterfaces(List<LocationServiceStatusInterface> locationServiceStatusInterfaces) {
         if (m_locationServiceStatusInterfaces.addAll(locationServiceStatusInterfaces)) {
             for (LocationServiceStatusInterface locationServiceStatusInterface : locationServiceStatusInterfaces) {
-//                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
 //                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
 //                locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
 //                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
@@ -105,6 +113,7 @@ public abstract class LocationService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        stop();
         Log.d(TAG, "onTaskRemoved: " + rootIntent);
         m_locationServiceInterfaces.clear();
         m_locationServiceStatusInterfaces.clear();

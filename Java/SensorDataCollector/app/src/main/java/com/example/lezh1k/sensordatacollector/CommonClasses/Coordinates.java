@@ -1,10 +1,7 @@
 package com.example.lezh1k.sensordatacollector.CommonClasses;
 
-import com.example.lezh1k.sensordatacollector.CommonClasses.GeoPoint;
 import com.example.lezh1k.sensordatacollector.Filters.GeoHash;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,29 +75,34 @@ public class Coordinates {
         return getPointAhead(point, distance, 0.0);
     }
 
-    public static ArrayList<GeoPoint> filterByGeohash(List<GeoPoint> lstSrc,
-                                                      int precision,
-                                                      int minPointCount) {
-        class cindex {
-            int index;
-            int count;
+    public static GeoPoint[] filterByGeoHash(List<GeoPoint> lstSrc,
+                                             int precision,
+                                             int minPointCount) {
+        final int NOT_VALID_INDEX  = -1;
+        class AuxItem {
+            int index, count;
             double lon, lat;
+
+            AuxItem() {
+                index = NOT_VALID_INDEX;
+                count = 0;
+                lon = lat = 0.0;
+            }
         }
 
-        HashMap<String, cindex> dctHashCount = new HashMap<>();
+        char buff[] = new char[precision];
+        HashMap<String, AuxItem> dctHashCount = new HashMap<>();
 
         int idx = 0;
         for (GeoPoint ci : lstSrc) {
-            String geohash = GeoHash.encode(ci.Latitude, ci.Longitude, precision);
-            if (!dctHashCount.containsKey(geohash)) {
-                cindex ni = new cindex();
-                ni.count = 0;
-                ni.lat = 0.0;
-                ni.lon = 0.0;
-                ni.index = -1;
-                dctHashCount.put(geohash, ni);
+            GeoHash.encode(ci.Latitude, ci.Longitude, buff, precision);
+            String geoHash = new String(buff);
+            AuxItem it;
+            if (!dctHashCount.containsKey(geoHash)) {
+                it = new AuxItem();
+                dctHashCount.put(geoHash, it);
             }
-            cindex it = dctHashCount.get(geohash);
+            it = dctHashCount.get(geoHash);
             if (++it.count == minPointCount)
                 it.index = idx++;
             it.lat += ci.Latitude;
@@ -108,34 +110,34 @@ public class Coordinates {
         }
 
         GeoPoint resArr[] = new GeoPoint[idx];
-        for (Map.Entry<String, cindex> it : dctHashCount.entrySet()) {
-            cindex val = it.getValue();
-            if (val.index == -1)
+        for (Map.Entry<String, AuxItem> it : dctHashCount.entrySet()) {
+            AuxItem val = it.getValue();
+            if (val.index == NOT_VALID_INDEX)
                 continue;
-
-            GeoPoint np = new GeoPoint(val.lat / val.count,
-                    val.lon / val.count);
+            double meanLatitude = val.lat / val.count;
+            double meanLongitude = val.lon / val.count;
+            GeoPoint np = new GeoPoint(meanLatitude, meanLongitude);
             resArr[val.index] = np;
         }
-        ArrayList<GeoPoint> lstRes = new ArrayList<>(Arrays.asList(resArr));
-        return lstRes;
+        return resArr;
     }
 
-    public static double calculateDistance(ArrayList<GeoPoint> lstTrack) {
+    public static double calculateDistance(GeoPoint track[]) {
         double distance = 0.0;
-        double llon, llat;
-
-        if (lstTrack.isEmpty() || lstTrack.size() == 1)
+        double lastLon, lastLat;
+        //WARNING! I didn't find array.length type. Seems it's int, so we can use next comparison:
+        if (track == null || track.length - 1 <= 0) //track.length == 0 || track.length == 1
             return 0.0;
 
-        llon = lstTrack.get(0).Longitude;
-        llat = lstTrack.get(0).Latitude;
+        lastLon = track[0].Longitude;
+        lastLat = track[0].Latitude;
 
-        for (int i = 1; i < lstTrack.size(); ++i) {
-            GeoPoint pp = lstTrack.get(i); //todo use iterator;
-            distance += Coordinates.geoDistanceMeters(llat, llon, pp.Latitude, pp.Longitude);
-            llat = pp.Latitude;
-            llon = pp.Longitude;
+        for (int i = 1; i < track.length; ++i) {
+            distance += Coordinates.geoDistanceMeters(
+                    lastLat, lastLon,
+                    track[i].Latitude, track[i].Longitude);
+            lastLat = track[i].Latitude;
+            lastLon = track[i].Longitude;
         }
         return distance;
     }

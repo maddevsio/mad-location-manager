@@ -215,6 +215,27 @@ public class MatrixUnitTest {
     }
 
     @Test
+    public void matrixIdentityTest() throws Exception {
+        Matrix ma, mb, mc, md;
+        ma = new Matrix(2, 2);
+        mb = new Matrix(2, 2);
+        mb.setData(1.0, 0.0, 0.0, 1.0);
+        ma.setIdentity();
+        assertTrue(Matrix.matrixEq(ma, mb, 1e-06));
+
+        mc = new Matrix(3, 5);
+        md = new Matrix(3, 5);
+        double mdval[] = {
+                1.0, 0.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0, 0.0
+        };
+        mc.setIdentityDiag();
+        md.setData(mdval);
+        assertTrue(Matrix.matrixEq(mc, md, 1e-06));
+    }
+
+    @Test
     public void matrixDestructiveInvertTest() throws Exception {
         Matrix ma, mb, mc;
         ma = new Matrix(3, 3);

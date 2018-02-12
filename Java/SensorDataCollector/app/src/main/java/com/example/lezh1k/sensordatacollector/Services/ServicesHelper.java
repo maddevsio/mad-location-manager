@@ -22,8 +22,8 @@ public class ServicesHelper {
 
     //Location Service
     private boolean connectingLocationService = false;
-    private KalmanLocationService locationService;
-    private List<SimpleTempCallback<KalmanLocationService>> locationServiceRequests = new ArrayList<>();
+    private LocationService locationService;
+    private List<SimpleTempCallback<LocationService>> locationServiceRequests = new ArrayList<>();
 
     private List<LocationServiceInterface> locationServiceInterfaces = new ArrayList<>();
     private List<LocationServiceStatusInterface> locationServiceStatusInterfaces = new ArrayList<>();
@@ -64,9 +64,9 @@ public class ServicesHelper {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             connectingLocationService = false;
-            locationService = ((KalmanLocationService.LocalBinder) service).getService();
+            locationService = ((LocationService.LocalBinder) service).getService();
             if (!locationServiceRequests.isEmpty()) {
-                for (SimpleTempCallback<KalmanLocationService> callback : locationServiceRequests) {
+                for (SimpleTempCallback<LocationService> callback : locationServiceRequests) {
                     if (callback != null) {
                         callback.onCall(locationService);
                     }
@@ -89,7 +89,7 @@ public class ServicesHelper {
         }
     };
 
-    public static void getLocationService(Context context, SimpleTempCallback<KalmanLocationService> callback) {
+    public static void getLocationService(Context context, SimpleTempCallback<LocationService> callback) {
         if (instance.locationService != null) {
             if (callback != null) {
                 callback.onCall(instance.locationService);

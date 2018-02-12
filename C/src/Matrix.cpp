@@ -75,9 +75,8 @@ void MatrixSet(matrix_t *m, ...) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSetIdentity(matrix_t *m) {
+void MatrixSetIdentityDiag(matrix_t *m) {
   assert(m);
-  assert(m->rows == m->cols);
   uint32_t r, c;
   for (r = 0; r < m->rows; ++r) {
     for (c = 0; c < m->cols; ++c) {
@@ -85,6 +84,13 @@ void MatrixSetIdentity(matrix_t *m) {
     }
     m->data[r][r] = 1.0;
   }
+}
+//////////////////////////////////////////////////////////////////////////
+
+void MatrixSetIdentity(matrix_t *m) {
+  assert(m);
+  assert(m->rows == m->cols);
+  MatrixSetIdentityDiag(m);
 }
 //////////////////////////////////////////////////////////////////////////
 
