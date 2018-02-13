@@ -103,8 +103,8 @@ void KalmanFilterUpdate(KalmanFilter_t *k) {
 
   //we don't use this
   //Yk|k = Zk - Hk*Xk|k
-//  MatrixMultiply(k->H, k->Xk_k, k->Yk_k);
-//  MatrixSubtract(k->Zk, k->Yk_k, k->Yk_k);
+  MatrixMultiply(k->H, k->Xk_k, k->Yk_k);
+  MatrixSubtract(k->Zk, k->Yk_k, k->Yk_k);
 }
 //////////////////////////////////////////////////////////////////////////
 

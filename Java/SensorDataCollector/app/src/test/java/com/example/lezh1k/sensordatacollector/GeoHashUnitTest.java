@@ -7,9 +7,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertTrue;
 
 /**

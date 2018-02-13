@@ -16,12 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service
-            android:name=".Services.KalmanLocationService"
-            android:enabled="true"
-            android:exported="false"
-            android:stopWithTask="false" />
-
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
@@ -31,6 +25,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false" />
+
     </application>
 
 </manifest>

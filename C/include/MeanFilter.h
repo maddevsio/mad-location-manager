@@ -34,7 +34,24 @@ private:
   }
 
 public:
-  void filter(const std::vector<T> &data,
+
+  CMeanFilter() :
+    m_startTimeUs(0),
+    m_timeStampUs(0),
+    m_count(0),
+    m_timeWindow(DEFAULT_TIME_WINDOW) {
+
+  }
+
+  void filter(T val,
+              std::vector<T> &meanBuff,
+              uint32_t timeStampUs) {
+    std::vector<T> tmp;
+    tmp.push_back(val);
+    filterArr(tmp, meanBuff, timeStampUs);
+  }
+
+  void filterArr(const std::vector<T> &data,
               std::vector<T> &meanBuff,
               uint32_t timeStampUs) {
     assert(data.size() == meanBuff.size());
@@ -44,14 +61,13 @@ public:
       m_startTimeUs = timeStampUs;
       auto i = meanBuff.begin();
       auto j = data.cbegin();
-      for (; i != meanBuff.end(); ++i, ++j) {
-        *i = *j;
-      }
+      for (; i != meanBuff.end(); ++i, ++j)
+        *i = *j;      
       return;
     }
 
-    double hz = m_count / ((m_timeStampUs - m_startTimeUs) / 1.0e9); //herz frequency
-    int fw = ceil(hz * m_timeWindow); //filter window
+    double hz = m_count / ((m_timeStampUs - m_startTimeUs) / 1.0e3); //herz frequency
+    uint32_t fw = ceil(hz * m_timeWindow); //filter window
     m_deckWindow.push_back(data);
     while (m_deckWindow.size() > fw)
       m_deckWindow.pop_front();

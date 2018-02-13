@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         applicationId "com.example.lezh1k.sensordatacollector"
-        minSdkVersion 18
+        minSdkVersion 15
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -39,4 +39,5 @@ dependencies {
     compile('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
         transitive = true
     }
+    compile project(path: ':gpsacckalmanfusion')
 }

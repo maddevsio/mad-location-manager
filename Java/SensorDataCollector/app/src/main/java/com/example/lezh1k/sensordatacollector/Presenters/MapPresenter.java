@@ -5,9 +5,9 @@ import android.content.Intent;
 import android.location.Location;
 import android.util.Log;
 
+import com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService;
+import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
-import com.example.lezh1k.sensordatacollector.Services.KalmanLocationService;
-import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 

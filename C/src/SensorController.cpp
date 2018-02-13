@@ -6,6 +6,7 @@
 #include "SensorController.h"
 #include "GPSAccKalman.h"
 #include "Coordinates.h"
+#include "MeanFilter.h"
 #include <QDebug>
 
 static void patchSdWithNoise(SensorData *sd) __attribute_used__ ;
@@ -204,13 +205,19 @@ FilterInputFile(const QString &inputFile,
 
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
-    static const double accDev = 1.0e+0;
+
+    bool usePredicted = true;
+    bool noise = false;
+    static const double accDev = 1.0e-01;
 
     double writeDt = sd.timestamp;
-
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
-//    patchSdWithNoise(&sd);
+    xVel = yVel = 0.0;
+
+    if (noise)
+      patchSdWithNoise(&sd);
+
     GPSAccKalmanFilter_t *kf2 = GPSAccKalmanAlloc(
                                   CoordLongitudeToMeters(sd.gpsLon),
                                   CoordLatitudeToMeters(sd.gpsLat),
@@ -221,7 +228,6 @@ FilterInputFile(const QString &inputFile,
                                   sd.timestamp);
     sensorDataToFile(fOut, &sd);
 
-    bool usePredicted = false ;
     while (!fIn.atEnd()) {
       QString line = fIn.readLine();
       int pi = SensorControllerParseDataString(line.toStdString().c_str(), &sd);
@@ -231,16 +237,16 @@ FilterInputFile(const QString &inputFile,
       if (sd.gpsLat == 0.0 && sd.gpsLon == 0.0) {
         GPSAccKalmanPredict(kf2, sd.timestamp,
                             sd.absEastAcc, sd.absNorthAcc);
-
         geopoint_t pp = CoordMetersToGeopoint(GPSAccKalmanGetX(kf2),
                                               GPSAccKalmanGetY(kf2));
         sd.gpsLat = pp.Latitude;
         sd.gpsLon = pp.Longitude;
 
-        if (sd.timestamp - writeDt > 1.0) {
-          if (usePredicted)
+        if (usePredicted) {
+          if (sd.timestamp - writeDt > 1.0) {
             sensorDataToFile(fOut, &sd);
-          writeDt = sd.timestamp;
+            writeDt = sd.timestamp;
+          }
         }
 
       } else {
@@ -248,9 +254,12 @@ FilterInputFile(const QString &inputFile,
           continue;
         gps_count = GPS_COUNT;
 
-//        patchSdWithNoise(&sd);
+        if (noise)
+          patchSdWithNoise(&sd);
+
         xVel = sd.speed * cos(sd.course);
         yVel = sd.speed * sin(sd.course);
+
         GPSAccKalmanUpdate(kf2,
                            sd.timestamp,
                            CoordLongitudeToMeters(sd.gpsLon),

@@ -9,7 +9,6 @@ import android.os.Build;
 import android.util.Log;
 
 import com.elvishew.xlog.XLog;
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 //collect all possible data. uses only in logger
 public class SensorRawDataLogger implements SensorEventListener {
 
+    private static final String TAG = "SensorRawDataLogger";
     private List<Sensor> m_lstSensors = new ArrayList<Sensor>();
     private SensorManager m_sensorManager;
 
@@ -105,7 +105,7 @@ public class SensorRawDataLogger implements SensorEventListener {
         for (Integer st : sensorTypes) {
             Sensor sensor = m_sensorManager.getDefaultSensor(st);
             if (sensor == null) {
-                Log.d(Commons.AppName, String.format("Couldn't get sensor %d", st));
+                Log.d(TAG, String.format("Couldn't get sensor %d", st));
                 continue;
             }
             m_lstSensors.add(sensor);

@@ -21,6 +21,7 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
   MatrixSet(f->kf->Xk_k,
             x, y, xVel, yVel);
   MatrixSetIdentityDiag(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
+
   MatrixSetIdentity(f->kf->Pk_k);
   MatrixScale(f->kf->Pk_k, posDev); //todo get speed accuracy if possible
   return f;
@@ -65,14 +66,15 @@ static void rebuildB(GPSAccKalmanFilter_t *f,
 
 static void rebuildR(GPSAccKalmanFilter_t *f,
                      double posSigma) {
-  MatrixSetIdentity(f->kf->R);
-  MatrixScale(f->kf->R, posSigma);
-//  double velSigma = posSigma * 1.0e-01;
-//  MatrixSet(f->kf->R,
-//            posSigma, 0.0, 0.0, 0.0,
-//            0.0, posSigma, 0.0, 0.0,
-//            0.0, 0.0, velSigma, 0.0,
-//            0.0, 0.0, 0.0, velSigma);
+//  MatrixSetIdentity(f->kf->R);
+//  MatrixScale(f->kf->R, posSigma);
+  double velSigma = posSigma * 1.0e-01;
+//  velSigma = 0.0;
+  MatrixSet(f->kf->R,
+            posSigma, 0.0, 0.0, 0.0,
+            0.0, posSigma, 0.0, 0.0,
+            0.0, 0.0, velSigma, 0.0,
+            0.0, 0.0, 0.0, velSigma);
 }
 //////////////////////////////////////////////////////////////////////////
 

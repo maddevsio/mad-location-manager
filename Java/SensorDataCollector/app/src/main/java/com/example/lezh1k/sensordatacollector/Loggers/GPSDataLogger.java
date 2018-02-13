@@ -3,27 +3,15 @@ package com.example.lezh1k.sensordatacollector.Loggers;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 
 import com.elvishew.xlog.XLog;
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
-
-import net.sf.marineapi.nmea.parser.SentenceFactory;
-import net.sf.marineapi.nmea.sentence.GGASentence;
-import net.sf.marineapi.nmea.sentence.GLLSentence;
-import net.sf.marineapi.nmea.sentence.GSASentence;
-import net.sf.marineapi.nmea.sentence.GSVSentence;
-import net.sf.marineapi.nmea.sentence.RMCSentence;
-import net.sf.marineapi.nmea.sentence.Sentence;
-import net.sf.marineapi.nmea.sentence.VTGSentence;
-import net.sf.marineapi.nmea.util.Position;
+import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 
 /**
  * Created by lezh1k on 12/25/17.
@@ -53,7 +41,7 @@ public class GPSDataLogger implements LocationListener {
             m_locationManager.removeUpdates(this);
 
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    Commons.GPS_MIN_TIME, Commons.GPS_MIN_DISTANCE, this);
+                    Utils.GPS_MIN_TIME, Utils.GPS_MIN_DISTANCE, this);
             return true;
         }
         return false;
@@ -76,7 +64,7 @@ public class GPSDataLogger implements LocationListener {
 //        long now = System.currentTimeMillis();
         long now = loc.getElapsedRealtimeNanos() / 1000000;
         m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
-                Commons.LogMessageType.GPS_DATA.ordinal(),
+                Utils.LogMessageType.GPS_DATA.ordinal(),
                 now, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);

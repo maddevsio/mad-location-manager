@@ -8,7 +8,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.elvishew.xlog.XLog;
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
+import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +18,7 @@ import java.util.List;
  */
 
 public class AccelerationLogger implements SensorEventListener {
+    private static final String TAG = "AccelerationLogger";
     private List<Sensor> m_lstSensors = new ArrayList<Sensor>();
     private SensorManager m_sensorManager;
 
@@ -31,7 +32,7 @@ public class AccelerationLogger implements SensorEventListener {
         for (Integer st : sensorTypes) {
             Sensor sensor = m_sensorManager.getDefaultSensor(st);
             if (sensor == null) {
-                Log.e(Commons.AppName, String.format("Couldn't get sensor %d", st));
+                Log.e(TAG, String.format("Couldn't get sensor %d", st));
                 continue;
             }
             m_lstSensors.add(sensor);
@@ -40,8 +41,8 @@ public class AccelerationLogger implements SensorEventListener {
 
     public boolean start() {
         for (Sensor sensor : m_lstSensors) {
-            if (!m_sensorManager.registerListener(this, sensor, Commons.hertz2periodUs(10.0))) {
-                Log.e(Commons.AppName, String.format("Couldn't registerListener %d", sensor.getType()));
+            if (!m_sensorManager.registerListener(this, sensor, Utils.hertz2periodUs(10.0))) {
+                Log.e(TAG, String.format("Couldn't registerListener %d", sensor.getType()));
                 return false;
             }
         }
@@ -75,7 +76,7 @@ public class AccelerationLogger implements SensorEventListener {
 //                long now = System.currentTimeMillis();
                 long now = SystemClock.elapsedRealtime();
                 lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
-                        Commons.LogMessageType.ABS_ACC_DATA.ordinal(),
+                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         now, accAxis[0], accAxis[1], accAxis[2]);
                 XLog.i(lastAbsAccelerationString);
                 break;

@@ -133,8 +133,9 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
         tmpGeo.Longitude /= count;
 
         if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-          distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
-                                                       tmpGeo.Latitude, tmpGeo.Longitude);
+          double dd = distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
+                                                                   tmpGeo.Latitude, tmpGeo.Longitude);
+          distance += dd;
         }
         laGeo = tmpGeo;
         tmpGeo.Latitude = tmpGeo.Longitude = 0.0;
@@ -180,9 +181,9 @@ MainWindow::initMap(QWebEnginePage *page,
   const int filterPrec = 8;
   const int minPoints = 2;
 
-  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
-  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
-  qDebug() << "RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, GEOHASH_MAX_PRECISION, 1);
+//  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
+//  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
+//  qDebug() << "RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, GEOHASH_MAX_PRECISION, 1);
 
   qDebug() << "2RealTime Src  distance: " << filterDistanceRealTime(lstCoords, filterPrec, minPoints);
   qDebug() << "2RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, filterPrec, minPoints);

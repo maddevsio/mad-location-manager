@@ -21,15 +21,13 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.elvishew.xlog.XLog;
-import com.example.lezh1k.sensordatacollector.CommonClasses.Commons;
-import com.example.lezh1k.sensordatacollector.Interfaces.LocationServiceInterface;
+import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
+import com.example.gpsacckalmanfusion.Lib.Loggers.KalmanDistanceLogger;
+import com.example.gpsacckalmanfusion.Lib.SensorAux.SensorCalibrator;
+import com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService;
+import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
-import com.example.lezh1k.sensordatacollector.Loggers.KalmanDistanceLogger;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
-import com.example.lezh1k.sensordatacollector.SensorsAux.SensorCalibrator;
-import com.example.lezh1k.sensordatacollector.Services.KalmanLocationService;
-import com.example.lezh1k.sensordatacollector.Services.ServicesHelper;
-
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
@@ -82,17 +80,14 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                             kdl.getDistanceGeoFilteredHP(),
                             kdl.getDistanceAsIs(),
                             kdl.getDistanceAsIsHP()));
-
                 });
             } else {
                 if (m_sensorCalibrator.isInProgress()) {
                     tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
                     if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                            m_sensorCalibrator.getDcLinearAcceleration().isCalculated() &&
-                            m_sensorCalibrator.getDcMeanLinearAcceleration().isCalculated()) {
+                            m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
                         set_isCalibrating(false, false);
-                        tvDistance.setText(/*m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString() +*/
-                            m_sensorCalibrator.getDcMeanLinearAcceleration().deviationInfoString());
+                        tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
                     }
 
 
@@ -242,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             try {
                 XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
             } catch (Exception e) {
-                Log.i(Commons.AppName, String.format("Megaunhandled exception : %s, %s, %s",
+                Log.i("SensorDataCollector", String.format("Megaunhandled exception : %s, %s, %s",
                         e.toString(), ex.toString(), ex.getStackTrace()));
             }
             defaultUEH.uncaughtException(thread, ex);
