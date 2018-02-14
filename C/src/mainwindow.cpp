@@ -127,14 +127,15 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
   for (++pi; pi != lst.end(); ++pi) {
     GeohashEncode(pi->Latitude, pi->Longitude, *ppReadGeohash, prec);
 
+    //if (ppCompGeohash != ppReadGeohash)
     if (memcmp(*ppCompGeohash, *ppReadGeohash, prec)) {
       if (count >= minPointCount) {
         tmpGeo.Latitude /= count;
         tmpGeo.Longitude /= count;
 
         if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-          double dd = distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
-                                                                   tmpGeo.Latitude, tmpGeo.Longitude);
+          double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
+                                                       tmpGeo.Latitude, tmpGeo.Longitude);
           distance += dd;
         }
         laGeo = tmpGeo;
@@ -159,8 +160,9 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
     tmpGeo.Longitude /= count;
 
     if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-      distance += CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
+      double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
                                                    tmpGeo.Latitude, tmpGeo.Longitude);
+      distance += dd;
     }
   }
 
