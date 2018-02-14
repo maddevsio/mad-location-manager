@@ -33,7 +33,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile group: 'net.sf.marineapi', name: 'marineapi', version: '0.10.0'
-    compile group: 'com.elvishew', name: 'xlog', version:'1.4.0'
     compile 'com.google.android.gms:play-services-location:11.8.0'
     implementation 'com.google.android.gms:play-services-maps:11.8.0'
     compile('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
