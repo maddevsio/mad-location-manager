@@ -23,9 +23,13 @@ So our model will have 4 dimensions: x (longitude), y (latitude), x' (velocity x
 
 Let's define matrices : 
 1. State transition matrix (F):
+
 [1.0, 0.0, dt, 0.0,
+
  0.0, 1.0, 0.0, dt,
+ 
  0.0, 0.0, 1.0, 0.0,
+ 
  0.0, 0.0, 0.0, 1.0] 
 dt here is period between two PREDICT steps. 
 
@@ -33,10 +37,15 @@ dt here is period between two PREDICT steps.
 Identity matrix 4x4 . We can get x, y, x' and y' from GPS receiver. 
 
 3. Control matrix (B) : 
+
 [ dt^2 / 2.0, 0.0,
+
   0.0, dt^2 / 2.0,
+  
   dt, 0.0,
+  
   0.0, dt ]
+  
 dt here is period between two PREDICT steps
 
 4. Control vector (U) : 
@@ -45,21 +54,31 @@ dt here is period between two PREDICT steps
 5. Process noise (Q) : 
 Q.setIdentity();
 Q.scale(accSigma * dt);
-Looks after that like this : 
+Looks after that like this :
+
 [ accSigma*dt, 0.0, 0.0, 0.0,
+
   0.0, accSigma*dt, 0.0, 0.0,
+  
   0.0, 0.0, accSigma*dt, 0.0,
+  
   0.0, 0.0, 0.0, accSigma*dt ]
+  
 dt here is period between two UPDATE steps. So here we are increasing prediction error with time. It helps to compensate integration error.
 
 6. Measurement noise (R) : 
 R.setIdentity();
 R.scale(posSigma);
 After that it will looks like :
+
 [ posSigma, 0.0, 0.0, 0.0,
+
   0.0, posSigma, 0.0, 0.0,
+  
   0.0, 0.0, posSigma, 0.0,
+  
   0.0, 0.0, 0.0, posSigma ]
+  
 posSigma - value we got from HDOP or from method Location.getAccuracy. 
 
 All formulas got from movement law : x = x0 + x'*dt + x''*dt^2 / 2 . 
