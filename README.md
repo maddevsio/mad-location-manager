@@ -1,10 +1,10 @@
 # mad-location-manager 
 This is library for GPS and Accelerometer data "fusion" with Kalman filter. 
-Project consists of 2 parts: gpsacckalmanfusion (AAR module) and 2 helper applications. Main thing here is gpsacckalmanfusion module.
+Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 helper applications. Main thing here is GpsAccelerationKalmanFusion module.
 
 ## How can mad-location-manager help you to get location more accurately
 
-This module helps to encrease GPS coordinates accuracy and smooth "jumps" from track. Also it helps to calculate total distance of route. 
+This module helps to increase GPS coordinates accuracy and smooth "jumps" from track. 
 
 ## The roadmap
 ### Visualizer 
