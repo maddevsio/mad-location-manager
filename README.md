@@ -28,6 +28,11 @@ This module helps to encrease GPS coordinates accuracy and smooth "jumps" from t
 - [x] Logger for pure GPS data, acceleration data and filtered GPS data.
 - [ ] Restore route if gps connection is lost
 
+### Library
+
+- [x] Separate test android application and library
+- [ ] Add library to maven repository
+
 ## Issues
 
 Feel free to send pull requests. Also feel free to create issues.
