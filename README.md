@@ -6,6 +6,27 @@ Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 help
 
 This module helps to increase GPS coordinates accuracy and smooth "jumps" from track. 
 
+## How to install
+
+1. Add it in your root build.gradle at the end of repositories:
+
+```
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
+	}
+}
+```
+
+2. Add the dependency: 
+
+```
+dependencies {
+        compile 'com.github.maddevsio:mad-location-manager:0.1.0'
+}
+```
+
 ## The roadmap
 ### Visualizer 
 
