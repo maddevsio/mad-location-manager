@@ -2,6 +2,7 @@ package com.example.gpsacckalmanfusion.Lib.Loggers;
 
 import android.location.Location;
 
+import com.elvishew.xlog.XLog;
 import com.example.gpsacckalmanfusion.Lib.Commons.Coordinates;
 import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
@@ -93,7 +94,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
                 Utils.LogMessageType.FILTERED_GPS_DATA.ordinal(),
                 loc.getTime(),
                 loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-        //XLog.i(toLog);
+        XLog.i(toLog);
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
 
         if (isFirstCoordinate) {

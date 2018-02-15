@@ -4,7 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SensorDataCollector.iml" filepath="$PROJECT_DIR$/SensorDataCollector.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/gpsacckalmanfusion/gpsacckalmanfusion.iml" filepath="$PROJECT_DIR$/gpsacckalmanfusion/gpsacckalmanfusion.iml" />
+      <module fileurl="file://$PROJECT_DIR$/madlocationmanager/madlocationmanager.iml" filepath="$PROJECT_DIR$/madlocationmanager/madlocationmanager.iml" />
     </modules>
   </component>
 </project>

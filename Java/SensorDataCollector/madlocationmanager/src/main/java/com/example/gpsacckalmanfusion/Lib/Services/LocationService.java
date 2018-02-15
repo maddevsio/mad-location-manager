@@ -33,10 +33,11 @@ public abstract class LocationService extends Service {
         m_track.clear();
     }
 
-    public static final int ServiceStopped = 0;
-    public static final int StartLocationUpdates = 1;
-    public static final int HaveLocation = 2;
-    public static final int ServicePaused = 3;
+    public static final int PermissionDenied = 0;
+    public static final int ServiceStopped = 1;
+    public static final int StartLocationUpdates = 2;
+    public static final int HaveLocation = 3;
+    public static final int ServicePaused = 4;
     protected int m_serviceStatus = ServiceStopped;
 
     public boolean IsRunning() {
@@ -73,7 +74,7 @@ public abstract class LocationService extends Service {
 
     public abstract void start();
     public abstract void stop();
-    public abstract void reset();
+    public abstract void reset(LocationServiceSettings settings);
 
     public void addStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         if (m_locationServiceStatusInterfaces.add(locationServiceStatusInterface)) {

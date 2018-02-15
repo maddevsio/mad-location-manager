@@ -38,5 +38,5 @@ dependencies {
     compile('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
         transitive = true
     }
-    compile project(path: ':gpsacckalmanfusion')
+    compile project(path: ':madlocationmanager')
 }

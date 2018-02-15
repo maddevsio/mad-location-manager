@@ -1,1 +1,1 @@
-include ':app', ':gpsacckalmanfusion'
+include ':app', ':madlocationmanager'
