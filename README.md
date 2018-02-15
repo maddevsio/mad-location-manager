@@ -8,6 +8,8 @@ This module helps to increase GPS coordinates accuracy and smooth "jumps" from t
 
 ## How to install
 
+### Gradle
+
 1. Add it in your root build.gradle at the end of repositories:
 
 ```
@@ -26,6 +28,32 @@ dependencies {
         compile 'com.github.maddevsio:mad-location-manager:0.1.0'
 }
 ```
+
+### Maven
+
+1. Add the JitPack repository to your build file:
+
+
+```
+<repositories>
+	<repository>
+	    <id>jitpack.io</id>
+	    <url>https://jitpack.io</url>
+	</repository>
+</repositories>
+```
+
+2. Add the dependency:
+
+```
+<dependency>
+    <groupId>com.github.maddevsio</groupId>
+    <artifactId>mad-location-manager</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+###
 
 ## The roadmap
 ### Visualizer 
