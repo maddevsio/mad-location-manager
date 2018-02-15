@@ -208,7 +208,7 @@ FilterInputFile(const QString &inputFile,
 
     bool usePredicted = false;
     bool noise = false;
-    static const double accDev = 1.0e-00;
+    static const double accDev = 0.7;
 
     double writeDt = sd.timestamp;
     double xVel = sd.speed * cos(sd.course);

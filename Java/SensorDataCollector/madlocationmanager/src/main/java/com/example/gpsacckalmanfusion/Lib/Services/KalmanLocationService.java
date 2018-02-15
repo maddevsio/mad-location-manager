@@ -47,31 +47,27 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 
-/**
- * Created by lezh1k on 1/11/18.
- */
-
 public class KalmanLocationService extends LocationService
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
     //todo remove after tests
-    private static final double ACC_DEFAULT_DEVIATION = 0.7;
-
     private KalmanDistanceLogger m_kalmanDistanceLogger = null;
     public KalmanDistanceLogger getDistanceLogger() {
         return m_kalmanDistanceLogger;
     }
-
     private String m_lastLoggedGPSMessage;
     private String m_lastAbsAccelerationString;
-    //!!!
-
     /**/
+
     private static final String TAG = "KalmanLocationService";
-    public static final int PermissionDenied = 0;
+    public static LocationServiceSettings defaultSettings =
+            new LocationServiceSettings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                    Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME, Utils.SENSOR_DEFAULT_FREQ_HZ,
+                    Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT);
+
+    private LocationServiceSettings m_settings;
 
     private LocationManager m_locationManager;
-
     private PowerManager m_powerManager;
     private PowerManager.WakeLock m_wakeLock;
 
@@ -88,7 +84,6 @@ public class KalmanLocationService extends LocationService
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
     private double m_magneticDeclination = 0.0;
-    private double m_accDev;
 
     /*accelerometer + rotation vector*/
     private static int[] sensorTypes = {
@@ -257,12 +252,11 @@ public class KalmanLocationService extends LocationService
     };
 
     public KalmanLocationService() {
-        this.m_accDev = ACC_DEFAULT_DEVIATION;
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
-        reset();
+        reset(defaultSettings);
     }
 
     private String xLogFolderPath;
@@ -338,9 +332,8 @@ public class KalmanLocationService extends LocationService
             m_lstSensors.add(sensor);
         }
 
-        //todo move 8 and 2 to arguments
-        //also move gpsMinInterval and gpsMinDistance to arguments
-        m_kalmanDistanceLogger = new KalmanDistanceLogger(8,2);
+        m_kalmanDistanceLogger = new KalmanDistanceLogger(m_settings.getGeoHashPrecision(),
+                m_settings.getGeoHashPointMinCount());
     }
 
     @Override
@@ -360,14 +353,14 @@ public class KalmanLocationService extends LocationService
             m_locationManager.addGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    Utils.GPS_MIN_TIME, Utils.GPS_MIN_DISTANCE, this );
+                    m_settings.getGpsMinTime(), m_settings.getGpsMinDistance(), this );
         }
 
         m_sensorsEnabled = true;
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    Utils.hertz2periodUs(Utils.SENSOR_DEFAULT_FREQ_HZ));
+                    Utils.hertz2periodUs(m_settings.getSensorFfequencyHz()));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
@@ -414,7 +407,8 @@ public class KalmanLocationService extends LocationService
             m_kalmanDistanceLogger.stop();
     }
 
-    public void reset() {
+    public void reset(LocationServiceSettings settings) {
+        m_settings = settings;
         m_kalmanFilter = null;
         m_track.clear();
     }
@@ -509,13 +503,13 @@ public class KalmanLocationService extends LocationService
         if (m_kalmanFilter == null) {
             XLog.i("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
                     Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
-                    timeStamp, x, y, speed, course, m_accDev, posDev);
+                    timeStamp, x, y, speed, course, m_settings.getAccelerationDeviation(), posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
                     Coordinates.longitudeToMeters(x),
                     Coordinates.latitudeToMeters(y),
                     xVel,
                     yVel,
-                    m_accDev,
+                    m_settings.getAccelerationDeviation(),
                     posDev,
                     timeStamp);
             return;

@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 KalmanLocationService kls = (KalmanLocationService) value;
                 kls.initXlogPrintersFileName();
                 value.stop();
-                value.reset();
+                value.reset(KalmanLocationService.defaultSettings); //warning!! here you can adjust your filter behavior
                 value.start();
             });
             btnStartStopText = "Stop tracking";
