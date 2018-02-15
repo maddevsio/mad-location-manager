@@ -50,10 +50,13 @@
         android:id="@+id/tvDistance"
         android:layout_width="354dp"
         android:layout_height="66dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="Distance:"
-        app:layout_constraintTop_toBottomOf="@+id/mapView"
-        tools:layout_editor_absoluteX="17dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/mapView" />
 
     <com.mapbox.mapboxsdk.maps.MapView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:mapbox="http://schemas.android.com/apk/res-auto"
