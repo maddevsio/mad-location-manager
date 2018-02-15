@@ -2,6 +2,8 @@
 This is library for GPS and Accelerometer data "fusion" with Kalman filter. 
 Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 helper applications. Main thing here is GpsAccelerationKalmanFusion module.
 
+[![](https://jitpack.io/v/maddevsio/mad-location-manager.svg)](https://jitpack.io/#maddevsio/mad-location-manager)
+
 ## How can mad-location-manager help you to get location more accurately
 
 This module helps to increase GPS coordinates accuracy and smooth "jumps" from track. 
