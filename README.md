@@ -63,6 +63,7 @@ dependencies {
 - [x] Implement some route visualizer for desktop application
 - [x] Implement Kalman filter and test all settings
 - [x] Implement noise generator for logged data
+- [ ] Improve UI. Need to use some controls for coefficient/noise changes
 
 ### Filter 
 
@@ -82,7 +83,26 @@ dependencies {
 ### Library
 
 - [x] Separate test android application and library
-- [ ] Add library to maven repository
+- [x] Add library to some public repository
+
+## Theory
+
+Kalman filtering, also known as linear quadratic estimation (LQE), is an algorithm that uses a series of measurements observed over time, containing statistical noise and other inaccuracies, and produces estimates of unknown variables that tend to be more accurate than those based on a single measurement alone, by estimating a joint probability distribution over the variables for each timeframe.
+
+You can get more details about the filter [here](https://en.wikipedia.org/wiki/Kalman_filter).
+
+The filter is a de-facto standard solution in navigation systems. The project simply defines the given data and implements some math.
+
+The project uses 2 data sources: GPS and accelerometer. GPS coordinates are not very accurate, but each of them doesn't depend on previous values. So, there is no accumulation error in this case. On the other hand, the accelerometer has very accurate GPS readings, but it accumulates error related to noise and integration error. Therefore, it is necessary to "fuse" these two sources. Kalman is the best solution here.
+
+So first - we need to define matrices and do some math with them. And second - we need to get real acceleration (not in device orientation) . First one is described in current project's wiki. But second one is little bit more complex thing called "sensor fusion". There is a lot information about this in internet. For real acceleration we need to know 2 things : device orientation and "linear acceleration". Linear acceleration is acceleration along each device axis excluding force of gravity. It could be calculated by high pass filter or with more complex algorithms. Device orientation could be calculated in many ways :
+
+- Using accelerometer + magnetometer
+- Using accelerometer + magnetometer + gyroscope
+- Using [Madgwick filter](http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/)
+- Using virtual "rotation vector" sensor. 
+
+Best results show madgwick and rotation vector sensor, but Madgwick filter should be used when we know sensor frequency. Android doesn't provide such information, so best solution here is to use virtual rotation vector sensor. You can get more details from current project's wiki.
 
 ## Issues
 
