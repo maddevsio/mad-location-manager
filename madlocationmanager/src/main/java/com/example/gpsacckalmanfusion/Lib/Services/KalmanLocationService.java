@@ -375,7 +375,7 @@ public class KalmanLocationService extends LocationService
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_kalmanDistanceLogger.reset();
+        m_kalmanDistanceLogger.reset(m_settings.isLogToFile());
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);

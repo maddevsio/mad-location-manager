@@ -52,7 +52,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
         m_geohashPrecision = geohashPrecision;
         m_geohashMinPointCount = geohashMinPointCount;
         m_geoFilteredTrack = new ArrayList<>();
-        reset();
+        reset(false);
         ServicesHelper.addLocationServiceInterface(this);
         ServicesHelper.addLocationServiceStatusInterface(this);
     }
@@ -70,7 +70,10 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
         return m_distanceAsIsHP;
     }
 
-    public void reset() {
+    private boolean m_log2file = Utils.LOG2FILE_DEFAULT;
+
+    public void reset(boolean log2file) {
+        m_log2file = log2file;
         m_geoFilteredTrack.clear();
         char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
         char[] buff2 = new char[GeoHash.GEOHASH_MAX_PRECISION];
@@ -90,13 +93,15 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
 
     @Override
     public void locationChanged(Location loc) {
-        String toLog = String.format("%d%d FKS : lat=%f, lon=%f, alt=%f",
-                Utils.LogMessageType.FILTERED_GPS_DATA.ordinal(),
-                loc.getTime(),
-                loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-        XLog.i(toLog);
-        GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
+        if (m_log2file) {
+            String toLog = String.format("%d%d FKS : lat=%f, lon=%f, alt=%f",
+                    Utils.LogMessageType.FILTERED_GPS_DATA.ordinal(),
+                    loc.getTime(),
+                    loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
+            XLog.i(toLog);
+        }
 
+        GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (isFirstCoordinate) {
             GeoHash.encode(pi.Latitude, pi.Longitude, geoHashBuffers[ppCompGeoHash], m_geohashPrecision);
             currentGeoPoint.Latitude = pi.Latitude;
