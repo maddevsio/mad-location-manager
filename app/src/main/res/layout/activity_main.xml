@@ -44,7 +44,7 @@
         app:layout_constraintBottom_toTopOf="@+id/btnStartStop"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
+        app:layout_constraintTop_toBottomOf="@+id/cbFilteredKalman" />
 
     <TextView
         android:id="@+id/tvDistance"
@@ -62,7 +62,7 @@
         xmlns:mapbox="http://schemas.android.com/apk/res-auto"
         android:id="@+id/mapView"
         android:layout_width="352dp"
-        android:layout_height="290dp"
+        android:layout_height="227dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -74,4 +74,45 @@
         mapbox:mapbox_cameraZoom="16"
         mapbox:mapbox_cameraZoomMax="19"
         mapbox:mapbox_cameraZoomMin="8" />
+
+    <CheckBox
+        android:id="@+id/cbGPS"
+        android:layout_width="115dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:buttonTint="@color/black"
+        android:checked="true"
+        android:text="GPS"
+        android:textColorLink="@color/black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
+
+    <CheckBox
+        android:id="@+id/cbFilteredKalman"
+        android:layout_width="115dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:buttonTint="@color/black"
+        android:checked="true"
+        android:text="Filtered"
+        android:textColorLink="@color/black"
+        app:layout_constraintEnd_toStartOf="@+id/cbFilteredKalmanGeo"
+        app:layout_constraintStart_toEndOf="@+id/cbGPS"
+        app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
+
+    <CheckBox
+        android:id="@+id/cbFilteredKalmanGeo"
+        android:layout_width="115dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:buttonTint="@color/black"
+        android:checked="true"
+        android:text="Filtered+Geo"
+        android:textColorLink="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
 </android.support.constraint.ConstraintLayout>

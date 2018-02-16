@@ -11,16 +11,22 @@ public class LocationServiceSettings {
     private int sensorFfequencyHz;
     private int geoHashPrecision;
     private int geoHashPointMinCount;
+    private boolean logToFile;
 
-    public LocationServiceSettings(double accelerationDeviation, int gpsMinDistance,
-                                   int gpsMinTime, int sensorFfequencyHz,
-                                   int geoHashPrecision, int geoHashPointMinCount) {
+    public LocationServiceSettings(double accelerationDeviation,
+                                   int gpsMinDistance,
+                                   int gpsMinTime,
+                                   int sensorFfequencyHz,
+                                   int geoHashPrecision,
+                                   int geoHashPointMinCount,
+                                   boolean logToFile) {
         this.accelerationDeviation = accelerationDeviation;
         this.gpsMinDistance = gpsMinDistance;
         this.gpsMinTime = gpsMinTime;
         this.sensorFfequencyHz = sensorFfequencyHz;
         this.geoHashPrecision = geoHashPrecision;
         this.geoHashPointMinCount = geoHashPointMinCount;
+        this.logToFile = logToFile;
     }
 
     public double getAccelerationDeviation() {
@@ -46,4 +52,6 @@ public class LocationServiceSettings {
     public int getGeoHashPointMinCount() {
         return geoHashPointMinCount;
     }
+
+    public boolean isLogToFile() { return logToFile; }
 }

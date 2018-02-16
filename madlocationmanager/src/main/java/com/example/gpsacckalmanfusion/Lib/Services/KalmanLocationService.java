@@ -62,8 +62,9 @@ public class KalmanLocationService extends LocationService
     private static final String TAG = "KalmanLocationService";
     public static LocationServiceSettings defaultSettings =
             new LocationServiceSettings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                    Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME, Utils.SENSOR_DEFAULT_FREQ_HZ,
-                    Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT);
+                    Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
+                    Utils.SENSOR_DEFAULT_FREQ_HZ, Utils.GEOHASH_DEFAULT_PREC,
+                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, Utils.LOG2FILE_DEFAULT);
 
     private LocationServiceSettings m_settings;
 
@@ -100,6 +101,12 @@ public class KalmanLocationService extends LocationService
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
             new PriorityBlockingQueue<SensorGpsDataItem>();
 
+    private void log2File(String format, Object... args) {
+        if (!m_settings.isLogToFile())
+            return;
+        XLog.i(format, args);
+    }
+
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaTMs;
@@ -110,7 +117,7 @@ public class KalmanLocationService extends LocationService
         }
 
         private void handlePredict(SensorGpsDataItem sdi) {
-            XLog.i("%d%d KalmanPredict : accX=%f, accY=%f",
+            log2File("%d%d KalmanPredict : accX=%f, accY=%f",
                     Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
                     (long)sdi.getTimestamp(),
                     sdi.getAbsEastAcc(),
@@ -121,7 +128,7 @@ public class KalmanLocationService extends LocationService
         private void handleUpdate(SensorGpsDataItem sdi) {
             double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
             double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
-            XLog.i("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
+            log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
                     Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
                     (long)sdi.getTimestamp(),
                     sdi.getGpsLon(),
@@ -241,9 +248,8 @@ public class KalmanLocationService extends LocationService
         @Override
         public void uncaughtException(Thread thread, Throwable ex) {
             try {
-//                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
-                Log.i(TAG, String.format("Unhandled exception : %s, %s, %s",
-                        ex.toString(), ex.toString(), Arrays.toString(ex.getStackTrace())));
+                log2File("Unhandled exception : %s, %s, %s",
+                        ex.toString(), ex.toString(), Arrays.toString(ex.getStackTrace()));
             } catch (Exception e) {
                 //do nothing. HACK!!! WARNING!!! 11
             }
@@ -413,7 +419,6 @@ public class KalmanLocationService extends LocationService
         m_track.clear();
     }
 
-
     /*SensorEventListener methods implementation*/
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -433,7 +438,7 @@ public class KalmanLocationService extends LocationService
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         nowMs, accAxis[east], accAxis[north], accAxis[up]);
 
-                XLog.i(m_lastAbsAccelerationString);
+                log2File(m_lastAbsAccelerationString);
                 if (m_kalmanFilter == null) {
                     break;
                 }
@@ -491,7 +496,7 @@ public class KalmanLocationService extends LocationService
                 timeStamp, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), velErr);
-        XLog.i(m_lastLoggedGPSMessage);
+        log2File(m_lastLoggedGPSMessage);
 
         GeomagneticField f = new GeomagneticField(
                 (float)loc.getLatitude(),
@@ -501,7 +506,7 @@ public class KalmanLocationService extends LocationService
         m_magneticDeclination = f.getDeclination();
 
         if (m_kalmanFilter == null) {
-            XLog.i("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
+            log2File("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
                     Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
                     timeStamp, x, y, speed, course, m_settings.getAccelerationDeviation(), posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
@@ -547,7 +552,6 @@ public class KalmanLocationService extends LocationService
     @Override
     public void onProviderDisabled(String provider) {
         Log.d(TAG, "onProviderDisabled: " + provider);
-
         if (provider.equals(LocationManager.GPS_PROVIDER)) {
             m_gpsEnabled = false;
             for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {

@@ -18,6 +18,8 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import com.elvishew.xlog.XLog;
@@ -98,9 +100,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     /*********************************************************/
 
     MapPresenter m_presenter;
-    Polyline m_routeKalmanOnly;
-    Polyline m_routeKalmanWithGeo;
-    Polyline m_routeGps;
+    Polyline m_routeKalmanOnly = null;
+    Polyline m_routeKalmanWithGeo = null;
+    Polyline m_routeGps = null;
 
     MapboxMap m_map;
     MapView m_mapView;
@@ -256,43 +258,33 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         }
     }
 
+    public static final int FILTER_KALMAN_ONLY = 0;
+    public static final int FILTER_KALMAN_WITH_GEO = 1;
+    public static final int GPS_ONLY = 2;
+    private int routeColors[] = {R.color.colorAccent, R.color.mapbox_blue, R.color.green};
+    private Polyline lines[] = new Polyline[3];
+
     @Override
-    public void showRoute(List<LatLng> route, int hack) {
+    public void showRoute(List<LatLng> route, int interestedRoute) {
+
+        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
+        cbGps = (CheckBox) findViewById(R.id.cbGPS);
+        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
+        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked()};
         if (m_map != null) {
             runOnUiThread(() ->
                     m_mapView.post(() -> {
-                        if (hack == 0) {
-                            if (this.m_routeKalmanOnly != null) {
-                                m_map.removeAnnotation(this.m_routeKalmanOnly);
-                            }
+                        if (lines[interestedRoute] != null)
+                            m_map.removeAnnotation(lines[interestedRoute]);
 
-                            this.m_routeKalmanOnly = m_map.addPolyline(new PolylineOptions()
-                                    .addAll(route)
-                                    .color(ContextCompat.getColor(this, R.color.colorAccent))
-                                    .width(2));
-                        }
-                        if (hack == 1) {
-                            if (this.m_routeKalmanWithGeo != null) {
-                                m_map.removeAnnotation(this.m_routeKalmanWithGeo);
-                            }
+                        if (!enabled[interestedRoute])
+                            route.clear(); //too many hacks here
 
-                            this.m_routeKalmanWithGeo = m_map.addPolyline(new PolylineOptions()
-                                    .addAll(route)
-                                    .color(ContextCompat.getColor(this, R.color.mapbox_blue))
-                                    .width(2));
-
-                        }
-                        if (hack == 2) {
-                            if (this.m_routeGps != null) {
-                                m_map.removeAnnotation(this.m_routeGps);
-                            }
-
-                            this.m_routeGps = m_map.addPolyline(new PolylineOptions()
-                                    .addAll(route)
-                                    .color(ContextCompat.getColor(this, R.color.green))
-                                    .width(2));
-
-                        }
+                        lines[interestedRoute] = m_map.addPolyline(new PolylineOptions()
+                                .addAll(route)
+                                .color(ContextCompat.getColor(this, routeColors[interestedRoute]))
+                                .width(2));
                     }));
         }
     }
@@ -340,11 +332,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
             int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
             m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
-
-            if (m_routeKalmanOnly != null) {
-                m_routeKalmanOnly.setMapboxMap(m_map);
-            }
-
             ServicesHelper.addLocationServiceInterface(this);
             m_presenter.getRoute();
         });
@@ -359,6 +346,17 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         Mapbox.getInstance(this, BuildConfig.access_token);
         setContentView(R.layout.activity_main);
         setupMap(savedInstanceState);
+
+        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
+        cbGps = (CheckBox) findViewById(R.id.cbGPS);
+        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
+        CheckBox cb[] = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps};
+        for (int i = 0; i < 3; ++i) {
+            if (cb[i] == null)
+                continue;
+            cb[i].setBackgroundColor(ContextCompat.getColor(this, routeColors[i]));
+        }
     }
 
     @Override

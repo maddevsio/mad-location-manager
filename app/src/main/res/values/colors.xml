@@ -6,7 +6,7 @@
 
     <color name="iconColor">#FF000000</color>
 
-    <color name="black">#FF000000</color>
+    <color name="black">#000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="light_grey">#FFA5A5A5</color>
     <color name="grey">#FF424242</color>

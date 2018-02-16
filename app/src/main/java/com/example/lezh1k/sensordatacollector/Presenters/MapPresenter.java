@@ -8,6 +8,7 @@ import android.util.Log;
 import com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService;
 import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
+import com.example.lezh1k.sensordatacollector.MainActivity;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
@@ -38,14 +39,14 @@ public class MapPresenter {
         ServicesHelper.getLocationService(context, value -> {
             KalmanLocationService kls = (KalmanLocationService) value;
             
-            List<LatLng> routeAsIs = new ArrayList<>(value.getTrack().size());
+            List<LatLng> routeFilteredKalman = new ArrayList<>(value.getTrack().size());
             List<LatLng> routeFilteredWithGeoHash =
                     new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack().size());
             List<LatLng> routGpsAsIs =
                     new ArrayList<>(kls.getGpsTrack().size());
 
             for (Location location : new ArrayList<>(value.getTrack())) {
-                routeAsIs.add(new LatLng(location.getLatitude(), location.getLongitude()));
+                routeFilteredKalman.add(new LatLng(location.getLatitude(), location.getLongitude()));
             }
 
             for (Location location : new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack())) {
@@ -57,9 +58,9 @@ public class MapPresenter {
                 routGpsAsIs.add(new LatLng(location.getLatitude(), location.getLongitude()));
             }
 
-            mapInterface.showRoute(routeAsIs, 0);
-            mapInterface.showRoute(routeFilteredWithGeoHash, 1);
-            mapInterface.showRoute(routGpsAsIs, 2);
+            mapInterface.showRoute(routeFilteredKalman, MainActivity.FILTER_KALMAN_ONLY);
+            mapInterface.showRoute(routeFilteredWithGeoHash, MainActivity.FILTER_KALMAN_WITH_GEO);
+            mapInterface.showRoute(routGpsAsIs, MainActivity.GPS_ONLY);
         });
     }
 
