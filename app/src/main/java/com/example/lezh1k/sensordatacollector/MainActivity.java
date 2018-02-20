@@ -74,7 +74,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 ServicesHelper.getLocationService(owner, value -> {
                     KalmanLocationService kls = (KalmanLocationService) value;
                     KalmanDistanceLogger kdl = kls.getDistanceLogger();
-                    tvDistance.setText(String.format("Distance (geo): %fm\n" +
+                    tvDistance.setText(String.format(
+                                    "Distance (geo): %fm\n" +
                                     "Distance (geo) HP: %fm\n" +
                                     "Distance as is : %fm\n" +
                                     "Distance as is HP: %fm",

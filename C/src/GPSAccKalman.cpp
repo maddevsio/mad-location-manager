@@ -13,7 +13,7 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
                                         double timeStamp) {
   GPSAccKalmanFilter_t *f = (GPSAccKalmanFilter_t*) malloc(sizeof(GPSAccKalmanFilter_t));
   assert(f);
-  f->kf = KalmanFilterCreate(4, 4, 2);
+  f->kf = KalmanFilterCreate(4, 2, 2);
   /*initialization*/
   f->predictTime = f->updateTime = timeStamp;
   f->accDev = accDev;
@@ -66,15 +66,14 @@ static void rebuildB(GPSAccKalmanFilter_t *f,
 
 static void rebuildR(GPSAccKalmanFilter_t *f,
                      double posSigma) {
-//  MatrixSetIdentity(f->kf->R);
-//  MatrixScale(f->kf->R, posSigma);
-  double velSigma = posSigma * 1.0e-01;
-//  velSigma = 0.0;
-  MatrixSet(f->kf->R,
-            posSigma, 0.0, 0.0, 0.0,
-            0.0, posSigma, 0.0, 0.0,
-            0.0, 0.0, velSigma, 0.0,
-            0.0, 0.0, 0.0, velSigma);
+  MatrixSetIdentity(f->kf->R);
+  MatrixScale(f->kf->R, posSigma);
+//  double velSigma = posSigma * 1.0e-01;
+//  MatrixSet(f->kf->R,
+//            posSigma, 0.0, 0.0, 0.0,
+//            0.0, posSigma, 0.0, 0.0,
+//            0.0, 0.0, velSigma, 0.0,
+//            0.0, 0.0, 0.0, velSigma);
 }
 //////////////////////////////////////////////////////////////////////////
 
