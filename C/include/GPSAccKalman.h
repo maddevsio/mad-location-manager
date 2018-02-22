@@ -9,6 +9,7 @@ typedef struct GPSAccKalmanFilter {
   double predictTime;
   double updateTime;
   double accDev;
+  uint32_t predictCount;
   KalmanFilter_t *kf;
 } GPSAccKalmanFilter_t;
 

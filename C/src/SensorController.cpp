@@ -152,9 +152,14 @@ bool sensorDataToFile(QFile &fOut,
 //////////////////////////////////////////////////////////////////////////
 
 void patchSdWithNoise(SensorData *sd) {
-  double noiseX = RandomBetween2Vals(800, 1500) / 1000000.0;
-  double noiseY = RandomBetween2Vals(800, 1500) / 1000000.0;
+  static const int low = 800;
+  static const int high = 1500;
+  double noiseX = RandomBetween2Vals(low, high) / 1000000.0;
+  double noiseY = RandomBetween2Vals(low, high) / 1000000.0;
   double dd = 0.0;
+
+  if (rand() & 0x01) return;
+  if (rand() & 0x01) return;
 
   noiseX *= rand() & 0x01 ? -1.0 : 1.0;
   noiseY *= rand() & 0x01 ? -1.0 : 1.0;
@@ -208,7 +213,7 @@ FilterInputFile(const QString &inputFile,
 
     bool usePredicted = false;
     bool noise = false;
-    static const double accDev = 0.7;
+    static const double accDev = 0.1;
 
     double writeDt = sd.timestamp;
     double xVel = sd.speed * cos(sd.course);

@@ -22,8 +22,8 @@ public class ServicesHelper {
 
     //Location Service
     private boolean connectingLocationService = false;
-    private LocationService locationService;
-    private List<SimpleTempCallback<LocationService>> locationServiceRequests = new ArrayList<>();
+    private KalmanLocationService kalmanLocationService;
+    private List<SimpleTempCallback<KalmanLocationService>> locationServiceRequests = new ArrayList<>();
 
     private List<LocationServiceInterface> locationServiceInterfaces = new ArrayList<>();
     private List<LocationServiceStatusInterface> locationServiceStatusInterfaces = new ArrayList<>();
@@ -31,32 +31,32 @@ public class ServicesHelper {
     public static void addLocationServiceInterface(LocationServiceInterface locationServiceInterface) {
         if (!instance.locationServiceInterfaces.contains(locationServiceInterface)) {
             instance.locationServiceInterfaces.add(locationServiceInterface);
-            if (instance.locationService != null) {
-                instance.locationService.addInterface(locationServiceInterface);
+            if (instance.kalmanLocationService != null) {
+                instance.kalmanLocationService.addInterface(locationServiceInterface);
             }
         }
     }
 
     public static void removeLocationServiceInterface(LocationServiceInterface locationServiceInterface) {
         instance.locationServiceInterfaces.remove(locationServiceInterface);
-        if (instance.locationService != null) {
-            instance.locationService.removeInterface(locationServiceInterface);
+        if (instance.kalmanLocationService != null) {
+            instance.kalmanLocationService.removeInterface(locationServiceInterface);
         }
     }
 
     public static void addLocationServiceStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         if (!instance.locationServiceStatusInterfaces.contains(locationServiceStatusInterface)) {
             instance.locationServiceStatusInterfaces.add(locationServiceStatusInterface);
-            if (instance.locationService != null) {
-                instance.locationService.addStatusInterface(locationServiceStatusInterface);
+            if (instance.kalmanLocationService != null) {
+                instance.kalmanLocationService.addStatusInterface(locationServiceStatusInterface);
             }
         }
     }
 
     public static void removeLocationServiceStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         instance.locationServiceStatusInterfaces.remove(locationServiceStatusInterface);
-        if (instance.locationService != null) {
-            instance.locationService.removeStatusInterface(locationServiceStatusInterface);
+        if (instance.kalmanLocationService != null) {
+            instance.kalmanLocationService.removeStatusInterface(locationServiceStatusInterface);
         }
     }
 
@@ -64,35 +64,35 @@ public class ServicesHelper {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             connectingLocationService = false;
-            locationService = ((LocationService.LocalBinder) service).getService();
+            kalmanLocationService = ((KalmanLocationService.LocalBinder) service).getService();
             if (!locationServiceRequests.isEmpty()) {
-                for (SimpleTempCallback<LocationService> callback : locationServiceRequests) {
+                for (SimpleTempCallback<KalmanLocationService> callback : locationServiceRequests) {
                     if (callback != null) {
-                        callback.onCall(locationService);
+                        callback.onCall(kalmanLocationService);
                     }
                 }
                 locationServiceRequests.clear();
             }
 
             if (locationServiceInterfaces != null && !locationServiceInterfaces.isEmpty()) {
-                locationService.addInterfaces(locationServiceInterfaces);
+                kalmanLocationService.addInterfaces(locationServiceInterfaces);
             }
             if (locationServiceStatusInterfaces != null && !locationServiceStatusInterfaces.isEmpty()) {
-                locationService.addStatusInterfaces(locationServiceStatusInterfaces);
+                kalmanLocationService.addStatusInterfaces(locationServiceStatusInterfaces);
             }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName className) {
             connectingLocationService = false;
-            locationService = null;
+            kalmanLocationService = null;
         }
     };
 
-    public static void getLocationService(Context context, SimpleTempCallback<LocationService> callback) {
-        if (instance.locationService != null) {
+    public static void getLocationService(Context context, SimpleTempCallback<KalmanLocationService> callback) {
+        if (instance.kalmanLocationService != null) {
             if (callback != null) {
-                callback.onCall(instance.locationService);
+                callback.onCall(instance.kalmanLocationService);
             }
         } else {
             if (callback != null) {

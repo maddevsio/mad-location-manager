@@ -2,6 +2,8 @@ package com.example.gpsacckalmanfusion.Lib.Services;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Service;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
@@ -14,9 +16,12 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
@@ -47,19 +52,109 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 
-public class KalmanLocationService extends LocationService
+public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
+
+    protected String TAG = "KalmanLocationService";
+
+    //region Location service implementation. Maybe we need to move it to some abstract class?*/
+    protected List<LocationServiceInterface> m_locationServiceInterfaces;
+    protected List<LocationServiceStatusInterface> m_locationServiceStatusInterfaces;
+
+    protected Location m_lastLocation;
+    protected List<Location> m_track;
+
+    public List<Location> getTrack() {
+        return m_track;
+    }
+    public void clearTracks() {
+        m_track.clear();
+    }
+
+    public static final int PermissionDenied = 0;
+    public static final int ServiceStopped = 1;
+    public static final int StartLocationUpdates = 2;
+    public static final int HaveLocation = 3;
+    public static final int ServicePaused = 4;
+    protected int m_serviceStatus = ServiceStopped;
+
+    public boolean IsRunning() {
+        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused;
+    }
+
+    public void addInterface(LocationServiceInterface locationServiceInterface) {
+        if (m_locationServiceInterfaces.add(locationServiceInterface) && m_lastLocation != null) {
+            locationServiceInterface.locationChanged(m_lastLocation);
+        }
+    }
+
+    public void addInterfaces(List<LocationServiceInterface> locationServiceInterfaces) {
+        if (m_locationServiceInterfaces.addAll(locationServiceInterfaces) && m_lastLocation != null) {
+            for (LocationServiceInterface locationServiceInterface : locationServiceInterfaces) {
+                locationServiceInterface.locationChanged(m_lastLocation);
+            }
+        }
+    }
+
+    public void removeInterface(LocationServiceInterface locationServiceInterface) {
+        m_locationServiceInterfaces.remove(locationServiceInterface);
+    }
+
+    public void removeStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
+        m_locationServiceStatusInterfaces.remove(locationServiceStatusInterface);
+    }
+
+    public void addStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
+        if (m_locationServiceStatusInterfaces.add(locationServiceStatusInterface)) {
+            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+            locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
+            locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
+            locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
+        }
+    }
+
+    public void addStatusInterfaces(List<LocationServiceStatusInterface> locationServiceStatusInterfaces) {
+        if (m_locationServiceStatusInterfaces.addAll(locationServiceStatusInterfaces)) {
+            for (LocationServiceStatusInterface locationServiceStatusInterface : locationServiceStatusInterfaces) {
+                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
+                locationServiceStatusInterface.GPSEnabledChanged(m_gpsEnabled);
+                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
+            }
+        }
+    }
+
+    /*Service implementation*/
+    public class LocalBinder extends Binder {
+        public KalmanLocationService getService() {
+            return KalmanLocationService.this;
+        }
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new LocalBinder();
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        stop();
+        Log.d(TAG, "onTaskRemoved: " + rootIntent);
+        m_locationServiceInterfaces.clear();
+        m_locationServiceStatusInterfaces.clear();
+        stopSelf();
+    }
+    //endregion
 
     //todo remove after tests
     private KalmanDistanceLogger m_kalmanDistanceLogger = null;
     public KalmanDistanceLogger getDistanceLogger() {
         return m_kalmanDistanceLogger;
     }
-    private String m_lastLoggedGPSMessage;
-    private String m_lastAbsAccelerationString;
     /**/
 
-    private static final String TAG = "KalmanLocationService";
     public static LocationServiceSettings defaultSettings =
             new LocationServiceSettings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                     Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
@@ -96,7 +191,7 @@ public class KalmanLocationService extends LocationService
     private float[] RI = new float[16];
     private float[] accAxis = new float[4];
     private float[] linAcc = new float[4];
-    /*gps*/
+    //!
 
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
             new PriorityBlockingQueue<SensorGpsDataItem>();
@@ -110,8 +205,8 @@ public class KalmanLocationService extends LocationService
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaTMs;
-        LocationService owner;
-        SensorDataEventLoopTask(long deltaTMs, LocationService owner) {
+        KalmanLocationService owner;
+        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
         }
@@ -258,6 +353,10 @@ public class KalmanLocationService extends LocationService
     };
 
     public KalmanLocationService() {
+        m_locationServiceInterfaces = new ArrayList<>();
+        m_locationServiceStatusInterfaces = new ArrayList<>();
+        m_track = new ArrayList<>();
+
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
@@ -415,6 +514,7 @@ public class KalmanLocationService extends LocationService
 
     public void reset(LocationServiceSettings settings) {
         m_settings = settings;
+        initXlogPrintersFileName();
         m_kalmanFilter = null;
         m_track.clear();
     }
@@ -434,11 +534,11 @@ public class KalmanLocationService extends LocationService
                 android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
                         0, linAcc, 0);
 
-                m_lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
+                String logStr = String.format("%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         nowMs, accAxis[east], accAxis[north], accAxis[up]);
+                log2File(logStr);
 
-                log2File(m_lastAbsAccelerationString);
                 if (m_kalmanFilter == null) {
                     break;
                 }
@@ -491,12 +591,12 @@ public class KalmanLocationService extends LocationService
         double velErr = loc.getAccuracy() * 0.1;
 
         m_gpsTrack.add(loc);
-        m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+        String logStr = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Utils.LogMessageType.GPS_DATA.ordinal(),
                 timeStamp, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), velErr);
-        log2File(m_lastLoggedGPSMessage);
+        log2File(logStr);
 
         GeomagneticField f = new GeomagneticField(
                 (float)loc.getLatitude(),
@@ -535,7 +635,7 @@ public class KalmanLocationService extends LocationService
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
+        /*do nothing*/
     }
 
     @Override

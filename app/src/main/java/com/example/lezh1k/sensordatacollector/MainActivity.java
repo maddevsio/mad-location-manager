@@ -100,18 +100,14 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
     /*********************************************************/
 
-    MapPresenter m_presenter;
-    Polyline m_routeKalmanOnly = null;
-    Polyline m_routeKalmanWithGeo = null;
-    Polyline m_routeGps = null;
-
-    MapboxMap m_map;
-    MapView m_mapView;
+    private MapPresenter m_presenter;
+    private MapboxMap m_map;
+    private MapView m_mapView;
 
     private SensorCalibrator m_sensorCalibrator = null;
     private boolean m_isLogging = false;
     private boolean m_isCalibrating = false;
-    RefreshTask m_refreshTask = new RefreshTask(1000l, this);
+    private RefreshTask m_refreshTask = new RefreshTask(1000l, this);
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -131,8 +127,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             ServicesHelper.getLocationService(this, value -> {
                 if (value.IsRunning())
                     return;
-                KalmanLocationService kls = (KalmanLocationService) value;
-                kls.initXlogPrintersFileName();
                 value.stop();
                 value.reset(KalmanLocationService.defaultSettings); //warning!! here you can adjust your filter behavior
                 value.start();
