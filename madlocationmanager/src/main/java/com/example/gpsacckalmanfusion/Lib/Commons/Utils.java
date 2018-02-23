@@ -11,7 +11,7 @@ public class Utils {
 
     //todo move to some another better place
     public static double ACCELEROMETER_DEFAULT_DEVIATION = 0.1;
-    public static final int GPS_MIN_TIME = 1000;
+    public static final int GPS_MIN_TIME = 2000;
     public static final int GPS_MIN_DISTANCE = 0;
     public static final int SENSOR_DEFAULT_FREQ_HZ = 10;
     public static final int GEOHASH_DEFAULT_PREC = 8;
@@ -25,8 +25,6 @@ public class Utils {
         KALMAN_UPDATE,
         GPS_DATA,
         ABS_ACC_DATA,
-        FILTERED_GPS_DATA,
-        FINAL_DISTANCE,
-        ABS_ACC_MEAN_DATA
+        FILTERED_GPS_DATA
     }
 }

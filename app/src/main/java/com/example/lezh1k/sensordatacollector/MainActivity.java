@@ -257,6 +257,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     public static final int FILTER_KALMAN_WITH_GEO = 1;
     public static final int GPS_ONLY = 2;
     private int routeColors[] = {R.color.colorAccent, R.color.mapbox_blue, R.color.green};
+    private int routeWidths[] = {1, 3, 1};
     private Polyline lines[] = new Polyline[3];
 
     @Override
@@ -279,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                         lines[interestedRoute] = m_map.addPolyline(new PolylineOptions()
                                 .addAll(route)
                                 .color(ContextCompat.getColor(this, routeColors[interestedRoute]))
-                                .width(2));
+                                .width(routeWidths[interestedRoute]));
                     }));
         }
     }

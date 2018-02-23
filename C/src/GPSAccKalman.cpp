@@ -13,7 +13,7 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
                                         double timeStamp) {
   GPSAccKalmanFilter_t *f = (GPSAccKalmanFilter_t*) malloc(sizeof(GPSAccKalmanFilter_t));
   assert(f);
-  f->kf = KalmanFilterCreate(4, 4, 2);
+  f->kf = KalmanFilterCreate(4, 2, 2);
   /*initialization*/
   f->predictTime = f->updateTime = timeStamp;
   f->predictCount = 0;

@@ -68,11 +68,12 @@ public class GPSAccKalmanFilter {
 
     private void rebuildQ(double dtUpdate,
                           double accDev) {
+//        now we use predictCount. but maybe there is way to use dtUpdate.
 //        m_kf.Q.setIdentity();
 //        m_kf.Q.scale(accSigma * dtUpdate);
         double velDev = accDev * m_predictCount;
         double posDev = velDev * m_predictCount / 2;
-        double covDev = velDev*posDev;
+        double covDev = velDev * posDev;
         double posSig = posDev * posDev;
         double velSig = velDev * velDev;
 
