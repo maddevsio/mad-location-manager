@@ -39,5 +39,6 @@ dependencies {
     compile('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
         transitive = true
     }
+    compile group: 'com.elvishew', name: 'xlog', version:'1.4.0'
     compile project(path: ':madlocationmanager')
 }

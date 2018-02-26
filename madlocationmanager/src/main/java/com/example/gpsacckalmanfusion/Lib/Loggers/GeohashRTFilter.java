@@ -2,7 +2,6 @@ package com.example.gpsacckalmanfusion.Lib.Loggers;
 
 import android.location.Location;
 
-import com.elvishew.xlog.XLog;
 import com.example.gpsacckalmanfusion.Lib.Commons.Coordinates;
 import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
@@ -20,7 +19,7 @@ import java.util.List;
  * Created by lezh1k on 2/13/18.
  */
 
-public class KalmanDistanceLogger implements LocationServiceInterface, LocationServiceStatusInterface {
+public class GeohashRTFilter implements LocationServiceInterface, LocationServiceStatusInterface {
 
     private double m_distanceGeoFiltered = 0.0;
     private double m_distanceGeoFilteredHP = 0.0;
@@ -48,8 +47,8 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
     private int m_geohashPrecision;
     private int m_geohashMinPointCount;
 
-    public KalmanDistanceLogger(int geohashPrecision,
-                                int geohashMinPointCount) {
+    public GeohashRTFilter(int geohashPrecision,
+                           int geohashMinPointCount) {
         m_geohashPrecision = geohashPrecision;
         m_geohashMinPointCount = geohashMinPointCount;
         m_geoFilteredTrack = new ArrayList<>();

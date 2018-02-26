@@ -18,7 +18,6 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
@@ -33,25 +32,13 @@ import com.example.gpsacckalmanfusion.Lib.Filters.GPSAccKalmanFilter;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceStatusInterface;
-import com.example.gpsacckalmanfusion.Lib.Loggers.KalmanDistanceLogger;
+import com.example.gpsacckalmanfusion.Lib.Loggers.GeohashRTFilter;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Queue;
-import java.util.TimeZone;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import com.elvishew.xlog.LogLevel;
-import com.elvishew.xlog.XLog;
-import com.elvishew.xlog.printer.AndroidPrinter;
-import com.elvishew.xlog.printer.Printer;
-import com.elvishew.xlog.printer.file.FilePrinter;
-import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
-import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
@@ -66,12 +53,12 @@ public class KalmanLocationService extends Service
         private ILogger logger;
 
         public Settings(double accelerationDeviation,
-                                       int gpsMinDistance,
-                                       int gpsMinTime,
-                                       int sensorFfequencyHz,
-                                       int geoHashPrecision,
-                                       int geoHashPointMinCount,
-                                       ILogger logger) {
+                        int gpsMinDistance,
+                        int gpsMinTime,
+                        int sensorFfequencyHz,
+                        int geoHashPrecision,
+                        int geoHashPointMinCount,
+                        ILogger logger) {
             this.accelerationDeviation = accelerationDeviation;
             this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
@@ -175,12 +162,10 @@ public class KalmanLocationService extends Service
     }
     //endregion
 
-    //todo remove after tests
-    private KalmanDistanceLogger m_kalmanDistanceLogger = null;
-    public KalmanDistanceLogger getDistanceLogger() {
-        return m_kalmanDistanceLogger;
+    private GeohashRTFilter m_geohashRTFilter = null;
+    public GeohashRTFilter getGeohashRTFilter() {
+        return m_geohashRTFilter;
     }
-    /**/
 
     public static Settings defaultSettings =
             new Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
@@ -326,64 +311,47 @@ public class KalmanLocationService extends Service
         }
 
         void onLocationChangedImp(Location location) {
-            if (location != null && location.getLatitude() != 0 &&
-                    location.getLongitude() != 0 &&
-                    location.getProvider().equals(TAG)) {
-
-                m_serviceStatus = HaveLocation;
-                m_lastLocation = location;
-                m_lastLocationAccuracy = location.getAccuracy();
-
-                if (ActivityCompat.checkSelfPermission(owner, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                        PackageManager.PERMISSION_GRANTED) {
-                    m_gpsStatus = m_locationManager.getGpsStatus(m_gpsStatus);
-                }
-
-                int activeSatellites = 0;
-                if (m_gpsStatus != null) {
-                    for (GpsSatellite satellite : m_gpsStatus.getSatellites()) {
-                        activeSatellites += satellite.usedInFix() ? 1 : 0;
-                    }
-                    m_activeSatellites = activeSatellites;
-                }
-
-                m_track.add(location);
-
-                for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
-                    locationServiceInterface.locationChanged(location);
-                }
-                for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
-                    locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
-                    locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
-                    locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
-                }
+            if (location == null || location.getLatitude() == 0 ||
+                    location.getLongitude() == 0 ||
+                    !location.getProvider().equals(TAG)) {
+                return;
             }
+
+            m_serviceStatus = HaveLocation;
+            m_lastLocation = location;
+            m_lastLocationAccuracy = location.getAccuracy();
+
+            if (ActivityCompat.checkSelfPermission(owner, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                m_gpsStatus = m_locationManager.getGpsStatus(m_gpsStatus);
+            }
+
+            int activeSatellites = 0;
+            if (m_gpsStatus != null) {
+                for (GpsSatellite satellite : m_gpsStatus.getSatellites()) {
+                    activeSatellites += satellite.usedInFix() ? 1 : 0;
+                }
+                m_activeSatellites = activeSatellites;
+            }
+
+            m_track.add(location);
+
+            for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
+                locationServiceInterface.locationChanged(location);
+            }
+            for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
+                locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
+                locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
+                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
+            }
+
         }
     }
-
-    //uncaught exceptions
-    private Thread.UncaughtExceptionHandler defaultUEH;
-    // handler listener
-    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
-        @Override
-        public void uncaughtException(Thread thread, Throwable ex) {
-            try {
-                log2File("Unhandled exception : %s, %s, %s",
-                        ex.toString(), ex.toString(), Arrays.toString(ex.getStackTrace()));
-            } catch (Exception e) {
-                //do nothing. HACK!!! WARNING!!! 11
-            }
-            defaultUEH.uncaughtException(thread, ex);
-        }
-    };
 
     public KalmanLocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
         m_track = new ArrayList<>();
-
-        defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         reset(defaultSettings);
@@ -412,7 +380,7 @@ public class KalmanLocationService extends Service
             m_lstSensors.add(sensor);
         }
 
-        m_kalmanDistanceLogger = new KalmanDistanceLogger(m_settings.geoHashPrecision,
+        m_geohashRTFilter = new GeohashRTFilter(m_settings.geoHashPrecision,
                 m_settings.geoHashPointMinCount);
     }
 
@@ -449,7 +417,7 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_kalmanDistanceLogger.reset(m_settings.logger);
+        m_geohashRTFilter.reset(m_settings.logger);
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -483,8 +451,8 @@ public class KalmanLocationService extends Service
         }
         m_sensorDataQueue.clear();
 
-        if (m_kalmanDistanceLogger != null)
-            m_kalmanDistanceLogger.stop();
+        if (m_geohashRTFilter != null)
+            m_geohashRTFilter.stop();
     }
 
     public void reset(Settings settings) {

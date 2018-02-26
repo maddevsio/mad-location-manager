@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import com.elvishew.xlog.LogLevel;
@@ -33,7 +32,7 @@ import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
-import com.example.gpsacckalmanfusion.Lib.Loggers.KalmanDistanceLogger;
+import com.example.gpsacckalmanfusion.Lib.Loggers.GeohashRTFilter;
 import com.example.gpsacckalmanfusion.Lib.SensorAux.SensorCalibrator;
 import com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService;
 import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
@@ -126,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             if (m_isLogging) {
                 ServicesHelper.getLocationService(owner, value -> {
                     KalmanLocationService kls = (KalmanLocationService) value;
-                    KalmanDistanceLogger kdl = kls.getDistanceLogger();
+                    GeohashRTFilter kdl = kls.getGeohashRTFilter();
                     tvDistance.setText(String.format(
                                     "Distance (geo): %fm\n" +
                                     "Distance (geo) HP: %fm\n" +

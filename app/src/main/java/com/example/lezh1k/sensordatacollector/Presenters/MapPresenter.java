@@ -41,7 +41,7 @@ public class MapPresenter {
             
             List<LatLng> routeFilteredKalman = new ArrayList<>(value.getTrack().size());
             List<LatLng> routeFilteredWithGeoHash =
-                    new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack().size());
+                    new ArrayList<>(kls.getGeohashRTFilter().getGeoFilteredTrack().size());
             List<LatLng> routGpsAsIs =
                     new ArrayList<>(kls.getGpsTrack().size());
 
@@ -49,7 +49,7 @@ public class MapPresenter {
                 routeFilteredKalman.add(new LatLng(location.getLatitude(), location.getLongitude()));
             }
 
-            for (Location location : new ArrayList<>(kls.getDistanceLogger().getGeoFilteredTrack())) {
+            for (Location location : new ArrayList<>(kls.getGeohashRTFilter().getGeoFilteredTrack())) {
                 routeFilteredWithGeoHash.add(new LatLng(location.getLatitude(),
                         location.getLongitude()));
             }
