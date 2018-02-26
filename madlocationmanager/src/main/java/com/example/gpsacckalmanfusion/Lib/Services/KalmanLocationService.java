@@ -77,12 +77,8 @@ public class KalmanLocationService extends Service
 
     protected Location m_lastLocation;
     protected List<Location> m_track;
-
     public List<Location> getTrack() {
         return m_track;
-    }
-    public void clearTracks() {
-        m_track.clear();
     }
 
     public static final int PermissionDenied = 0;

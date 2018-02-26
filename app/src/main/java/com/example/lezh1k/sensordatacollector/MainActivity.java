@@ -166,7 +166,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    //todo change to state machine
     private void set_isLogging(boolean isLogging) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
         TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
@@ -212,7 +211,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         m_isLogging = isLogging;
     }
 
-    //todo change to state machine
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
         TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
@@ -317,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     public static final int FILTER_KALMAN_ONLY = 0;
     public static final int FILTER_KALMAN_WITH_GEO = 1;
     public static final int GPS_ONLY = 2;
-    private int routeColors[] = {R.color.colorAccent, R.color.mapbox_blue, R.color.green};
+    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green};
     private int routeWidths[] = {1, 3, 1};
     private Polyline lines[] = new Polyline[3];
 
