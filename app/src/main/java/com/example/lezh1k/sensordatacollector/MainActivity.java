@@ -8,6 +8,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -22,7 +23,15 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.AndroidPrinter;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
+import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
+import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
+import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
 import com.example.gpsacckalmanfusion.Lib.Loggers.KalmanDistanceLogger;
 import com.example.gpsacckalmanfusion.Lib.SensorAux.SensorCalibrator;
@@ -39,10 +48,54 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
-public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface {
+public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
+
+    private String xLogFolderPath;
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    class ChangableFileNameGenerator implements FileNameGenerator {
+        private String fileName;
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+        public ChangableFileNameGenerator() {
+        }
+        @Override
+        public boolean isFileNameChangeable() {
+            return true;
+        }
+        @Override
+        public String generateFileName(int logLevel, long timestamp) {
+            return fileName;
+        }
+    }
+
+    ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+    public void initXlogPrintersFileName() {
+        sdf.setTimeZone(TimeZone.getDefault());
+        String dateStr = sdf.format(System.currentTimeMillis());
+        String fileName = dateStr;
+        final int secondsIn24Hour = 86400; //I don't think that it's possible to press button more frequently
+        for (int i = 0; i < secondsIn24Hour; ++i) {
+            fileName = String.format("%s_%d", dateStr, i);
+            File f = new File(xLogFolderPath, fileName);
+            if (!f.exists())
+                break;
+        }
+        xLogFileNameGenerator.setFileName(fileName);
+    }
+
+    @Override
+    public void log2file(String format, Object... args) {
+        XLog.i(format, args);
+    }
+
 
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
@@ -128,7 +181,16 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 if (value.IsRunning())
                     return;
                 value.stop();
-                value.reset(KalmanLocationService.defaultSettings); //warning!! here you can adjust your filter behavior
+                initXlogPrintersFileName();
+                KalmanLocationService.Settings settings =
+                        new KalmanLocationService.Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                                Utils.GPS_MIN_DISTANCE,
+                                Utils.GPS_MIN_TIME,
+                                Utils.SENSOR_DEFAULT_FREQ_HZ,
+                                Utils.GEOHASH_DEFAULT_PREC,
+                                Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
+                                this);
+                value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
             });
             btnStartStopText = "Stop tracking";
@@ -352,6 +414,22 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             if (cb[i] == null)
                 continue;
             cb[i].setBackgroundColor(ContextCompat.getColor(this, routeColors[i]));
+        }
+
+        File esd = Environment.getExternalStorageDirectory();
+        String storageState = Environment.getExternalStorageState();
+        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
+            xLogFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), "SensorDataCollector");
+            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
+            initXlogPrintersFileName();
+            Printer xLogFilePrinter = new FilePrinter
+                    .Builder(xLogFolderPath)
+                    .fileNameGenerator(xLogFileNameGenerator)
+                    .backupStrategy(new FileSizeBackupStrategy(1024 * 1024 * 100)) //100MB for backup files
+                    .build();
+            XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
+        } else {
+            //todo set some status
         }
     }
 

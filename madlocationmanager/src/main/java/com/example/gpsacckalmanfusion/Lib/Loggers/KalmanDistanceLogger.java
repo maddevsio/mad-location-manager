@@ -7,6 +7,7 @@ import com.example.gpsacckalmanfusion.Lib.Commons.Coordinates;
 import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 import com.example.gpsacckalmanfusion.Lib.Filters.GeoHash;
+import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceStatusInterface;
 import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
@@ -52,7 +53,7 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
         m_geohashPrecision = geohashPrecision;
         m_geohashMinPointCount = geohashMinPointCount;
         m_geoFilteredTrack = new ArrayList<>();
-        reset(false);
+        reset(null);
         ServicesHelper.addLocationServiceInterface(this);
         ServicesHelper.addLocationServiceStatusInterface(this);
     }
@@ -70,10 +71,10 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
         return m_distanceAsIsHP;
     }
 
-    private boolean m_log2file = Utils.LOG2FILE_DEFAULT;
+    private ILogger m_logger;
 
-    public void reset(boolean log2file) {
-        m_log2file = log2file;
+    public void reset(ILogger logger) {
+        m_logger = logger;
         m_geoFilteredTrack.clear();
         char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
         char[] buff2 = new char[GeoHash.GEOHASH_MAX_PRECISION];
@@ -93,12 +94,12 @@ public class KalmanDistanceLogger implements LocationServiceInterface, LocationS
 
     @Override
     public void locationChanged(Location loc) {
-        if (m_log2file) {
+        if (m_logger != null) {
             String toLog = String.format("%d%d FKS : lat=%f, lon=%f, alt=%f",
                     Utils.LogMessageType.FILTERED_GPS_DATA.ordinal(),
                     loc.getTime(),
                     loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-            XLog.i(toLog);
+            m_logger.log2file(toLog);
         }
 
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());

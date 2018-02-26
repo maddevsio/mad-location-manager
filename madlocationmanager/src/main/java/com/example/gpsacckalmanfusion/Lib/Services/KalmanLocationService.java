@@ -30,6 +30,7 @@ import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
 import com.example.gpsacckalmanfusion.Lib.Commons.SensorGpsDataItem;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 import com.example.gpsacckalmanfusion.Lib.Filters.GPSAccKalmanFilter;
+import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceStatusInterface;
 import com.example.gpsacckalmanfusion.Lib.Loggers.KalmanDistanceLogger;
@@ -54,6 +55,32 @@ import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
+
+    public static class Settings {
+        private double accelerationDeviation;
+        private int gpsMinDistance;
+        private int gpsMinTime;
+        private int sensorFfequencyHz;
+        private int geoHashPrecision;
+        private int geoHashPointMinCount;
+        private ILogger logger;
+
+        public Settings(double accelerationDeviation,
+                                       int gpsMinDistance,
+                                       int gpsMinTime,
+                                       int sensorFfequencyHz,
+                                       int geoHashPrecision,
+                                       int geoHashPointMinCount,
+                                       ILogger logger) {
+            this.accelerationDeviation = accelerationDeviation;
+            this.gpsMinDistance = gpsMinDistance;
+            this.gpsMinTime = gpsMinTime;
+            this.sensorFfequencyHz = sensorFfequencyHz;
+            this.geoHashPrecision = geoHashPrecision;
+            this.geoHashPointMinCount = geoHashPointMinCount;
+            this.logger = logger;
+        }
+    }
 
     protected String TAG = "KalmanLocationService";
 
@@ -155,14 +182,13 @@ public class KalmanLocationService extends Service
     }
     /**/
 
-    public static LocationServiceSettings defaultSettings =
-            new LocationServiceSettings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+    public static Settings defaultSettings =
+            new Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                     Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
                     Utils.SENSOR_DEFAULT_FREQ_HZ, Utils.GEOHASH_DEFAULT_PREC,
-                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, Utils.LOG2FILE_DEFAULT);
+                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, null);
 
-    private LocationServiceSettings m_settings;
-
+    private Settings m_settings;
     private LocationManager m_locationManager;
     private PowerManager m_powerManager;
     private PowerManager.WakeLock m_wakeLock;
@@ -197,9 +223,8 @@ public class KalmanLocationService extends Service
             new PriorityBlockingQueue<SensorGpsDataItem>();
 
     private void log2File(String format, Object... args) {
-        if (!m_settings.isLogToFile())
-            return;
-        XLog.i(format, args);
+        if (m_settings.logger != null)
+            m_settings.logger.log2file(format, args);
     }
 
     class SensorDataEventLoopTask extends AsyncTask {
@@ -364,40 +389,6 @@ public class KalmanLocationService extends Service
         reset(defaultSettings);
     }
 
-    private String xLogFolderPath;
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    class ChangableFileNameGenerator implements FileNameGenerator {
-        private String fileName;
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-        public ChangableFileNameGenerator() {
-        }
-        @Override
-        public boolean isFileNameChangeable() {
-            return true;
-        }
-        @Override
-        public String generateFileName(int logLevel, long timestamp) {
-            return fileName;
-        }
-    }
-
-    ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
-    public void initXlogPrintersFileName() {
-        sdf.setTimeZone(TimeZone.getDefault());
-        String dateStr = sdf.format(System.currentTimeMillis());
-        String fileName = dateStr;
-        final int secondsIn24Hour = 86400; //I don't think that it's possible to press button more frequently
-        for (int i = 0; i < secondsIn24Hour; ++i) {
-            fileName = String.format("%s_%d", dateStr, i);
-            File f = new File(xLogFolderPath, fileName);
-            if (!f.exists())
-                break;
-        }
-        xLogFileNameGenerator.setFileName(fileName);
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -406,22 +397,6 @@ public class KalmanLocationService extends Service
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         m_wakeLock = m_powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
-
-        File esd = Environment.getExternalStorageDirectory();
-        String storageState = Environment.getExternalStorageState();
-        if (storageState != null && storageState.equals(Environment.MEDIA_MOUNTED)) {
-            xLogFolderPath = String.format("%s/%s/", esd.getAbsolutePath(), TAG);
-            Printer androidPrinter = new AndroidPrinter();             // Printer that print the log using android.util.Log
-            initXlogPrintersFileName();
-            Printer xLogFilePrinter = new FilePrinter
-                    .Builder(xLogFolderPath)
-                    .fileNameGenerator(xLogFileNameGenerator)
-                    .backupStrategy(new FileSizeBackupStrategy(1024 * 1024 * 100)) //100MB for backup files
-                    .build();
-            XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
-        } else {
-            //todo set some status
-        }
 
         if (m_sensorManager == null) {
             m_sensorsEnabled = false;
@@ -437,8 +412,8 @@ public class KalmanLocationService extends Service
             m_lstSensors.add(sensor);
         }
 
-        m_kalmanDistanceLogger = new KalmanDistanceLogger(m_settings.getGeoHashPrecision(),
-                m_settings.getGeoHashPointMinCount());
+        m_kalmanDistanceLogger = new KalmanDistanceLogger(m_settings.geoHashPrecision,
+                m_settings.geoHashPointMinCount);
     }
 
     @Override
@@ -458,14 +433,14 @@ public class KalmanLocationService extends Service
             m_locationManager.addGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    m_settings.getGpsMinTime(), m_settings.getGpsMinDistance(), this );
+                    m_settings.gpsMinTime, m_settings.gpsMinDistance, this );
         }
 
         m_sensorsEnabled = true;
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    Utils.hertz2periodUs(m_settings.getSensorFfequencyHz()));
+                    Utils.hertz2periodUs(m_settings.sensorFfequencyHz));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
@@ -474,7 +449,7 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_kalmanDistanceLogger.reset(m_settings.isLogToFile());
+        m_kalmanDistanceLogger.reset(m_settings.logger);
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -512,9 +487,8 @@ public class KalmanLocationService extends Service
             m_kalmanDistanceLogger.stop();
     }
 
-    public void reset(LocationServiceSettings settings) {
+    public void reset(Settings settings) {
         m_settings = settings;
-        initXlogPrintersFileName();
         m_kalmanFilter = null;
         m_track.clear();
     }
@@ -608,13 +582,13 @@ public class KalmanLocationService extends Service
         if (m_kalmanFilter == null) {
             log2File("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
                     Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
-                    timeStamp, x, y, speed, course, m_settings.getAccelerationDeviation(), posDev);
+                    timeStamp, x, y, speed, course, m_settings.accelerationDeviation, posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
                     Coordinates.longitudeToMeters(x),
                     Coordinates.latitudeToMeters(y),
                     xVel,
                     yVel,
-                    m_settings.getAccelerationDeviation(),
+                    m_settings.accelerationDeviation,
                     posDev,
                     timeStamp);
             return;
