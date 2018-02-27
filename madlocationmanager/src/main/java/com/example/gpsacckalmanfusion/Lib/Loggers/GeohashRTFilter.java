@@ -18,6 +18,8 @@ import java.util.List;
 
 public class GeohashRTFilter {
 
+    public static String PROVIDER_NAME = "GeoHashFiltered";
+
     private double m_distanceGeoFiltered = 0.0;
     private double m_distanceGeoFilteredHP = 0.0;
     private double m_distanceAsIs = 0.0;
@@ -150,7 +152,7 @@ public class GeohashRTFilter {
                 }
                 lastApprovedGeoPoint.Longitude = currentGeoPoint.Longitude;
                 lastApprovedGeoPoint.Latitude = currentGeoPoint.Latitude;
-                Location laLoc = new Location("GeoFiltered");
+                Location laLoc = new Location(PROVIDER_NAME);
                 laLoc.setLatitude(lastApprovedGeoPoint.Latitude);
                 laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
                 laLoc.setAltitude(loc.getAltitude()); //hack.
@@ -196,7 +198,7 @@ public class GeohashRTFilter {
             }
             lastApprovedGeoPoint.Longitude = currentGeoPoint.Longitude;
             lastApprovedGeoPoint.Latitude = currentGeoPoint.Latitude;
-            Location laLoc = new Location("GeoFiltered");
+            Location laLoc = new Location(PROVIDER_NAME);
             laLoc.setLatitude(lastApprovedGeoPoint.Latitude);
             laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
             m_geoFilteredTrack.add(laLoc);

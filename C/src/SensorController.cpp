@@ -211,14 +211,13 @@ FilterInputFile(const QString &inputFile,
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
 
-    bool usePredicted = false;
+    bool usePredicted = true;
     bool noise = false;
-    static const double accDev = 0.5;
+    static const double accDev = 0.32;
 
     double writeDt = sd.timestamp;
     double xVel = sd.speed * cos(sd.course);
     double yVel = sd.speed * sin(sd.course);
-    xVel = yVel = 0.0;
 
     if (noise)
       patchSdWithNoise(&sd);
