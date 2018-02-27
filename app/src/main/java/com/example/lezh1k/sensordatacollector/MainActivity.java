@@ -123,29 +123,27 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
             TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
             if (m_isLogging) {
-                ServicesHelper.getLocationService(owner, value -> {
-                    KalmanLocationService kls = (KalmanLocationService) value;
-                    GeohashRTFilter kdl = kls.getGeohashRTFilter();
-                    tvDistance.setText(String.format(
-                                    "Distance (geo): %fm\n" +
-                                    "Distance (geo) HP: %fm\n" +
-                                    "Distance as is : %fm\n" +
-                                    "Distance as is HP: %fm",
-                            kdl.getDistanceGeoFiltered(),
-                            kdl.getDistanceGeoFilteredHP(),
-                            kdl.getDistanceAsIs(),
-                            kdl.getDistanceAsIsHP()));
-                });
+                if (m_geoHashRTFilter == null)
+                    return;
+
+                tvDistance.setText(String.format(
+                        "Distance (geo): %fm\n" +
+                                "Distance (geo) HP: %fm\n" +
+                                "Distance as is : %fm\n" +
+                                "Distance as is HP: %fm",
+                        m_geoHashRTFilter.getDistanceGeoFiltered(),
+                        m_geoHashRTFilter.getDistanceGeoFilteredHP(),
+                        m_geoHashRTFilter.getDistanceAsIs(),
+                        m_geoHashRTFilter.getDistanceAsIsHP()));
             } else {
-                if (m_sensorCalibrator.isInProgress()) {
-                    tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
-                    if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                            m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
-                        set_isCalibrating(false, false);
-                        tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
-                    }
+                if (!m_sensorCalibrator.isInProgress())
+                    return;
 
-
+                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
+                if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
+                    set_isCalibrating(false, false);
+                    tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
                 }
             }
         }
@@ -156,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     private MapboxMap m_map;
     private MapView m_mapView;
 
+    private GeohashRTFilter m_geoHashRTFilter;
     private SensorCalibrator m_sensorCalibrator = null;
     private boolean m_isLogging = false;
     private boolean m_isCalibrating = false;
@@ -179,16 +178,21 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 if (value.IsRunning())
                     return;
                 value.stop();
+
+                if (m_geoHashRTFilter != null)
+                    m_geoHashRTFilter.stop();
+
                 initXlogPrintersFileName();
                 KalmanLocationService.Settings settings =
                         new KalmanLocationService.Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                                 Utils.GPS_MIN_DISTANCE,
                                 Utils.GPS_MIN_TIME,
-                                Utils.SENSOR_DEFAULT_FREQ_HZ,
                                 Utils.GEOHASH_DEFAULT_PREC,
                                 Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
+                                Utils.SENSOR_DEFAULT_FREQ_HZ,
                                 this);
                 value.reset(settings); //warning!! here you can adjust your filter behavior
+                m_geoHashRTFilter.reset(this);
                 value.start();
             });
             btnStartStopText = "Stop tracking";
@@ -373,7 +377,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         m_mapView = (MapView) findViewById(R.id.mapView);
         m_mapView.onCreate(savedInstanceState);
 
-        m_presenter = new MapPresenter(this, this);
+        m_presenter = new MapPresenter(this, this, m_geoHashRTFilter);
         m_mapView.getMapAsync(mapboxMap -> {
             m_map = mapboxMap;
             m_map.setStyleUrl(BuildConfig.lightMapStyle);
@@ -390,7 +394,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             ServicesHelper.addLocationServiceInterface(this);
             m_presenter.getRoute();
         });
-
     }
 
     @Override
@@ -400,6 +403,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         Mapbox.getInstance(this, BuildConfig.access_token);
         setContentView(R.layout.activity_main);
+        m_geoHashRTFilter = new GeohashRTFilter(Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT);
         setupMap(savedInstanceState);
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;

@@ -208,12 +208,12 @@ FilterInputFile(const QString &inputFile,
     if (!initialData)
       break;
 
-    static const int GPS_COUNT = 2;
+    static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
 
     bool usePredicted = false;
-    bool noise = true;
-    static const double accDev = 0.1;
+    bool noise = false;
+    static const double accDev = 0.5;
 
     double writeDt = sd.timestamp;
     double xVel = sd.speed * cos(sd.course);

@@ -12,13 +12,17 @@ public class GPSAccKalmanFilter {
     private int m_predictCount;
     private KalmanFilter m_kf;
     private double m_accSigma;
+    private boolean m_useGpsSpeed;
 
-    public GPSAccKalmanFilter(double x, double y,
+    public GPSAccKalmanFilter(boolean useGpsSpeed,
+                              double x, double y,
                               double xVel, double yVel,
                               double accDev, double posDev,
                               double timeStampMs) {
+        int mesDim = useGpsSpeed ? 4 : 2;
+        m_useGpsSpeed = useGpsSpeed;
 
-        m_kf = new KalmanFilter(4, 4, 1);
+        m_kf = new KalmanFilter(4, mesDim, 1);
         m_timeStampMsPredict = m_timeStampMsUpdate = timeStampMs;
         m_accSigma = accDev;
         m_predictCount = 0;
@@ -56,14 +60,18 @@ public class GPSAccKalmanFilter {
     }
 
     private void rebuildR(double posSigma, double velSigma) {
-        //Warning!!! this matrix depends on measure dimension.
-        double R[] = {
-                posSigma, 0.0, 0.0, 0.0,
-                0.0, posSigma, 0.0, 0.0,
-                0.0, 0.0, velSigma, 0.0,
-                0.0, 0.0, 0.0, velSigma
-        };
-        m_kf.R.setData(R);
+        if (m_useGpsSpeed) {
+            double R[] = {
+                    posSigma, 0.0, 0.0, 0.0,
+                    0.0, posSigma, 0.0, 0.0,
+                    0.0, 0.0, velSigma, 0.0,
+                    0.0, 0.0, 0.0, velSigma
+            };
+            m_kf.R.setData(R);
+        } else {
+            m_kf.R.setIdentity();
+            m_kf.R.scale(posSigma);
+        }
     }
 
     private void rebuildQ(double dtUpdate,
@@ -74,6 +82,7 @@ public class GPSAccKalmanFilter {
         double velDev = accDev * m_predictCount;
         double posDev = velDev * m_predictCount / 2;
         double covDev = velDev * posDev;
+
         double posSig = posDev * posDev;
         double velSig = velDev * velDev;
 

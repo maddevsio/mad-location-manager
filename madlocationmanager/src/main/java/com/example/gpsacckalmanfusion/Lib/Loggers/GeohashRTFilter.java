@@ -7,9 +7,6 @@ import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
 import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
 import com.example.gpsacckalmanfusion.Lib.Filters.GeoHash;
 import com.example.gpsacckalmanfusion.Lib.Interfaces.ILogger;
-import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceInterface;
-import com.example.gpsacckalmanfusion.Lib.Interfaces.LocationServiceStatusInterface;
-import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +16,7 @@ import java.util.List;
  * Created by lezh1k on 2/13/18.
  */
 
-public class GeohashRTFilter implements LocationServiceInterface, LocationServiceStatusInterface {
+public class GeohashRTFilter {
 
     private double m_distanceGeoFiltered = 0.0;
     private double m_distanceGeoFilteredHP = 0.0;
@@ -53,8 +50,6 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
         m_geohashMinPointCount = geohashMinPointCount;
         m_geoFilteredTrack = new ArrayList<>();
         reset(null);
-        ServicesHelper.addLocationServiceInterface(this);
-        ServicesHelper.addLocationServiceStatusInterface(this);
     }
 
     public double getDistanceGeoFiltered() {
@@ -91,8 +86,7 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
     private float hpResBuffAsIs[] = new float[3];
     private float hpResBuffGeo[] = new float[3];
 
-    @Override
-    public void locationChanged(Location loc) {
+    public void filter(Location loc) {
         if (m_logger != null) {
             String toLog = String.format("%d%d FKS : lat=%f, lon=%f, alt=%f",
                     Utils.LogMessageType.FILTERED_GPS_DATA.ordinal(),
@@ -114,7 +108,7 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
             return;
         }
 
-        m_distanceAsIs += Coordinates.geoDistanceMeters(
+        m_distanceAsIs += Coordinates.distanceBetween(
                 lastGeoPointAsIs.Longitude,
                 lastGeoPointAsIs.Latitude,
                 pi.Longitude,
@@ -139,7 +133,7 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
                 currentGeoPoint.Longitude /= pointsInCurrentGeohashCount;
 
                 if (lastApprovedGeoPoint.Latitude != COORD_NOT_INITIALIZED) {
-                    double dd1 = Coordinates.geoDistanceMeters(
+                    double dd1 = Coordinates.distanceBetween(
                             lastApprovedGeoPoint.Longitude,
                             lastApprovedGeoPoint.Latitude,
                             currentGeoPoint.Longitude,
@@ -185,7 +179,7 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
             currentGeoPoint.Longitude /= pointsInCurrentGeohashCount;
 
             if (lastApprovedGeoPoint.Latitude != COORD_NOT_INITIALIZED) {
-                double dd1 = Coordinates.geoDistanceMeters(
+                double dd1 = Coordinates.distanceBetween(
                         lastApprovedGeoPoint.Longitude,
                         lastApprovedGeoPoint.Latitude,
                         currentGeoPoint.Longitude,
@@ -208,25 +202,5 @@ public class GeohashRTFilter implements LocationServiceInterface, LocationServic
             m_geoFilteredTrack.add(laLoc);
             currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
         }
-    }
-
-    @Override
-    public void serviceStatusChanged(int status) {
-
-    }
-
-    @Override
-    public void GPSStatusChanged(int activeSatellites) {
-
-    }
-
-    @Override
-    public void GPSEnabledChanged(boolean enabled) {
-
-    }
-
-    @Override
-    public void lastLocationAccuracyChanged(float accuracy) {
-
     }
 }

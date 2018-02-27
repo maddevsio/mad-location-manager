@@ -13,7 +13,7 @@ import java.util.Map;
 public class Coordinates {
     private static final double EARTH_RADIUS = 6371.0 * 1000.0; // meters
 
-    public static double geoDistanceMeters(double lon1, double lat1, double lon2, double lat2) {
+    public static double distanceBetween(double lon1, double lat1, double lon2, double lat2) {
         double deltaLon = Math.toRadians(lon2 - lon1);
         double deltaLat = Math.toRadians(lat2 - lat1);
         double a =
@@ -26,7 +26,7 @@ public class Coordinates {
     }
 
     public static double longitudeToMeters(double lon) {
-        double distance = geoDistanceMeters(lon, 0.0, 0.0, 0.0);
+        double distance = distanceBetween(lon, 0.0, 0.0, 0.0);
         return distance * (lon < 0.0 ? -1.0 : 1.0);
     }
 
@@ -39,7 +39,7 @@ public class Coordinates {
     }
 
     public static double latitudeToMeters(double lat) {
-        double distance = geoDistanceMeters(0.0, lat, 0.0, 0.0);
+        double distance = distanceBetween(0.0, lat, 0.0, 0.0);
         return distance * (lat < 0.0 ? -1.0 : 1.0);
     }
 
@@ -132,7 +132,7 @@ public class Coordinates {
         lastLat = track[0].Latitude;
 
         for (int i = 1; i < track.length; ++i) {
-            distance += Coordinates.geoDistanceMeters(
+            distance += Coordinates.distanceBetween(
                     lastLat, lastLon,
                     track[i].Latitude, track[i].Longitude);
             lastLat = track[i].Latitude;

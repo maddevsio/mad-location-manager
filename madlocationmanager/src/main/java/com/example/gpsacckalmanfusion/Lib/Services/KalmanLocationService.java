@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
@@ -47,24 +46,25 @@ public class KalmanLocationService extends Service
         private double accelerationDeviation;
         private int gpsMinDistance;
         private int gpsMinTime;
-        private int sensorFfequencyHz;
         private int geoHashPrecision;
-        private int geoHashPointMinCount;
+        private int geoHashMinPointCount;
+        private int sensorFfequencyHz;
         private ILogger logger;
+
 
         public Settings(double accelerationDeviation,
                         int gpsMinDistance,
                         int gpsMinTime,
-                        int sensorFfequencyHz,
                         int geoHashPrecision,
-                        int geoHashPointMinCount,
+                        int geoHashMinPointCount,
+                        int sensorFfequencyHz,
                         ILogger logger) {
             this.accelerationDeviation = accelerationDeviation;
             this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
-            this.sensorFfequencyHz = sensorFfequencyHz;
             this.geoHashPrecision = geoHashPrecision;
-            this.geoHashPointMinCount = geoHashPointMinCount;
+            this.geoHashMinPointCount = geoHashMinPointCount;
+            this.sensorFfequencyHz = sensorFfequencyHz;
             this.logger = logger;
         }
     }
@@ -76,10 +76,6 @@ public class KalmanLocationService extends Service
     protected List<LocationServiceStatusInterface> m_locationServiceStatusInterfaces;
 
     protected Location m_lastLocation;
-    protected List<Location> m_track;
-    public List<Location> getTrack() {
-        return m_track;
-    }
 
     public static final int PermissionDenied = 0;
     public static final int ServiceStopped = 1;
@@ -158,16 +154,29 @@ public class KalmanLocationService extends Service
     }
     //endregion
 
-    private GeohashRTFilter m_geohashRTFilter = null;
-    public GeohashRTFilter getGeohashRTFilter() {
-        return m_geohashRTFilter;
+    //todo remove after tests
+    private List<Location> m_kalmanOnlyFilteredTrack;
+    @Deprecated
+    public List<Location> getKalmanOnlyFilteredTrack() {
+        return m_kalmanOnlyFilteredTrack;
     }
+    private List<Location> m_gpsTrack;
+    @Deprecated
+    public List<Location> getGpsTrack() {
+        return m_gpsTrack;
+    }
+    private GeohashRTFilter m_geoHashRTFilter = null;
+    public GeohashRTFilter getGeoHashRTFilter() {
+        return m_geoHashRTFilter;
+    }
+    //!!!!!!!!!!!!!!!!!!!!!!!
 
     public static Settings defaultSettings =
             new Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                     Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
-                    Utils.SENSOR_DEFAULT_FREQ_HZ, Utils.GEOHASH_DEFAULT_PREC,
-                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, null);
+                    Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
+                    Utils.SENSOR_DEFAULT_FREQ_HZ,
+                    null);
 
     private Settings m_settings;
     private LocationManager m_locationManager;
@@ -266,6 +275,11 @@ public class KalmanLocationService extends Service
             loc.setSpeed((float) speed);
             loc.setTime((long) sdi.getTimestamp());
             loc.setAccuracy((float) sdi.getPosErr());
+
+            if (m_geoHashRTFilter != null) {
+                m_geoHashRTFilter.filter(loc);
+            }
+
             return loc;
         }
 
@@ -330,7 +344,7 @@ public class KalmanLocationService extends Service
                 m_activeSatellites = activeSatellites;
             }
 
-            m_track.add(location);
+            m_kalmanOnlyFilteredTrack.add(location);
 
             for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
                 locationServiceInterface.locationChanged(location);
@@ -347,7 +361,7 @@ public class KalmanLocationService extends Service
     public KalmanLocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
-        m_track = new ArrayList<>();
+        m_kalmanOnlyFilteredTrack = new ArrayList<>();
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         reset(defaultSettings);
@@ -375,9 +389,6 @@ public class KalmanLocationService extends Service
             }
             m_lstSensors.add(sensor);
         }
-
-        m_geohashRTFilter = new GeohashRTFilter(m_settings.geoHashPrecision,
-                m_settings.geoHashPointMinCount);
     }
 
     @Override
@@ -413,7 +424,6 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_geohashRTFilter.reset(m_settings.logger);
         m_eventLoopTask = new SensorDataEventLoopTask(500, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -431,6 +441,10 @@ public class KalmanLocationService extends Service
             m_locationManager.removeUpdates(this);
         }
 
+        if (m_geoHashRTFilter != null) {
+            m_geoHashRTFilter.stop();
+        }
+
         m_sensorsEnabled = false;
         m_gpsEnabled = false;
         for (Sensor sensor : m_lstSensors)
@@ -446,15 +460,18 @@ public class KalmanLocationService extends Service
             m_eventLoopTask.cancel(true);
         }
         m_sensorDataQueue.clear();
-
-        if (m_geohashRTFilter != null)
-            m_geohashRTFilter.stop();
     }
 
     public void reset(Settings settings) {
         m_settings = settings;
+        m_kalmanOnlyFilteredTrack.clear();
         m_kalmanFilter = null;
-        m_track.clear();
+
+        if (m_settings.geoHashPrecision != 0 &&
+                m_settings.geoHashMinPointCount != 0) {
+            m_geoHashRTFilter = new GeohashRTFilter(m_settings.geoHashPrecision,
+                    m_settings.geoHashMinPointCount);
+        }
     }
 
     /*SensorEventListener methods implementation*/
@@ -507,10 +524,6 @@ public class KalmanLocationService extends Service
         /*do nothing*/
     }
 
-    private List<Location> m_gpsTrack;
-    public List<Location> getGpsTrack() {
-        return m_gpsTrack;
-    }
     /*LocationListener methods implementation*/
     @Override
     public void onLocationChanged(Location loc) {
@@ -548,6 +561,7 @@ public class KalmanLocationService extends Service
                     Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
                     timeStamp, x, y, speed, course, m_settings.accelerationDeviation, posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
+                    false, //todo move to settings
                     Coordinates.longitudeToMeters(x),
                     Coordinates.latitudeToMeters(y),
                     xVel,
