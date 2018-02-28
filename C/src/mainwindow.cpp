@@ -175,11 +175,11 @@ MainWindow::initMap(QWebEnginePage *page,
                     const QString &filteredCoordsFile,
                     const QString &filteredCoordsFile2) {
   (void)filteredCoordsFile2;
-  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_GPS_DATA);
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_OLD_FILTER);
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
   std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 //  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
-
+  lstGeoFilter.clear();
   const int filterPrec = 8;
   const int minPoints = 2;
 

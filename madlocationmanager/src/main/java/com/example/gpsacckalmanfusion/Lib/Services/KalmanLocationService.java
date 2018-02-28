@@ -166,6 +166,7 @@ public class KalmanLocationService extends Service
         return m_gpsTrack;
     }
     private GeohashRTFilter m_geoHashRTFilter = null;
+    @Deprecated
     public GeohashRTFilter getGeoHashRTFilter() {
         return m_geoHashRTFilter;
     }
@@ -203,14 +204,14 @@ public class KalmanLocationService extends Service
             Sensor.TYPE_ROTATION_VECTOR,
     };
 
-    private float[] R = new float[16];
-    private float[] RI = new float[16];
-    private float[] accAxis = new float[4];
-    private float[] linAcc = new float[4];
+    private float[] rotationMatrix = new float[16];
+    private float[] rotationMatrixInv = new float[16];
+    private float[] absAcceleration = new float[4];
+    private float[] linearAcceleration = new float[4];
     //!
 
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
-            new PriorityBlockingQueue<SensorGpsDataItem>();
+            new PriorityBlockingQueue<>();
 
     private void log2File(String format, Object... args) {
         if (m_settings.logger != null)
@@ -485,13 +486,13 @@ public class KalmanLocationService extends Service
         long nowMs = Utils.nano2milli(now);
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
-                System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
-                android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
-                        0, linAcc, 0);
+                System.arraycopy(event.values, 0, linearAcceleration, 0, event.values.length);
+                android.opengl.Matrix.multiplyMV(absAcceleration, 0, rotationMatrixInv,
+                        0, linearAcceleration, 0);
 
                 String logStr = String.format("%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
-                        nowMs, accAxis[east], accAxis[north], accAxis[up]);
+                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
                 log2File(logStr);
 
                 if (m_kalmanFilter == null) {
@@ -502,9 +503,9 @@ public class KalmanLocationService extends Service
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
-                        accAxis[north],
-                        accAxis[east],
-                        accAxis[up],
+                        absAcceleration[north],
+                        absAcceleration[east],
+                        absAcceleration[up],
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
@@ -513,8 +514,8 @@ public class KalmanLocationService extends Service
                 m_sensorDataQueue.add(sdi);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
-                SensorManager.getRotationMatrixFromVector(R, event.values);
-                android.opengl.Matrix.invertM(RI, 0, R, 0);
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+                android.opengl.Matrix.invertM(rotationMatrixInv, 0, rotationMatrix, 0);
                 break;
         }
     }

@@ -17,8 +17,7 @@ static bool parseKalmanAllocData(const char *str, SensorData_t *sd);
 static bool parseKalmanPredict(const char *str, SensorData_t *sd);
 static bool parseKalmanUpdate(const char *str, SensorData_t *sd);
 static bool parseFilteredGpsData(const char *str, SensorData_t *sd);
-static bool parseFinalDistance(const char *str, SensorData_t *sd);
-static bool parseAbsAccMeanData(const char *str, SensorData_t *sd);
+static bool parseOldFilterGpsData(const char *str, SensorData_t *sd);
 
 typedef bool (*pf_parser)(const char*, SensorData_t*);
 
@@ -30,8 +29,7 @@ static pf_parser parsers[] = {
   parseGpsData,
   parseAbsAccData,
   parseFilteredGpsData,
-  parseFinalDistance,
-  parseAbsAccMeanData
+  parseOldFilterGpsData,
 };
 
 bool parseAbsAccData(const char *str, SensorData_t *sd) {
@@ -103,31 +101,16 @@ bool parseFilteredGpsData(const char *str, SensorData_t *sd) {
   return tt == 4;
 }
 
-bool parseFinalDistance(const char *str, SensorData_t *sd) {
+bool parseOldFilterGpsData(const char *str, SensorData_t *sd) {
   int tt;
-  tt = sscanf(str, "%lf Distance as is : %lf\n"
-                   "Distance as is HP : %lf\n"
-                   "Distance(geo) : %lf\n"
-                   "Distance(geo) HP : %lf",
+  tt = sscanf(str, "%lf OLDGPS : pos lat=%lf, lon=%lf, alt=%lf",
               &sd->timestamp,
-              &sd->distanceAsIs,
-              &sd->distanceAsIsHP,
-              &sd->distanceGeo,
-              &sd->distanceGeoHP);
-  return tt == 5;
-}
-
-static bool parseAbsAccMeanData(const char *str, SensorData_t *sd) {
-  int tt;
-  tt = sscanf(str, "%lf abs mean acc: %lf %lf %lf",
-              &sd->timestamp,
-              &sd->absEastAcc,
-              &sd->absNorthAcc,
-              &sd->absUpAcc);
+              &sd->gpsLat,
+              &sd->gpsLon,
+              &sd->gpsAlt);
   return tt == 4;
 }
 //////////////////////////////////////////////////////////////////////////
-
 
 LogMessageType
 SensorControllerParseDataString(const char *str, SensorData_t *sd) {
@@ -211,7 +194,7 @@ FilterInputFile(const QString &inputFile,
     static const int GPS_COUNT = 1;
     int gps_count = GPS_COUNT;
 
-    bool usePredicted = true;
+    bool usePredicted = false;
     bool noise = false;
     static const double accDev = 0.32;
 
