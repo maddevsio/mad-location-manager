@@ -154,23 +154,10 @@ public class KalmanLocationService extends Service
     }
     //endregion
 
-    //todo remove after tests
-    private List<Location> m_kalmanOnlyFilteredTrack;
-    @Deprecated
-    public List<Location> getKalmanOnlyFilteredTrack() {
-        return m_kalmanOnlyFilteredTrack;
-    }
-    private List<Location> m_gpsTrack;
-    @Deprecated
-    public List<Location> getGpsTrack() {
-        return m_gpsTrack;
-    }
     private GeohashRTFilter m_geoHashRTFilter = null;
-    @Deprecated
     public GeohashRTFilter getGeoHashRTFilter() {
         return m_geoHashRTFilter;
     }
-    //!!!!!!!!!!!!!!!!!!!!!!!
 
     public static Settings defaultSettings =
             new Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
@@ -345,8 +332,6 @@ public class KalmanLocationService extends Service
                 m_activeSatellites = activeSatellites;
             }
 
-            m_kalmanOnlyFilteredTrack.add(location);
-
             for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
                 locationServiceInterface.locationChanged(location);
             }
@@ -362,7 +347,6 @@ public class KalmanLocationService extends Service
     public KalmanLocationService() {
         m_locationServiceInterfaces = new ArrayList<>();
         m_locationServiceStatusInterfaces = new ArrayList<>();
-        m_kalmanOnlyFilteredTrack = new ArrayList<>();
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
         reset(defaultSettings);
@@ -371,7 +355,6 @@ public class KalmanLocationService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        m_gpsTrack = new ArrayList<>();
         m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -398,7 +381,6 @@ public class KalmanLocationService extends Service
     }
 
     public void start() {
-        m_gpsTrack.clear();
         m_wakeLock.acquire();
         m_sensorDataQueue.clear();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -465,7 +447,6 @@ public class KalmanLocationService extends Service
 
     public void reset(Settings settings) {
         m_settings = settings;
-        m_kalmanOnlyFilteredTrack.clear();
         m_kalmanFilter = null;
 
         if (m_settings.geoHashPrecision != 0 &&
@@ -528,6 +509,10 @@ public class KalmanLocationService extends Service
     /*LocationListener methods implementation*/
     @Override
     public void onLocationChanged(Location loc) {
+
+        if (loc == null) return;
+//        if (loc.isFromMockProvider()) return;
+
         double x, y, xVel, yVel, posDev, course, speed;
         long timeStamp;
         speed = loc.getSpeed();
@@ -542,7 +527,6 @@ public class KalmanLocationService extends Service
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;
 
-        m_gpsTrack.add(loc);
         String logStr = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Utils.LogMessageType.GPS_DATA.ordinal(),
                 timeStamp, loc.getLatitude(),

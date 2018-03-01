@@ -174,14 +174,15 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
         if (isLogging) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            m_presenter.stop();
+            m_presenter.start();
+            m_geoHashRTFilter.stop();
+            m_geoHashRTFilter.reset(this);
             ServicesHelper.getLocationService(this, value -> {
-                if (value.IsRunning())
+                if (value.IsRunning()) {
                     return;
+                }
                 value.stop();
-
-                if (m_geoHashRTFilter != null)
-                    m_geoHashRTFilter.stop();
-
                 initXlogPrintersFileName();
                 KalmanLocationService.Settings settings =
                         new KalmanLocationService.Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
@@ -192,15 +193,16 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 Utils.SENSOR_DEFAULT_FREQ_HZ,
                                 this);
                 value.reset(settings); //warning!! here you can adjust your filter behavior
-                m_geoHashRTFilter.reset(this);
                 value.start();
             });
+
             btnStartStopText = "Stop tracking";
             btnTvStatusText = "Tracking is in progress";
 
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
+            m_presenter.stop();
             ServicesHelper.getLocationService(this, value -> {
                 value.stop();
             });
@@ -312,7 +314,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 m_map.getMyLocationViewSettings().setForegroundTintColor(ContextCompat.getColor(this, R.color.red));
             }
 
-            m_presenter.onLocationChanged(location, m_map.getCameraPosition());
+            m_presenter.locationChanged(location, m_map.getCameraPosition());
         }
     }
 
