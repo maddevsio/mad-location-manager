@@ -28,8 +28,7 @@ static const QString g_baseHtml = "<!DOCTYPE html>\n"
                                   "        center: bishkek\n"
                                   "      });\n"
                                   "       %2\n"
-                                  "    }\n"
-                                  "  </script>\n"
+                                  "    }\n"                                  "  </script>\n"
                                   "  <script async defer\n"
                                   "  src=\"https://maps.googleapis.com/maps/api/js?callback=initMap\">\n"
                                   "  </script>\n"
@@ -160,8 +159,7 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
     tmpGeo.Longitude /= count;
 
     if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-      double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,
-                                                   tmpGeo.Latitude, tmpGeo.Longitude);
+      double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,                                                   tmpGeo.Latitude, tmpGeo.Longitude);
       distance += dd;
     }
   }
@@ -180,16 +178,16 @@ MainWindow::initMap(QWebEnginePage *page,
   std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 //  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
   lstGeoFilter.clear();
-  const int filterPrec = 7;
-  const int minPoints = 3;
+  const int filterPrec = 8;
+  const int minPoints = 1;
 
 //  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
 //  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
 //  qDebug() << "RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, GEOHASH_MAX_PRECISION, 1);
 
-  qDebug() << "2RealTime Src  distance: " << filterDistanceRealTime(lstCoords, filterPrec, minPoints);
-  qDebug() << "2RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, filterPrec, minPoints);
-  qDebug() << "2RealTime Java distance: " << filterDistanceRealTime(lstJavaFilter, filterPrec, minPoints);
+  qDebug() << "Src distance (OLD filter or GPS): " << filterDistanceRealTime(lstCoords, filterPrec, minPoints);
+  qDebug() << "Desktop distance: " << filterDistanceRealTime(lstGeoFilter, filterPrec, minPoints);
+  qDebug() << "New filter or java logged distance: " << filterDistanceRealTime(lstJavaFilter, filterPrec, minPoints);
 
   qDebug() << "Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
@@ -197,8 +195,8 @@ MainWindow::initMap(QWebEnginePage *page,
 
   //filter for display
   lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
-  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
   lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
 
   qDebug() << "2Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "2Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
