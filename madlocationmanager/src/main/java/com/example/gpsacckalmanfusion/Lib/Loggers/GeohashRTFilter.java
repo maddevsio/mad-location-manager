@@ -156,6 +156,7 @@ public class GeohashRTFilter {
                 laLoc.setLatitude(lastApprovedGeoPoint.Latitude);
                 laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
                 laLoc.setAltitude(loc.getAltitude()); //hack.
+                laLoc.setTime(loc.getTime()); //hack2
                 m_geoFilteredTrack.add(laLoc);
                 currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
             }

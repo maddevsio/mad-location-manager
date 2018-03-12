@@ -511,7 +511,7 @@ public class KalmanLocationService extends Service
     public void onLocationChanged(Location loc) {
 
         if (loc == null) return;
-        if (loc.isFromMockProvider()) return;
+//        if (loc.isFromMockProvider()) return;
 
         double x, y, xVel, yVel, posDev, course, speed;
         long timeStamp;
