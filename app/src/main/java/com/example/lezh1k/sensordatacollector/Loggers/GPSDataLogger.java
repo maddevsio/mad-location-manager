@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 
 import com.elvishew.xlog.XLog;
-import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
+import mad.location.manager.lib.Commons.Utils;
 
 /**
  * Created by lezh1k on 12/25/17.

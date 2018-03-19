@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name="com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService"
+            android:name="mad.location.manager.lib.Services.KalmanLocationService"
             android:enabled="true"
             android:exported="false"
             android:stopWithTask="false" />

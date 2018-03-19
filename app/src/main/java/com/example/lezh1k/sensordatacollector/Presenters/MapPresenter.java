@@ -9,10 +9,9 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 
-import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
-import com.example.gpsacckalmanfusion.Lib.Loggers.GeohashRTFilter;
-import com.example.gpsacckalmanfusion.Lib.Services.KalmanLocationService;
-import com.example.gpsacckalmanfusion.Lib.Services.ServicesHelper;
+import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Loggers.GeohashRTFilter;
+
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.MainActivity;
 import com.mapbox.mapboxsdk.camera.CameraPosition;

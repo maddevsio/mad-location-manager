@@ -8,7 +8,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.elvishew.xlog.XLog;
-import com.example.gpsacckalmanfusion.Lib.Commons.Utils;
+import mad.location.manager.lib.Commons.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
