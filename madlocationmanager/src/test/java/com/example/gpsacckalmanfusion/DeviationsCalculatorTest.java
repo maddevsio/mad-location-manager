@@ -1,10 +1,13 @@
 package com.example.gpsacckalmanfusion;
 
+import com.example.gpsacckalmanfusion.Lib.SensorAux.DeviationCalculator;
+
 import org.junit.Test;
 
 import java.util.Random;
 
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Created by lezh1k on 2/13/18.

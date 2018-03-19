@@ -50,6 +50,7 @@ public class KalmanLocationService extends Service
         private int geoHashMinPointCount;
         private int sensorFfequencyHz;
         private ILogger logger;
+        private boolean filterMockGpsCoordinates;
 
 
         public Settings(double accelerationDeviation,
@@ -58,7 +59,8 @@ public class KalmanLocationService extends Service
                         int geoHashPrecision,
                         int geoHashMinPointCount,
                         int sensorFfequencyHz,
-                        ILogger logger) {
+                        ILogger logger,
+                        boolean filterMockGpsCoordinates) {
             this.accelerationDeviation = accelerationDeviation;
             this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
@@ -66,6 +68,7 @@ public class KalmanLocationService extends Service
             this.geoHashMinPointCount = geoHashMinPointCount;
             this.sensorFfequencyHz = sensorFfequencyHz;
             this.logger = logger;
+            this.filterMockGpsCoordinates = filterMockGpsCoordinates;
         }
     }
 
@@ -84,8 +87,12 @@ public class KalmanLocationService extends Service
     public static final int ServicePaused = 4;
     protected int m_serviceStatus = ServiceStopped;
 
+    public boolean isSensorsEnabled() {
+        return m_sensorsEnabled;
+    }
+
     public boolean IsRunning() {
-        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused;
+        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused && m_sensorsEnabled;
     }
 
     public void addInterface(LocationServiceInterface locationServiceInterface) {
@@ -164,7 +171,7 @@ public class KalmanLocationService extends Service
                     Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
                     Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
-                    null);
+                    null, true);
 
     private Settings m_settings;
     private LocationManager m_locationManager;
@@ -511,7 +518,7 @@ public class KalmanLocationService extends Service
     public void onLocationChanged(Location loc) {
 
         if (loc == null) return;
-//        if (loc.isFromMockProvider()) return;
+        if (m_settings.filterMockGpsCoordinates && loc.isFromMockProvider()) return;
 
         double x, y, xVel, yVel, posDev, course, speed;
         long timeStamp;

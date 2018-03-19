@@ -1,11 +1,15 @@
 package com.example.gpsacckalmanfusion;
 
+import com.example.gpsacckalmanfusion.Lib.Commons.GeoPoint;
+import com.example.gpsacckalmanfusion.Lib.Filters.GeoHash;
+
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Created by lezh1k on 2/13/18.

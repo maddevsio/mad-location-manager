@@ -1,11 +1,14 @@
 package com.example.gpsacckalmanfusion;
 
+import com.example.gpsacckalmanfusion.Lib.Commons.SensorGpsDataItem;
+
 import org.junit.Test;
 
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import static org.junit.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Created by lezh1k on 2/13/18.
