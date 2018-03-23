@@ -9,7 +9,6 @@ Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 help
 [Our site](https://gps.maddevs.io/en/)
 
 
-[![](https://jitpack.io/v/maddevsio/mad-location-manager.svg)](https://jitpack.io/#maddevsio/mad-location-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## How can mad-location-manager help you to get location more accurately
@@ -18,52 +17,9 @@ This module helps to increase GPS coordinates accuracy and smooth "jumps" from t
 
 ## How to install
 
-### Gradle
+Use last version from link below (jitpack): 
 
-1. Add it in your root build.gradle at the end of repositories:
-
-```
-allprojects {
-	repositories {
-		...
-		maven { url 'https://jitpack.io' }
-	}
-}
-```
-
-2. Add the dependency: 
-
-```
-dependencies {
-        compile 'com.github.maddevsio:mad-location-manager:0.1.0'
-}
-```
-
-### Maven
-
-1. Add the JitPack repository to your build file:
-
-
-```
-<repositories>
-	<repository>
-	    <id>jitpack.io</id>
-	    <url>https://jitpack.io</url>
-	</repository>
-</repositories>
-```
-
-2. Add the dependency:
-
-```
-<dependency>
-    <groupId>com.github.maddevsio</groupId>
-    <artifactId>mad-location-manager</artifactId>
-    <version>0.1.0</version>
-</dependency>
-```
-
-###
+[![](https://jitpack.io/v/maddevsio/mad-location-manager.svg)](https://jitpack.io/#maddevsio/mad-location-manager)
 
 ## The roadmap
 ### Visualizer 
