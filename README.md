@@ -21,6 +21,52 @@ Use last version from link below (jitpack):
 
 [![](https://jitpack.io/v/maddevsio/mad-location-manager.svg)](https://jitpack.io/#maddevsio/mad-location-manager)
 
+## How to use
+There is example application in current repository called "Sensor Data Collector" . 
+
+### KalmanLocationService
+
+This is main class. It implements data collecting and processing. You need to make several preparation steps for using it : 
+1. Add to application manifest this : 
+
+```
+<service
+            android:name="mad.location.manager.lib.Services.KalmanLocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false" />
+```
+2. Create some class and implement LocationServiceInterface and optionally LocationServiceStatusInterface . 
+3. Register this class with ServicesHelper.addLocationServiceInterface(this) (do it in constructor for example)
+4. Handle locationChanged callback. There is Kalman filtered location WITHOUT geohash filtering. Example of geohash filtering is in MapPresenter class.
+5. Init location service settings object (or use standard one) and pass it to reset() function.
+
+#### Important things!
+It's recommended to use start(), stop() and reset() methods, because this service has internal state. Use start() method at the beginning of new route. Stop service when your application doesn't use locations data. That need to be done for decrease battery consumption. 
+
+### Kalman filter settings
+
+There are several settings for KalmanFilter. All of them stored in KalmanLocationService.Settings class. 
+
+- Acceleration deviation - this value controls process noise covariance matrix. In other words it's "trust level" of accelerometer data. Low value means that accelerometer data is more preferable. 
+- Gps min time	- minimum time interval between location updates, in milliseconds
+- Gps min distance - minimum distance between location updates, in meters
+- Sensor frequency in Herz - the rate sensor events are delivered at
+- GeoHash precision - length of geohash string (and precision)
+- GeoHash min point - count of points with same geohash. GPS point becomes valid only when count greater then this value. 
+- Logger - if you need to log something to file just implement ILogger interface and initialize settings with that object. If you don't need that - just pass null . 
+
+There is an example in MainActivity class how to use logger and settings.
+
+### GeoHashRTFilter
+
+There are 2 ways of using GeoHash real-time filter : 
+* It could be used as part of KalmanLocationService. It will work inside that thread and will be used by service. But then you need to use start(), stop() and reset() methods. 
+* It could be used as external component and filter Location objects from any source (not only from KalmanLocationService). You need to reset it before using and then use method filter() .
+
+It will calculate distance in 2 ways : Vincenty and haversine formula . Both of them show good results so maybe we will add some flag for choose. 
+
+
 ## The roadmap
 ### Visualizer 
 
