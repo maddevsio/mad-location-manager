@@ -137,6 +137,10 @@ public class KalmanLocationService extends Service
         }
     }
 
+    public Location getLastLocation() {
+        return m_lastLocation;
+    }
+
     /*Service implementation*/
     public class LocalBinder extends Binder {
         public KalmanLocationService getService() {
