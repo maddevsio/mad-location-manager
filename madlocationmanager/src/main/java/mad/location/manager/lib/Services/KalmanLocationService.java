@@ -24,6 +24,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.PriorityBlockingQueue;
+
 import mad.location.manager.lib.Commons.Coordinates;
 import mad.location.manager.lib.Commons.GeoPoint;
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
@@ -33,11 +38,6 @@ import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.PriorityBlockingQueue;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
@@ -80,19 +80,28 @@ public class KalmanLocationService extends Service
 
     protected Location m_lastLocation;
 
-    public static final int PermissionDenied = 0;
-    public static final int ServiceStopped = 1;
-    public static final int StartLocationUpdates = 2;
-    public static final int HaveLocation = 3;
-    public static final int ServicePaused = 4;
-    protected int m_serviceStatus = ServiceStopped;
+    protected ServiceStatus m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
+
+    public enum ServiceStatus {
+        PERMISSION_DENIED(0),
+        SERVICE_STOPPED(1),
+        SERVICE_STARTED(2),
+        HAS_LOCATION(3),
+        SERVICE_PAUSED(4);
+
+        int value;
+
+        ServiceStatus(int value) { this.value = value;}
+
+        public int getValue() { return value; }
+    }
 
     public boolean isSensorsEnabled() {
         return m_sensorsEnabled;
     }
 
     public boolean IsRunning() {
-        return m_serviceStatus != ServiceStopped && m_serviceStatus != ServicePaused && m_sensorsEnabled;
+        return m_serviceStatus != ServiceStatus.SERVICE_STOPPED && m_serviceStatus != ServiceStatus.SERVICE_PAUSED && m_sensorsEnabled;
     }
 
     public void addInterface(LocationServiceInterface locationServiceInterface) {
@@ -326,7 +335,7 @@ public class KalmanLocationService extends Service
                 return;
             }
 
-            m_serviceStatus = HaveLocation;
+            m_serviceStatus = ServiceStatus.HAS_LOCATION;
             m_lastLocation = location;
             m_lastLocationAccuracy = location.getAccuracy();
 
@@ -395,9 +404,9 @@ public class KalmanLocationService extends Service
         m_wakeLock.acquire();
         m_sensorDataQueue.clear();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            m_serviceStatus = PermissionDenied;
+            m_serviceStatus = ServiceStatus.PERMISSION_DENIED;
         } else {
-            m_serviceStatus = StartLocationUpdates;
+            m_serviceStatus = ServiceStatus.SERVICE_STARTED;
             m_locationManager.removeGpsStatusListener(this);
             m_locationManager.addGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
@@ -428,9 +437,9 @@ public class KalmanLocationService extends Service
             m_wakeLock.release();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            m_serviceStatus = ServiceStopped;
+            m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
         } else {
-            m_serviceStatus = ServicePaused;
+            m_serviceStatus = ServiceStatus.SERVICE_PAUSED;
             m_locationManager.removeGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
         }
