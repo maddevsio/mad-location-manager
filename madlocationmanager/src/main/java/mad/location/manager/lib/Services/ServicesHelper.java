@@ -6,12 +6,12 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Interfaces.SimpleTempCallback;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by lezh1k on 2/13/18.
@@ -107,4 +107,7 @@ public class ServicesHelper {
         }
     }
 
+    public static KalmanLocationService getLocationService() {
+        return instance.kalmanLocationService;
+    }
 }
