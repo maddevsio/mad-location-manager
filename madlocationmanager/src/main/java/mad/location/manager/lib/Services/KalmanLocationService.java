@@ -281,7 +281,8 @@ public class KalmanLocationService extends Service
             double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
             //todo calculate bearing!
             loc.setSpeed((float) speed);
-            loc.setTime((long) sdi.getTimestamp());
+            loc.setTime(System.currentTimeMillis());
+            loc.setElapsedRealtimeNanos(System.nanoTime());
             loc.setAccuracy((float) sdi.getPosErr());
 
             if (m_geoHashRTFilter != null) {

@@ -72,9 +72,9 @@ static void launchTests() {
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   launchTests();
-  QString in("/home/lezh1k/gps_test_data/log1sorted"),
-      out("/home/lezh1k/gps_test_data/log1filtered"),
-      out2("/home/lezh1k/gps_test_data/log1filteredJava");
+  QString in("/home/lezh1k/test_data/gps_test_data/log1sorted"),
+      out("/home/lezh1k/test_data/gps_test_data/log1filtered"),
+      out2("/home/lezh1k/test_data/gps_test_data/log1filteredJava");
 
 //  if (!FilterInputFile(in, out))
 //    return 1;
