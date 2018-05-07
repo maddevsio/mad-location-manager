@@ -25,17 +25,25 @@ android {
     }
 }
 
+ext {
+    supportLibraryVersion = "26.1.0"
+}
+
 dependencies {
+    api "com.android.support:appcompat-v7:${supportLibraryVersion}"
+    api "com.android.support:support-v4:${supportLibraryVersion}"
+    api "com.android.support:design:${supportLibraryVersion}"
+    api "com.android.support:recyclerview-v7:${supportLibraryVersion}"
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    //noinspection GradleCompatible
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
     api group: 'net.sf.marineapi', name: 'marineapi', version: '0.10.0'
-    api 'com.google.android.gms:play-services-location:11.8.0'
-    implementation 'com.google.android.gms:play-services-maps:11.8.0'
+    api 'com.google.android.gms:play-services-location:15.0.1'
+    implementation 'com.google.android.gms:play-services-maps:15.0.1'
     api ('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
         transitive = true
     }
