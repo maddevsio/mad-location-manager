@@ -279,7 +279,7 @@ public class KalmanLocationService extends Service
             xVel = m_kalmanFilter.getCurrentXVel();
             yVel = m_kalmanFilter.getCurrentYVel();
             double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
-            //todo calculate bearing!
+            loc.setBearing((float)sdi.getCourse());
             loc.setSpeed((float) speed);
             loc.setTime(System.currentTimeMillis());
             loc.setElapsedRealtimeNanos(System.nanoTime());
