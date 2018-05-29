@@ -24,6 +24,13 @@ Use last version from link below (jitpack):
 ## How to use
 There is example application in current repository called "Sensor Data Collector" . 
 
+### WARNING!!
+
+Right now these sensors should be available:
+TYPE_ROTATION_VECTOR, TYPE_LINEAR_ACCELERATION .
+
+It's possible to use just TYPE_ACCELEROMETER with high-pass filter. Also it's possible to use Madgwick filter instead of rotation vector, but gyroscope and magnetometer sensors should be available in that case.
+
 ### KalmanLocationService
 
 This is main class. It implements data collecting and processing. You need to make several preparation steps for using it : 
