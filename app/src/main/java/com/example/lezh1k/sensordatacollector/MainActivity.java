@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 Utils.GEOHASH_DEFAULT_PREC,
                                 Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                                 Utils.SENSOR_DEFAULT_FREQ_HZ,
-                                this, false);
+                                this, false, Utils.DEFAULT_VEL_FACTOR, Utils.DEFAULT_POS_FACTOR);
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
             });
