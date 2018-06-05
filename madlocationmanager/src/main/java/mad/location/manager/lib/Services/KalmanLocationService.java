@@ -52,6 +52,9 @@ public class KalmanLocationService extends Service
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
 
+        private double mVelFactor;
+        private double mPosFactor;
+
 
         public Settings(double accelerationDeviation,
                         int gpsMinDistance,
@@ -60,7 +63,9 @@ public class KalmanLocationService extends Service
                         int geoHashMinPointCount,
                         int sensorFfequencyHz,
                         ILogger logger,
-                        boolean filterMockGpsCoordinates) {
+                        boolean filterMockGpsCoordinates,
+                        double velFactor,
+                        double posFactor) {
             this.accelerationDeviation = accelerationDeviation;
             this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
@@ -69,6 +74,8 @@ public class KalmanLocationService extends Service
             this.sensorFfequencyHz = sensorFfequencyHz;
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
+            this.mVelFactor = velFactor;
+            this.mPosFactor = posFactor;
         }
     }
 
@@ -184,7 +191,7 @@ public class KalmanLocationService extends Service
                     Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
                     Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
-                    null, true);
+                    null, true, Utils.DEFAULT_VEL_FACTOR, Utils.DEFAULT_POS_FACTOR);
 
     private Settings m_settings;
     private LocationManager m_locationManager;
@@ -467,6 +474,7 @@ public class KalmanLocationService extends Service
     }
 
     public void reset(Settings settings) {
+
         m_settings = settings;
         m_kalmanFilter = null;
 
@@ -574,7 +582,9 @@ public class KalmanLocationService extends Service
                     yVel,
                     m_settings.accelerationDeviation,
                     posDev,
-                    timeStamp);
+                    timeStamp,
+                    m_settings.mVelFactor,
+                    m_settings.mPosFactor);
             return;
         }
 
