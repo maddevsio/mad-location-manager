@@ -159,7 +159,7 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
     tmpGeo.Longitude /= count;
 
     if (laGeo.Latitude != COORD_NOT_INITIALIZED) {
-      double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude,                                                   tmpGeo.Latitude, tmpGeo.Longitude);
+      double dd = CoordDistanceBetweenPointsMeters(laGeo.Latitude, laGeo.Longitude, tmpGeo.Latitude, tmpGeo.Longitude);
       distance += dd;
     }
   }
@@ -173,13 +173,12 @@ MainWindow::initMap(QWebEnginePage *page,
                     const QString &filteredCoordsFile,
                     const QString &filteredCoordsFile2) {
   (void)filteredCoordsFile2;
-  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_OLD_FILTER);
+  std::vector<geopoint_t> lstCoords = CoordGetFromFile(pathToCoordsFile, LMT_GPS_DATA);
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
   std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 //  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
-  lstGeoFilter.clear();
   const int filterPrec = 8;
-  const int minPoints = 1;
+  const int minPoints = 2;
 
 //  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
 //  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
@@ -194,9 +193,9 @@ MainWindow::initMap(QWebEnginePage *page,
   qDebug() << "Java distance : " << CoordCaclulateDistance(lstJavaFilter);
 
   //filter for display
-  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
-  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
-  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+//  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+//  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
+//  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
 
   qDebug() << "2Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "2Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);

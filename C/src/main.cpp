@@ -76,8 +76,8 @@ int main(int argc, char *argv[]) {
       out("/home/lezh1k/test_data/gps_test_data/log1filtered"),
       out2("/home/lezh1k/test_data/gps_test_data/log1filteredJava");
 
-//  if (!FilterInputFile(in, out))
-//    return 1;
+  if (!FilterInputFile(in, out))
+    return 1;
 //  if (!JavaFilter(in, out2))
 //    return 2;
 

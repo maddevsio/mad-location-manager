@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
+
+#include <immintrin.h>
 #include "Geohash.h"
 
 //where is 'A'???? oh my god, we lost 'I', 'L', 'O' too. :(
@@ -28,6 +31,7 @@ static int searchInBase32Table(char c) {
 typedef struct interval {
   double min, max;
 } interval_t;
+///////////////////////////////////////////////////////
 
 void GeohashEncode(double srcLat,
                    double srcLon,
@@ -54,7 +58,7 @@ void GeohashEncode(double srcLat,
     idx <<= 1; //idx *= 2
     if (cd >= mid) {
       ci->min = mid;
-      idx |= 1; //idx += 1
+      idx += 1;
     } else {
       ci->max = mid;
     }

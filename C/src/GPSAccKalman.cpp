@@ -88,10 +88,10 @@ static void rebuildQ(GPSAccKalmanFilter_t *f,
   double posDev = velDev * f->predictCount / 2;
   double covDev = velDev*posDev;
   MatrixSet(f->kf->Q,
-            posDev*posDev, 0.0, covDev, 0.0,
-            0.0, posDev*posDev, 0.0, covDev,
-            0.0, 0.0, velDev*velDev, 0.0,
-            0.0, 0.0, 0.0, velDev*velDev);
+            posDev*posDev, 0.0,           covDev,        0.0,
+            0.0,           posDev*posDev, 0.0,           covDev,
+            covDev,        0.0,           velDev*velDev, 0.0,
+            0.0,           covDev,        0.0,           velDev*velDev);
 }
 
 void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,

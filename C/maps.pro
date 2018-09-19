@@ -38,3 +38,6 @@ SOURCES += src/main.cpp \
 
 target.path = $$[QT_INSTALL_EXAMPLES]/webenginewidgets/maps
 INSTALLS += target
+
+QMAKE_CXXFLAGS += -mavx -msha -msse4.1 -mssse3 -march=native
+QMAKE_CFLAGS += -mavx -msha -msse4.1 -mssse3 -march=native

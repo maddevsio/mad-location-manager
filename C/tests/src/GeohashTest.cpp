@@ -1,10 +1,16 @@
 #include "Geohash.h"
 #include "GeohashTest.h"
+
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
 #include <stddef.h>
 #include <math.h>
+#include <stdio.h>
+#include <inttypes.h>
+#include <iostream>
+//todo add ifdef bmi2
+#include <immintrin.h>
 
 typedef struct TestEncodeItem {
   double lat;
@@ -12,6 +18,50 @@ typedef struct TestEncodeItem {
   uint32_t precision;
   const char *expected;
 } TestEncodeItem_t;
+
+static uint64_t interleave(uint64_t x, uint64_t y) {
+  x = (x | (x << 16)) & 0x0000ffff0000ffff;
+  x = (x | (x << 8)) & 0x00ff00ff00ff00ff;
+  x = (x | (x << 4)) & 0x0f0f0f0f0f0f0f0f;
+  x = (x | (x << 2)) & 0x3333333333333333;
+  x = (x | (x << 1)) & 0x5555555555555555;
+
+  y = (y | (y << 16)) & 0x0000ffff0000ffff;
+  y = (y | (y << 8)) & 0x00ff00ff00ff00ff;
+  y = (y | (y << 4)) & 0x0f0f0f0f0f0f0f0f;
+  y = (y | (y << 2)) & 0x3333333333333333;
+  y = (y | (y << 1)) & 0x5555555555555555;
+
+  return x | (y << 1);
+
+  //use pdep instructions
+//  return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y, 0xaaaaaaaaaaaaaaaa);
+}
+///////////////////////////////////////////////////////
+
+static uint64_t geohash_u64(double lat, double lon) {
+  lat = lat/180.0 + 1.5;
+  lon = lon/360.0 + 1.5;
+  uint64_t ilat = *((uint64_t*)&lat);
+  uint64_t ilon = *((uint64_t*)&lon);
+  ilat >>= 20;
+  ilon >>= 20;
+  ilat &= 0x00000000ffffffff;
+  ilon &= 0x00000000ffffffff;
+  return interleave(ilat, ilon);
+}
+
+static void tesnEncodeU64() {
+  double lat = 27.988056;
+  double lon = 86.925278;
+  uint64_t exp = 0xceb7f254240fd612;
+
+  uint64_t act = geohash_u64(lat, lon);
+  std::cout << std::hex << exp << std::endl;
+  std::cout << std::hex << act << std::endl;
+  assert(exp == act);
+}
+///////////////////////////////////////////////////////
 
 static void testEncode() {
   static char buff[GEOHASH_MAX_PRECISION+1] = {0};
@@ -76,6 +126,7 @@ static void testDecode() {
     {  46.7626 ,  -60.6356 , "f8kfh0y"},
     {  50.7919 ,  61.4802 , "v358zn2"},
     {  -82.2142 ,  114.258 , "n93k2125"},
+    {27.988056, 86.925278, "hello, world"},
     {0.0, 0.0, NULL},
   };
   TestDecodeItem_t *tmp;
@@ -92,6 +143,7 @@ static void testDecode() {
 }
 
 void TestGeohash() {
+  tesnEncodeU64();
   testEncode();
   testDecode();
 }
