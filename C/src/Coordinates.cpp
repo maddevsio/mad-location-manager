@@ -44,23 +44,23 @@ CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
     int32_t index;
     int32_t count;
   };
-  static char buff[GEOHASH_MAX_PRECISION+1] = {0};
 
   std::vector<geopoint_t> lstRes;
-  std::map<std::string, AuxItem> dctHashCount;
-  typedef std::map<std::string, AuxItem>::iterator dctIter;
+  std::map<uint64_t, AuxItem> dctHashCount;
+  typedef std::map<uint64_t, AuxItem>::iterator dctIter;
 
   int idx = 0;
   for (auto ci = lstSrc.begin(); ci != lstSrc.end(); ++ci) {
-    GeohashEncode(ci->Latitude, ci->Longitude, buff, precision);
-    std::string geohash(buff, precision);
-    dctIter it = dctHashCount.find(geohash);
+    uint64_t gh = GeohashEncodeU64(ci->Latitude, ci->Longitude);
+    gh >>= precision*5 + 4;
+
+    dctIter it = dctHashCount.find(gh);
     if (it == dctHashCount.end()) {
       AuxItem ni;
       ni.count = 0;
       ni.lat = ni.lon = 0.0;
       ni.index = NOT_VALID_POINT_INDEX;
-      auto ir = dctHashCount.insert(std::pair<std::string, AuxItem>(geohash, ni));
+      auto ir = dctHashCount.insert(std::pair<uint64_t, AuxItem>(gh, ni));
       if (!ir.second)
         continue;
       it = ir.first;

@@ -101,33 +101,34 @@ static QString jsCoordsString(const std::vector<geopoint_t>& lst,
 static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
                                      int prec,
                                      int minPointCount) {
+  static const double COORD_NOT_INITIALIZED = 361.0;
+
   if (lst.empty() || lst.size() == 1)
     return 0.0;  
 
   double distance = 0.0;
-  char buff1[GEOHASH_MAX_PRECISION+1] = {0};
-  char buff2[GEOHASH_MAX_PRECISION+1] = {0};
-  char *pbuff1 = buff1;
-  char *pbuff2 = buff2;
-  char **ppReadGeohash = &pbuff1;
-  char **ppCompGeohash = &pbuff2;
-
   int count;
   geopoint_t tmpGeo, laGeo;
   auto pi = lst.begin();
+  uint64_t gh0, gh;
+  uint64_t *tgh0, *tgh;
+  tgh0 = &gh0;
+  tgh = &gh;
 
-  static const double COORD_NOT_INITIALIZED = 361.0;
   laGeo.Latitude = laGeo.Longitude = COORD_NOT_INITIALIZED;
-  GeohashEncode(pi->Latitude, pi->Longitude, *ppCompGeohash, prec);
+
+  *tgh0 = GeohashEncodeU64(pi->Latitude, pi->Longitude);
   tmpGeo.Latitude = pi->Latitude;
   tmpGeo.Longitude = pi->Longitude;
   count = 1;
 
+  *tgh >>= prec*5 + 4;
   for (++pi; pi != lst.end(); ++pi) {
-    GeohashEncode(pi->Latitude, pi->Longitude, *ppReadGeohash, prec);
+     *tgh = GeohashEncodeU64(pi->Latitude, pi->Longitude);
+     *tgh >>= prec*5 + 4;
 
     //if (ppCompGeohash != ppReadGeohash)
-    if (memcmp(*ppCompGeohash, *ppReadGeohash, prec)) {
+    if (*tgh - *tgh0) {
       if (count >= minPointCount) {
         tmpGeo.Latitude /= count;
         tmpGeo.Longitude /= count;
@@ -144,7 +145,7 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
       count = 1;
       tmpGeo.Latitude = pi->Latitude;
       tmpGeo.Longitude = pi->Longitude;
-      std::swap(*ppCompGeohash, *ppReadGeohash);
+      std::swap(*tgh0, *tgh);
       continue;
     }
 
