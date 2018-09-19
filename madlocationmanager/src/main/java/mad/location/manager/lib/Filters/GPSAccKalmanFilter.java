@@ -1,5 +1,7 @@
 package mad.location.manager.lib.Filters;
 
+import android.util.Log;
+
 import mad.location.manager.lib.Commons.Matrix;
 
 /**
@@ -7,18 +9,24 @@ import mad.location.manager.lib.Commons.Matrix;
  */
 
 public class GPSAccKalmanFilter {
+    public static final String TAG = "GPSAccKalmanFilter";
+
     private double m_timeStampMsPredict;
     private double m_timeStampMsUpdate;
     private int m_predictCount;
     private KalmanFilter m_kf;
     private double m_accSigma;
     private boolean m_useGpsSpeed;
+    private double mVelFactor = 1.0;
+    private double mPosFactor = 1.0;
 
     public GPSAccKalmanFilter(boolean useGpsSpeed,
                               double x, double y,
                               double xVel, double yVel,
                               double accDev, double posDev,
-                              double timeStampMs) {
+                              double timeStampMs,
+                              double velFactor,
+                              double posFactor) {
         int mesDim = useGpsSpeed ? 4 : 2;
         m_useGpsSpeed = useGpsSpeed;
 
@@ -31,6 +39,8 @@ public class GPSAccKalmanFilter {
         m_kf.H.setIdentityDiag(); //state has 4d and measurement has 4d too. so here is identity
         m_kf.Pk_k.setIdentity();
         m_kf.Pk_k.scale(posDev);
+        mVelFactor = velFactor;
+        mPosFactor = posFactor;
     }
 
     private void rebuildF(double dtPredict) {
@@ -60,6 +70,16 @@ public class GPSAccKalmanFilter {
     }
 
     private void rebuildR(double posSigma, double velSigma) {
+
+        posSigma *= mPosFactor;
+        velSigma *= mVelFactor;
+
+        Log.i(TAG, "rebuildR: { " +
+                "velSigma : " + velSigma +
+                ", posSigma : " + posSigma +
+                ", velFactor : " + mVelFactor +
+                ", posFactor :" + mPosFactor +
+                "}");
         if (m_useGpsSpeed) {
             double R[] = {
                     posSigma, 0.0, 0.0, 0.0,
