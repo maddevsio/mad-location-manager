@@ -117,15 +117,13 @@ static double filterDistanceRealTime(const std::vector<geopoint_t> &lst,
 
   laGeo.Latitude = laGeo.Longitude = COORD_NOT_INITIALIZED;
 
-  *tgh0 = GeohashEncodeU64(pi->Latitude, pi->Longitude);
+  *tgh0 = GeohashEncodeU64(pi->Latitude, pi->Longitude, prec);
   tmpGeo.Latitude = pi->Latitude;
   tmpGeo.Longitude = pi->Longitude;
   count = 1;
 
-  *tgh >>= prec*5 + 4;
   for (++pi; pi != lst.end(); ++pi) {
-     *tgh = GeohashEncodeU64(pi->Latitude, pi->Longitude);
-     *tgh >>= prec*5 + 4;
+     *tgh = GeohashEncodeU64(pi->Latitude, pi->Longitude, prec);
 
     //if (ppCompGeohash != ppReadGeohash)
     if (*tgh - *tgh0) {

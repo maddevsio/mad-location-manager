@@ -28,7 +28,7 @@ static uint64_t interleave(uint64_t x, uint64_t y) {
 }
 ///////////////////////////////////////////////////////
 
-uint64_t GeohashEncodeU64(double lat, double lon) {
+uint64_t GeohashEncodeU64(double lat, double lon, int prec) {
   lat = lat/180.0 + 1.5;
   lon = lon/360.0 + 1.5;
   uint64_t ilat = *((uint64_t*)&lat);
@@ -37,17 +37,14 @@ uint64_t GeohashEncodeU64(double lat, double lon) {
   ilon >>= 20;
   ilat &= 0x00000000ffffffff;
   ilon &= 0x00000000ffffffff;
-
-  return interleave(ilat, ilon);
+  return interleave(ilat, ilon) >> (GEOHASH_MAX_PRECISION-prec)*5;
 }
 
 int GeohashComparePointsU64(double lon1, double lat1,
                             double lon2, double lat2,
                             int precision) {
   assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
-  uint64_t gh1 = GeohashEncodeU64(lat1, lon1);
-  uint64_t gh2 = GeohashEncodeU64(lat2, lon2);
-  gh1 >>= precision*5 + 4;
-  gh2 >>= precision*5 + 4;
+  uint64_t gh1 = GeohashEncodeU64(lat1, lon1, precision);
+  uint64_t gh2 = GeohashEncodeU64(lat2, lon2, precision);
   return gh1 - gh2;
 }

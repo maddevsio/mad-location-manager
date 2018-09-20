@@ -51,9 +51,7 @@ CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
 
   int idx = 0;
   for (auto ci = lstSrc.begin(); ci != lstSrc.end(); ++ci) {
-    uint64_t gh = GeohashEncodeU64(ci->Latitude, ci->Longitude);
-    gh >>= precision*5 + 4;
-
+    uint64_t gh = GeohashEncodeU64(ci->Latitude, ci->Longitude, precision);
     dctIter it = dctHashCount.find(gh);
     if (it == dctHashCount.end()) {
       AuxItem ni;

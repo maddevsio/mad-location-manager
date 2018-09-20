@@ -20,16 +20,16 @@ typedef struct TestEncodeItem {
   const char *expected;
 } TestEncodeItem_t;
 
-static const char *geohash_str(uint64_t geohash, int8_t prec) ;
+static const char *geohash_str(uint64_t geohash) ;
 
 static void tesnEncodeU64() {
   double lat = 27.988056;
   double lon = 86.925278;
   uint64_t exp = 0xceb7f254240fd612;
-  uint64_t act = GeohashEncodeU64(lat, lon);
+  uint64_t act = GeohashEncodeU64(lat, lon, GEOHASH_MAX_PRECISION);
   assert(exp == act);  
   //tuvz4p141zc1
-  std::cout << geohash_str(act, GEOHASH_MAX_PRECISION) << std::endl;  
+  std::cout << geohash_str(act) << std::endl;
 }
 ///////////////////////////////////////////////////////
 
@@ -39,15 +39,13 @@ static const char base32Table[BASE32_COUNT] = {'0', '1', '2', '3', '4', '5', '6'
                                                'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
                                                's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
-const char *geohash_str(uint64_t geohash, int8_t prec) {
+const char *geohash_str(uint64_t geohash) {
   static char buff[GEOHASH_MAX_PRECISION+1] = {0};
-  char *str = buff + prec + 1;
-  int idx;
+  char *str = buff + GEOHASH_MAX_PRECISION + 1;
   *str = 0;
-  geohash >>= ((GEOHASH_MAX_PRECISION-prec) * 5) + 4; //cause we don't need last 4 bits
-  while (prec--){
-    idx = geohash & 0x1f;
-    *--str = base32Table[idx];
+  geohash >>= 4; //cause we don't need last 4 bits. that's strange, I thought we don't need first 4 bits %)
+  while (geohash){
+    *--str = base32Table[geohash & 0x1f];
     geohash >>= 5;
   }
   return str;
@@ -86,14 +84,14 @@ static void testEncode() {
   TestEncodeItem_t *tmp;
 
   for (tmp = posTests; tmp->expected; ++tmp) {
-    uint64_t geohash = GeohashEncodeU64(tmp->lat, tmp->lon);
-    const char *geostr = geohash_str(geohash, tmp->precision);
+    uint64_t geohash = GeohashEncodeU64(tmp->lat, tmp->lon, tmp->precision);
+    const char *geostr = geohash_str(geohash);
     assert(strcmp(geostr, tmp->expected) == 0);
   }
 
   for (tmp = negTests; tmp->expected; ++tmp) {
-    uint64_t geohash = GeohashEncodeU64(tmp->lat, tmp->lon);
-    const char *geostr = geohash_str(geohash, tmp->precision);
+    uint64_t geohash = GeohashEncodeU64(tmp->lat, tmp->lon, tmp->precision);
+    const char *geostr = geohash_str(geohash);
     assert(strcmp(geostr, tmp->expected) != 0);
   }
 }
