@@ -25,16 +25,7 @@ android {
     }
 }
 
-ext {
-    supportLibraryVersion = "26.1.0"
-}
-
 dependencies {
-    api "com.android.support:appcompat-v7:${supportLibraryVersion}"
-    api "com.android.support:support-v4:${supportLibraryVersion}"
-    api "com.android.support:design:${supportLibraryVersion}"
-    api "com.android.support:recyclerview-v7:${supportLibraryVersion}"
-
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
