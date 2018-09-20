@@ -60,15 +60,15 @@ public class GeoHashUnitTest {
         };
 
         for (EncodeTestItem ti : posTests) {
-            char buff[] = new char[ti.precision];
-            GeoHash.encode(ti.lat, ti.lon, buff, ti.precision);
-            assertTrue(Arrays.equals(ti.expected.toCharArray(), buff));
+            long gh = GeoHash.encode_u64(ti.lat, ti.lon, ti.precision);
+            String ghstr = GeoHash.geohash_str(gh, ti.precision);
+            assertTrue(ti.expected.equals(ghstr));
         }
 
         for (EncodeTestItem ti : negTests) {
-            char buff[] = new char[ti.precision];
-            GeoHash.encode(ti.lat, ti.lon, buff, ti.precision);
-            assertFalse(Arrays.equals(ti.expected.toCharArray(), buff));
+            long gh = GeoHash.encode_u64(ti.lat, ti.lon, ti.precision);
+            String ghstr = GeoHash.geohash_str(gh, ti.precision);
+            assertFalse(ti.expected.equals(ghstr));
         }
     }
 
@@ -77,17 +77,24 @@ public class GeoHashUnitTest {
         GeoPoint geo1 = new GeoPoint(44.87533558, 72.5656988);
         GeoPoint geo2 = new GeoPoint(44.87533558, 72.5656988);
         GeoPoint geo3 = new GeoPoint(44.87533540, 72.5656988);
-
         final int prec = GeoHash.GEOHASH_MAX_PRECISION;
-        char buff1[] = new char[prec];
-        char buff2[] = new char[prec];
-        char buff3[] = new char[prec];
 
-        GeoHash.encode(geo1.Latitude, geo1.Longitude, buff1, prec);
-        GeoHash.encode(geo2.Latitude, geo2.Longitude, buff2, prec);
-        GeoHash.encode(geo3.Latitude, geo3.Longitude, buff3, prec);
+        long gh1 = GeoHash.encode_u64(geo1.Latitude, geo1.Longitude, prec);
+        long gh2 = GeoHash.encode_u64(geo2.Latitude, geo2.Longitude, prec);
+        long gh3 = GeoHash.encode_u64(geo3.Latitude, geo3.Longitude, prec);
 
-        assertTrue(Arrays.equals(buff1, buff2));
-        assertFalse(Arrays.equals(buff1, buff3));
+        assertTrue(gh1 == gh2);
+        assertFalse(gh1 == gh3);
+    }
+
+
+    @Test
+    public void geohashU64Test() throws Exception {
+        double lat = 27.988056;
+        double lon = 86.925278;
+        long exp = 0xceb7f254240fd612L;
+        long act = GeoHash.encode_u64(lat, lon, GeoHash.GEOHASH_MAX_PRECISION);
+        assertEquals(exp , act);
+        //tuvz4p141zc1
     }
 }

@@ -74,53 +74,6 @@ public class Coordinates {
         return getPointAhead(point, distance, 0.0);
     }
 
-    public static GeoPoint[] filterByGeoHash(List<GeoPoint> lstSrc,
-                                             int precision,
-                                             int minPointCount) {
-        final int NOT_VALID_INDEX  = -1;
-        class AuxItem {
-            int index, count;
-            double lon, lat;
-
-            AuxItem() {
-                index = NOT_VALID_INDEX;
-                count = 0;
-                lon = lat = 0.0;
-            }
-        }
-
-        char buff[] = new char[precision];
-        HashMap<String, AuxItem> dctHashCount = new HashMap<>();
-
-        int idx = 0;
-        for (GeoPoint ci : lstSrc) {
-            GeoHash.encode(ci.Latitude, ci.Longitude, buff, precision);
-            String geoHash = new String(buff);
-            AuxItem it;
-            if (!dctHashCount.containsKey(geoHash)) {
-                it = new AuxItem();
-                dctHashCount.put(geoHash, it);
-            }
-            it = dctHashCount.get(geoHash);
-            if (++it.count == minPointCount)
-                it.index = idx++;
-            it.lat += ci.Latitude;
-            it.lon += ci.Longitude;
-        }
-
-        GeoPoint resArr[] = new GeoPoint[idx];
-        for (Map.Entry<String, AuxItem> it : dctHashCount.entrySet()) {
-            AuxItem val = it.getValue();
-            if (val.index == NOT_VALID_INDEX)
-                continue;
-            double meanLatitude = val.lat / val.count;
-            double meanLongitude = val.lon / val.count;
-            GeoPoint np = new GeoPoint(meanLatitude, meanLongitude);
-            resArr[val.index] = np;
-        }
-        return resArr;
-    }
-
     public static double calculateDistance(GeoPoint track[]) {
         double distance = 0.0;
         double lastLon, lastLat;

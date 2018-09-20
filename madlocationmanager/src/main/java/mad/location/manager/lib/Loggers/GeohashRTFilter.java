@@ -29,7 +29,7 @@ public class GeohashRTFilter {
     private int ppCompGeoHash = 0;
     private int ppReadGeoHash = 1;
 
-    private char geoHashBuffers[][];
+    private long geoHashBuffers[];
     private int pointsInCurrentGeohashCount;
 
     private GeoPoint currentGeoPoint;
@@ -72,9 +72,7 @@ public class GeohashRTFilter {
     public void reset(ILogger logger) {
         m_logger = logger;
         m_geoFilteredTrack.clear();
-        char[] buff1 = new char[GeoHash.GEOHASH_MAX_PRECISION];
-        char[] buff2 = new char[GeoHash.GEOHASH_MAX_PRECISION];
-        geoHashBuffers = new char[][]{buff1, buff2};
+        geoHashBuffers = new long[2];
         pointsInCurrentGeohashCount = 0;
         lastApprovedGeoPoint = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
         currentGeoPoint = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);
@@ -99,7 +97,7 @@ public class GeohashRTFilter {
 
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (isFirstCoordinate) {
-            GeoHash.encode(pi.Latitude, pi.Longitude, geoHashBuffers[ppCompGeoHash], m_geohashPrecision);
+            geoHashBuffers[ppCompGeoHash] = GeoHash.encode_u64(pi.Latitude, pi.Longitude, m_geohashPrecision);
             currentGeoPoint.Latitude = pi.Latitude;
             currentGeoPoint.Longitude = pi.Longitude;
             pointsInCurrentGeohashCount = 1;
@@ -128,8 +126,8 @@ public class GeohashRTFilter {
         lastGeoPointAsIs.Longitude = loc.getLongitude();
         lastGeoPointAsIs.Latitude = loc.getLatitude();
 
-        GeoHash.encode(pi.Latitude, pi.Longitude, geoHashBuffers[ppReadGeoHash], m_geohashPrecision);
-        if (!Arrays.equals(geoHashBuffers[ppCompGeoHash], geoHashBuffers[ppReadGeoHash])) {
+        geoHashBuffers[ppReadGeoHash] = GeoHash.encode_u64(pi.Latitude, pi.Longitude, m_geohashPrecision);
+        if (geoHashBuffers[ppCompGeoHash] != geoHashBuffers[ppReadGeoHash]) {
             if (pointsInCurrentGeohashCount >= m_geohashMinPointCount) {
                 currentGeoPoint.Latitude /= pointsInCurrentGeohashCount;
                 currentGeoPoint.Longitude /= pointsInCurrentGeohashCount;

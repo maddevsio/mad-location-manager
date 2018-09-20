@@ -176,8 +176,8 @@ MainWindow::initMap(QWebEnginePage *page,
   std::vector<geopoint_t> lstGeoFilter = CoordGetFromFile(filteredCoordsFile, LMT_FILTERED_GPS_DATA);
   std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(pathToCoordsFile, LMT_FILTERED_GPS_DATA);
 //  std::vector<geopoint_t> lstJavaFilter = CoordGetFromFile(filteredCoordsFile2, LMT_FILTERED_GPS_DATA);
-  const int filterPrec = 8;
-  const int minPoints = 2;
+  const int filterPrec = 7;
+  const int minPoints = 3;
 
 //  qDebug() << "RealTime Src  distance: " << filterDistanceRealTime(lstCoords, GEOHASH_MAX_PRECISION, 1);
 //  qDebug() << "RealTime Desk distance: " << filterDistanceRealTime(lstGeoFilter, GEOHASH_MAX_PRECISION, 1);
@@ -192,9 +192,9 @@ MainWindow::initMap(QWebEnginePage *page,
   qDebug() << "Java distance : " << CoordCaclulateDistance(lstJavaFilter);
 
   //filter for display
-//  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
-//  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
-//  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
+  lstCoords = CoordFilterByGeoHash(lstCoords, filterPrec, minPoints);
+  lstJavaFilter = CoordFilterByGeoHash(lstJavaFilter, filterPrec, minPoints);
+  lstGeoFilter = CoordFilterByGeoHash(lstGeoFilter, filterPrec, minPoints);
 
   qDebug() << "2Src distance : " << CoordCaclulateDistance(lstCoords);
   qDebug() << "2Filtered distance : " << CoordCaclulateDistance(lstGeoFilter);
