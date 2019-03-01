@@ -1,6 +1,7 @@
 package com.example.lezh1k.sensordatacollector;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
@@ -43,6 +44,7 @@ import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -382,19 +384,31 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         m_presenter = new MapPresenter(this, this, m_geoHashRTFilter);
         m_mapView.getMapAsync(mapboxMap -> {
             m_map = mapboxMap;
+            MainActivity this_ = this;
+            ProgressDialog progress = new ProgressDialog(this);
+            progress.setTitle("Loading");
+            progress.setMessage("Wait while map loading...");
+            progress.setCancelable(false); // disable dismiss by tapping outside of the dialog
+            progress.show();
+
             m_map.setStyleUrl(BuildConfig.lightMapStyle);
+            m_map.setStyleUrl(Style.SATELLITE_STREETS, new MapboxMap.OnStyleLoadedListener() {
+                @Override
+                public void onStyleLoaded(String style) {
+                    m_map.getUiSettings().setLogoEnabled(false);
+                    m_map.getUiSettings().setAttributionEnabled(false);
+                    m_map.getUiSettings().setTiltGesturesEnabled(false);
 
-            m_map.getUiSettings().setLogoEnabled(false);
-            m_map.getUiSettings().setAttributionEnabled(false);
-            m_map.getUiSettings().setTiltGesturesEnabled(false);
-
-            int leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-            int topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56, getResources().getDisplayMetrics());
-            int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-            int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-            m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
-            ServicesHelper.addLocationServiceInterface(this);
-            m_presenter.getRoute();
+                    int leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                    int topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56, getResources().getDisplayMetrics());
+                    int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                    int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                    m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+                    ServicesHelper.addLocationServiceInterface(this_);
+                    m_presenter.getRoute();
+                    progress.dismiss();
+                }
+            });
         });
     }
 

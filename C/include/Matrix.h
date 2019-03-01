@@ -40,9 +40,9 @@ void MatrixSubtract(matrix_t *ma,
 void MatrixSubtractFromIdentity(matrix_t *m);
 
 /* Multiply matrices a and b and put the result in c. */
-void MatrixMultiply(restrict matrix_t *ma,
-                    restrict matrix_t *mb,
-                    restrict matrix_t *mc);
+void MatrixMultiply( matrix_t * restrict ma,
+                     matrix_t * restrict mb,
+                     matrix_t * restrict mc);
 
 /* Multiply matrix a by b-transpose and put the result in c. */
 void MatrixMultiplyByTranspose(matrix_t *ma,

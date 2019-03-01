@@ -36,13 +36,13 @@ public class GeohashRTFilter {
     private GeoPoint lastApprovedGeoPoint;
     private GeoPoint lastGeoPointAsIs;
 
-    private boolean isFirstCoordinate = true;
     private List<Location> m_geoFilteredTrack;
-
     public List<Location> getGeoFilteredTrack() {
         return m_geoFilteredTrack;
     }
 
+
+    private boolean isFirstCoordinate = true;
     private int m_geohashPrecision;
     private int m_geohashMinPointCount;
 

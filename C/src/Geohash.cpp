@@ -1,11 +1,5 @@
 #include <stdint.h>
 #include <assert.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <iostream>
-#include <immintrin.h>
 #include "Geohash.h"
 
 static uint64_t interleave(uint64_t x, uint64_t y) {
@@ -29,15 +23,16 @@ static uint64_t interleave(uint64_t x, uint64_t y) {
 ///////////////////////////////////////////////////////
 
 uint64_t GeohashEncodeU64(double lat, double lon, int prec) {
+  uint64_t ilat, ilon;
   lat = lat/180.0 + 1.5;
   lon = lon/360.0 + 1.5;
-  uint64_t ilat = *((uint64_t*)&lat);
-  uint64_t ilon = *((uint64_t*)&lon);
+  ilat = *((uint64_t*)&lat);
+  ilon = *((uint64_t*)&lon);
   ilat >>= 20;
   ilon >>= 20;
   ilat &= 0x00000000ffffffff;
   ilon &= 0x00000000ffffffff;
-  return interleave(ilat, ilon) >> (GEOHASH_MAX_PRECISION-prec)*5;
+  return interleave(ilat, ilon) >> ((GEOHASH_MAX_PRECISION-prec)*5);
 }
 
 int GeohashComparePointsU64(double lon1, double lat1,

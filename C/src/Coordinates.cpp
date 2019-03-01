@@ -34,7 +34,7 @@ std::vector<geopoint_t> CoordGetFromFile(const QString& filePath,
 //////////////////////////////////////////////////////////////////////////
 
 std::vector<geopoint_t>
-CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
+CoordFilterByGeoHash(const std::vector<geopoint_t> &lstSrc,
                 int precision,
                 int minPointCount) {
 #define NOT_VALID_POINT_INDEX -1
@@ -50,7 +50,7 @@ CoordFilterByGeoHash(std::vector<geopoint_t> &lstSrc,
   typedef std::map<uint64_t, AuxItem>::iterator dctIter;
 
   int idx = 0;
-  for (auto ci = lstSrc.begin(); ci != lstSrc.end(); ++ci) {
+  for (auto ci = lstSrc.cbegin(); ci != lstSrc.cend(); ++ci) {
     uint64_t gh = GeohashEncodeU64(ci->Latitude, ci->Longitude, precision);
     dctIter it = dctHashCount.find(gh);
     if (it == dctHashCount.end()) {
