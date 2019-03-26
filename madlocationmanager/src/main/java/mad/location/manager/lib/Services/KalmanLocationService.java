@@ -48,7 +48,7 @@ public class KalmanLocationService extends Service
         private int gpsMinTime;
         private int geoHashPrecision;
         private int geoHashMinPointCount;
-        private int sensorFfequencyHz;
+        private int sensorFrequencyHz;
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
 
@@ -61,7 +61,7 @@ public class KalmanLocationService extends Service
                         int gpsMinTime,
                         int geoHashPrecision,
                         int geoHashMinPointCount,
-                        int sensorFfequencyHz,
+                        int sensorFrequencyHz,
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
                         double velFactor,
@@ -71,7 +71,7 @@ public class KalmanLocationService extends Service
             this.gpsMinTime = gpsMinTime;
             this.geoHashPrecision = geoHashPrecision;
             this.geoHashMinPointCount = geoHashMinPointCount;
-            this.sensorFfequencyHz = sensorFfequencyHz;
+            this.sensorFrequencyHz = sensorFrequencyHz;
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
             this.mVelFactor = velFactor;
@@ -426,7 +426,7 @@ public class KalmanLocationService extends Service
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    Utils.hertz2periodUs(m_settings.sensorFfequencyHz));
+                    Utils.hertz2periodUs(m_settings.sensorFrequencyHz));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
