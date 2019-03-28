@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="pref_gps_min_time"
+        android:title="@string/pref_gps_min_time"
+        android:summary="@string/pref_gps_min_time_summ"
+        android:numeric="integer"
+        android:defaultValue="2000" />
+    <EditTextPreference
+        android:key="pref_gps_min_distance"
+        android:title="@string/pref_gps_min_distance"
+        android:summary="@string/pref_gps_min_distance_summ"
+        android:numeric="integer"
+        android:defaultValue="0" />
+    <EditTextPreference
+        android:key="pref_position_min_time"
+        android:title="@string/pref_position_min_time"
+        android:summary="@string/pref_position_min_time_summ"
+        android:numeric="integer"
+        android:defaultValue="500" />
+    <EditTextPreference
+        android:key="pref_sensor_frequency"
+        android:title="@string/pref_sensor_frequency"
+        android:summary="@string/pref_sensor_frequency_summ"
+        android:numeric="integer"
+        android:defaultValue="10" />
+    <EditTextPreference
+        android:key="pref_geohash_precision"
+        android:title="@string/pref_geohash_precision"
+        android:summary="@string/pref_geohash_precision_summ"
+        android:numeric="integer"
+        android:defaultValue="6" />
+    <EditTextPreference
+        android:key="pref_geohash_min_point"
+        android:title="@string/pref_geohash_min_point"
+        android:summary="@string/pref_geohash_min_point_summ"
+        android:numeric="integer"
+        android:defaultValue="2" />
+</PreferenceScreen>
