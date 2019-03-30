@@ -11,6 +11,7 @@ public class Utils {
 
     //todo move to some another better place
     public static double ACCELEROMETER_DEFAULT_DEVIATION = 0.1;
+    public static final int SENSOR_POSITION_MIN_TIME = 500;
     public static final int GPS_MIN_TIME = 2000;
     public static final int GPS_MIN_DISTANCE = 0;
     public static final int SENSOR_DEFAULT_FREQ_HZ = 10;
