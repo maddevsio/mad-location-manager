@@ -197,12 +197,12 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 KalmanLocationService.Settings settings =
                         new KalmanLocationService.Settings(
                                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                                mSharedPref.getInt("pref_gps_min_time", Utils.GPS_MIN_DISTANCE),
-                                mSharedPref.getInt("pref_gps_min_distance", Utils.GPS_MIN_TIME),
-                                mSharedPref.getInt("pref_position_min_time", Utils.GPS_MIN_TIME),
-                                mSharedPref.getInt("pref_geohash_precision", Utils.GEOHASH_DEFAULT_PREC),
-                                mSharedPref.getInt("pref_geohash_min_point", Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT),
-                                mSharedPref.getInt("pref_sensor_frequency", Utils.SENSOR_DEFAULT_FREQ_HZ),
+                                Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_position_min_time", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_sensor_frequency", "")),
                                 this,
                                 false,
                                 Utils.DEFAULT_VEL_FACTOR,
@@ -430,9 +430,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Set preferences data
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         Mapbox.getInstance(this, BuildConfig.access_token);
@@ -471,6 +468,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     @Override
     protected void onStart() {
         super.onStart();
+
+        // Set preferences data
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         initActivity();
         if (m_mapView != null) {
