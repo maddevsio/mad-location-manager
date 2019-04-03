@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SensorDataCollector</string>
+    <!-- Main Activity -->
+    <string name="status">Status</string>
+    <string name="start_tracking">Começar o rastreamento</string>
+    <string name="calibrate">Calibrar</string>
+    <string name="distance">Distância:</string>
+    <string name="gps">GPS</string>
+    <string name="filtered">Filtrado</string>
+    <string name="filtered_geo">Filtrado+Geo</string>
+    <!-- Preferences -->
+    <string name="settings">Configurações</string>
+    <string name="pref_gps_min_time">Intervalo de consulta ao GPS</string>
+    <string name="pref_gps_min_time_summ">Intervalo de tempo mínimo entre as atualizações de localização (vinda do GPS), em milissegundos</string>
+    <string name="pref_gps_min_distance">Distância mínima de GPS</string>
+    <string name="pref_gps_min_distance_summ">Distância mínima entre as atualizações da localização (vinda do GPS), em metros</string>
+    <string name="pref_position_min_time">Intervalo de cálculo da posição</string>
+    <string name="pref_position_min_time_summ">Intervalo de tempo mínimo entre cada cálculo de estimativa de posição, em milissegundos</string>
+    <string name="pref_sensor_frequency">Frequência do sensor (Hz)</string>
+    <string name="pref_sensor_frequency_summ">A taxa em que os eventos do sensor são entregues, em Hertz</string>
+    <string name="pref_geohash_precision">Precisão do GeoHash</string>
+    <string name="pref_geohash_precision_summ">O comprimento da string geohash (e precisão)</string>
+    <string name="pref_geohash_min_point">Quantidade mínima de pontos por GeoHash</string>
+    <string name="pref_geohash_min_point_summ">Quantidade mínima de pontos com o mesmo geohash. Pontos de GPS tornam-se válidos somente quando a quantidade for maior que este valor.</string>
+</resources>

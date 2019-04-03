@@ -3,6 +3,8 @@ package com.example.lezh1k.sensordatacollector;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
 import android.location.Location;
@@ -10,6 +12,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -17,6 +20,9 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -57,6 +63,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
+
+    private SharedPreferences mSharedPref;
 
     private String xLogFolderPath;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -187,13 +195,19 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 value.stop();
                 initXlogPrintersFileName();
                 KalmanLocationService.Settings settings =
-                        new KalmanLocationService.Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                                Utils.GPS_MIN_DISTANCE,
-                                Utils.GPS_MIN_TIME,
-                                Utils.GEOHASH_DEFAULT_PREC,
-                                Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
-                                Utils.SENSOR_DEFAULT_FREQ_HZ,
-                                this, false, Utils.DEFAULT_VEL_FACTOR, Utils.DEFAULT_POS_FACTOR);
+                        new KalmanLocationService.Settings(
+                                Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                                Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_position_min_time", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "")),
+                                Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "")),
+                                Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "")),
+                                this,
+                                false,
+                                Utils.DEFAULT_VEL_FACTOR,
+                                Utils.DEFAULT_POS_FACTOR
+                        );
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
             });
@@ -415,6 +429,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         Mapbox.getInstance(this, BuildConfig.access_token);
@@ -453,6 +468,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     @Override
     protected void onStart() {
         super.onStart();
+
+        // Set preferences data
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
         initActivity();
         if (m_mapView != null) {
             m_mapView.onStart();
@@ -515,4 +535,24 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             m_mapView.onDestroy();
         }
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 }

@@ -34,6 +34,7 @@ dependencies {
 
     api group: 'net.sf.marineapi', name: 'marineapi', version: '0.10.0'
     api 'com.google.android.gms:play-services-location:15.0.1'
+    api 'com.android.support:preference-v7:26.1.0'
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
     api ('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
         transitive = true

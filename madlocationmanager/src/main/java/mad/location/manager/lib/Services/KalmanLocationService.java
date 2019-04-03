@@ -46,9 +46,10 @@ public class KalmanLocationService extends Service
         private double accelerationDeviation;
         private int gpsMinDistance;
         private int gpsMinTime;
+        private int positionMinTime;
         private int geoHashPrecision;
         private int geoHashMinPointCount;
-        private int sensorFfequencyHz;
+        private double sensorFrequencyHz;
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
 
@@ -59,9 +60,10 @@ public class KalmanLocationService extends Service
         public Settings(double accelerationDeviation,
                         int gpsMinDistance,
                         int gpsMinTime,
+                        int positionMinTime,
                         int geoHashPrecision,
                         int geoHashMinPointCount,
-                        int sensorFfequencyHz,
+                        double sensorFrequencyHz,
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
                         double velFactor,
@@ -69,9 +71,10 @@ public class KalmanLocationService extends Service
             this.accelerationDeviation = accelerationDeviation;
             this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
+            this.positionMinTime = positionMinTime;
             this.geoHashPrecision = geoHashPrecision;
             this.geoHashMinPointCount = geoHashMinPointCount;
-            this.sensorFfequencyHz = sensorFfequencyHz;
+            this.sensorFrequencyHz = sensorFrequencyHz;
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
             this.mVelFactor = velFactor;
@@ -187,11 +190,19 @@ public class KalmanLocationService extends Service
     }
 
     public static Settings defaultSettings =
-            new Settings(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                    Utils.GPS_MIN_DISTANCE, Utils.GPS_MIN_TIME,
-                    Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
+            new Settings(
+                    Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                    Utils.GPS_MIN_DISTANCE,
+                    Utils.GPS_MIN_TIME,
+                    Utils.SENSOR_POSITION_MIN_TIME,
+                    Utils.GEOHASH_DEFAULT_PREC,
+                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
-                    null, true, Utils.DEFAULT_VEL_FACTOR, Utils.DEFAULT_POS_FACTOR);
+                    null,
+                    true,
+                    Utils.DEFAULT_VEL_FACTOR,
+                    Utils.DEFAULT_POS_FACTOR
+            );
 
     private Settings m_settings;
     private LocationManager m_locationManager;
@@ -426,7 +437,7 @@ public class KalmanLocationService extends Service
         for (Sensor sensor : m_lstSensors) {
             m_sensorManager.unregisterListener(this, sensor);
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
-                    Utils.hertz2periodUs(m_settings.sensorFfequencyHz));
+                    Utils.hertz2periodUs(m_settings.sensorFrequencyHz));
         }
         m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
@@ -435,7 +446,7 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_eventLoopTask = new SensorDataEventLoopTask(500, this);
+        m_eventLoopTask = new SensorDataEventLoopTask(m_settings.positionMinTime, this);
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
