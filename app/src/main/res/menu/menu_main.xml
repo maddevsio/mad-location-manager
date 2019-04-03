@@ -6,6 +6,6 @@
     tools:context="com.example.lezh1k.sensordatacollector.MainActivity">
     <item
         android:id="@+id/action_settings"
-        android:title="Settings"
+        android:title="@string/settings"
         app:showAsAction="never" />
 </menu>

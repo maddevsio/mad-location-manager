@@ -13,7 +13,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Status"
+        android:text="@string/status"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -26,7 +26,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:onClick="btnStartStop_click"
-        android:text="Start tracking"
+        android:text="@string/start_tracking"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -40,7 +40,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:onClick="btnCalibrate_click"
-        android:text="Calibrate"
+        android:text="@string/calibrate"
         android:visibility="visible"
         app:layout_constraintBottom_toTopOf="@+id/btnStartStop"
         app:layout_constraintEnd_toEndOf="parent"
@@ -54,7 +54,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Distance:"
+        android:text="@string/distance"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/mapView" />
@@ -84,7 +84,7 @@
         android:layout_marginTop="8dp"
         android:buttonTint="@color/black"
         android:checked="true"
-        android:text="GPS"
+        android:text="@string/gps"
         android:textColorLink="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
@@ -98,7 +98,7 @@
         android:layout_marginTop="8dp"
         android:buttonTint="@color/black"
         android:checked="true"
-        android:text="Filtered"
+        android:text="@string/filtered"
         android:textColorLink="@color/black"
         app:layout_constraintEnd_toStartOf="@+id/cbFilteredKalmanGeo"
         app:layout_constraintStart_toEndOf="@+id/cbGPS"
@@ -112,7 +112,7 @@
         android:layout_marginTop="8dp"
         android:buttonTint="@color/black"
         android:checked="true"
-        android:text="Filtered+Geo"
+        android:text="@string/filtered_geo"
         android:textColorLink="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvDistance" />
