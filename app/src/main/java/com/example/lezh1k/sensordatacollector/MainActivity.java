@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 Integer.parseInt(mSharedPref.getString("pref_position_min_time", "")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "")),
-                                Integer.parseInt(mSharedPref.getString("pref_sensor_frequency", "")),
+                                Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "")),
                                 this,
                                 false,
                                 Utils.DEFAULT_VEL_FACTOR,

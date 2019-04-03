@@ -49,7 +49,7 @@ public class KalmanLocationService extends Service
         private int positionMinTime;
         private int geoHashPrecision;
         private int geoHashMinPointCount;
-        private int sensorFrequencyHz;
+        private double sensorFrequencyHz;
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
 
@@ -63,7 +63,7 @@ public class KalmanLocationService extends Service
                         int positionMinTime,
                         int geoHashPrecision,
                         int geoHashMinPointCount,
-                        int sensorFrequencyHz,
+                        double sensorFrequencyHz,
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
                         double velFactor,
