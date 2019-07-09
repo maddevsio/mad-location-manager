@@ -10,6 +10,7 @@ Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 help
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Developed by Mad Devs](https://maddevs.io/badge-light.svg)](https://maddevs.io)
 
 ## How can mad-location-manager help you to get location more accurately
 
