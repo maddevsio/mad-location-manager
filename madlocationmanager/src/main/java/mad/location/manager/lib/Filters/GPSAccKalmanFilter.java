@@ -30,7 +30,7 @@ public class GPSAccKalmanFilter {
         int mesDim = useGpsSpeed ? 4 : 2;
         m_useGpsSpeed = useGpsSpeed;
 
-        m_kf = new KalmanFilter(4, mesDim, 1);
+        m_kf = new KalmanFilter(4, mesDim, 2);
         m_timeStampMsPredict = m_timeStampMsUpdate = timeStampMs;
         m_accSigma = accDev;
         m_predictCount = 0;
