@@ -3,6 +3,7 @@
     <!-- Main Activity -->
     <string name="status">Status</string>
     <string name="start_tracking">Start tracking</string>
+    <string name="start_tracking_v4">Start with v4</string>
     <string name="calibrate">Calibrate</string>
     <string name="distance">Distance:</string>
     <string name="gps">GPS</string>

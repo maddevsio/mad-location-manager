@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
 
     <application
         android:allowBackup="true"
@@ -35,6 +36,16 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+
+        <service
+            android:name=".v4.LocationProviderService"
+            android:enabled="true"
+            android:exported="false"
+            />
+
+        <service
+            android:name=".v4.ActivityRecognitionService"
+            android:exported="false"/>
 
         <service
             android:name="mad.location.manager.lib.Services.KalmanLocationService"

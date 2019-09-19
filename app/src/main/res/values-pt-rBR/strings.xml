@@ -4,6 +4,7 @@
     <!-- Main Activity -->
     <string name="status">Status</string>
     <string name="start_tracking">Começar o rastreamento</string>
+    <string name="start_tracking_v4">Começar com v4</string>
     <string name="calibrate">Calibrar</string>
     <string name="distance">Distância:</string>
     <string name="gps">GPS</string>
