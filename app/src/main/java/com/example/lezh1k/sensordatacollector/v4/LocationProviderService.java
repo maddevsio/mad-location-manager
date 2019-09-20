@@ -193,7 +193,7 @@ public class LocationProviderService extends Service {
             if (locationResult == null) return;
 
             for (Location location : locationResult.getLocations()) {
-                if (location != null /* && location.getAccuracy() <= 10 //debug validation */) {
+                if (location != null) {
                     onNewLocationFromFusedProvider(location);
 
                     Log.d(TAG, "accur: " + location.getAccuracy() + " => " + location.getLatitude() + " ; " + location.getLongitude());
