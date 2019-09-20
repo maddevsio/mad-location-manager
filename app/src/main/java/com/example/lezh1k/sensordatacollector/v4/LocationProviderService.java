@@ -1,6 +1,5 @@
 package com.example.lezh1k.sensordatacollector.v4;
 
-import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -15,7 +14,6 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -35,7 +33,6 @@ public class LocationProviderService extends Service {
     private final String TAG = getClass().getName();
     protected final Service locationService = LocationProviderService.this;
 
-    private boolean isTracking = false;
     private LocationListener mListener = null;
 
     private FusedLocationProviderClient mFusedLocationClient;
@@ -45,12 +42,9 @@ public class LocationProviderService extends Service {
 
     private final IBinder mBinder = new LocalBinder();
 
-    // TODO: that is it?
-    class LocalBinder extends Binder {
-        protected Service service;
-
-        public Service getService(){
-            return locationService;
+    public class LocalBinder extends Binder {
+        public LocationProviderService getService() {
+            return (LocationProviderService) locationService;
         }
     }
 
@@ -63,13 +57,10 @@ public class LocationProviderService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        startForeground(1, getNotification("Habilitado")); // HARDCODED STRING
         getLastLocationSharedPreferences();
 
         setupSelf();
     }
-
-    // removed onStartCommand method
 
     @Override
     public void onDestroy() {
@@ -86,59 +77,8 @@ public class LocationProviderService extends Service {
         }
     }
 
-
-    private Notification getNotification(@NonNull String notificationText) {
-        return new NotificationCompat.Builder(this, "ag.strider.scout.notification") // HARDCODED STRING
-                .setContentTitle("Rastreamento de localização") // HARDCODED STRING
-                .setContentText(notificationText)
-                /* .setSmallIcon(R.drawable.ic_logo_only */
-                .build();
-    }
-
     private void setupSelf() {
         registerReceiver(mDeviceGPSStatusReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
-    }
-
-    void unsubscribe() {
-        mListener = null;
-    }
-
-    @RequiresPermission(allOf = {
-            "android.permission.ACCESS_COARSE_LOCATION",
-            "android.permission.ACCESS_FINE_LOCATION",
-            "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
-    })
-    void startLocationTracking(@NonNull LocationListener listener) {
-        mListener = listener;
-
-
-        if (!isTracking) {
-            if (!isDeviceGPSEnabled()) {
-                mListener.onDeviceGPSDisabled();
-                return;
-            }
-
-            if (!hasGooglePlayServices()) {
-                mListener.onMissingGooglePlayServices();
-                return;
-            }
-
-            registerToFusedLocationProvider();
-            registerToActivityRecognition();
-            isTracking = true;
-
-            mListener.onLocationTrackingStarted();
-        }
-    }
-
-    void stopLocationTracking() {
-        if (isTracking) {
-            isTracking = false;
-
-            if (mListener != null) {
-                mListener.onLocationTrackingStopped();
-            }
-        }
     }
 
     private boolean isDeviceGPSEnabled() {
@@ -253,8 +193,10 @@ public class LocationProviderService extends Service {
             if (locationResult == null) return;
 
             for (Location location : locationResult.getLocations()) {
-                if (location != null) {
+                if (location != null /* && location.getAccuracy() <= 10 //debug validation */) {
                     onNewLocationFromFusedProvider(location);
+
+                    Log.d(TAG, "accur: " + location.getAccuracy() + " => " + location.getLatitude() + " ; " + location.getLongitude());
                 }
             }
         }
@@ -273,15 +215,16 @@ public class LocationProviderService extends Service {
         if (isNewLocationValid) {
             Log.v(TAG, "new location data is valid. updating lastKnownLocation and notifying listeners");
             mLastKnownLocation = pLocation;
-            notifyApplocationListener(mLastKnownLocation); // todo: async? 285 .kt
+            notifyAppLocationListener(mLastKnownLocation);
         }
     }
 
     private Location fineLocation(@NonNull Location location) {
-        return MovingAverage.calcMovingAverage(location); // todo 290 .kt
+        return MovingAverage.calcMovingAverage(location);
     }
 
     private boolean testLocationAgainstValidityCriteria(@NonNull Location oldLocation, @NonNull Location newLocation) {
+//        if(true) return true; // debug line
         if (isDeviceStill && newLocation.getAccuracy() < oldLocation.getAccuracy()) {
             return false;
         }
@@ -294,12 +237,12 @@ public class LocationProviderService extends Service {
         return true;
     }
 
-    private void notifyApplocationListener(Location location) {
+    private void notifyAppLocationListener(Location location) {
         if (mListener != null)
             mListener.onNewLocation(location);
     }
 
-    interface LocationListener {
+    public interface LocationListener {
 
         void onLocationTrackingStarted();
 
@@ -338,5 +281,37 @@ public class LocationProviderService extends Service {
         }
     }
 
+    @RequiresPermission(allOf = {
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+    })
+    public void startLocationTracking(@NonNull LocationListener listener) {
+        mListener = listener;
+
+        if (!isDeviceGPSEnabled()) {
+            mListener.onDeviceGPSDisabled();
+            return;
+        }
+
+        if (!hasGooglePlayServices()) {
+            mListener.onMissingGooglePlayServices();
+            return;
+        }
+
+        registerToFusedLocationProvider();
+        registerToActivityRecognition();
+
+        mListener.onLocationTrackingStarted();
+
+    }
+
+    public void stopLocationTracking() {
+
+        if (mListener != null) {
+            mListener.onLocationTrackingStopped();
+        }
+        mFusedLocationClient.removeLocationUpdates(mFusedLocationUpdateCallback);
+    }
 
 }

@@ -2,8 +2,10 @@ package com.example.lezh1k.sensordatacollector;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
@@ -12,6 +14,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -36,6 +39,7 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
+
 import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
@@ -43,8 +47,11 @@ import mad.location.manager.lib.Loggers.GeohashRTFilter;
 import mad.location.manager.lib.SensorAux.SensorCalibrator;
 import mad.location.manager.lib.Services.KalmanLocationService;
 import mad.location.manager.lib.Services.ServicesHelper;
+
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
+import com.example.lezh1k.sensordatacollector.v4.LocationProviderService;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
@@ -68,17 +75,22 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     private String xLogFolderPath;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+
     class ChangableFileNameGenerator implements FileNameGenerator {
         private String fileName;
+
         public void setFileName(String fileName) {
             this.fileName = fileName;
         }
+
         public ChangableFileNameGenerator() {
         }
+
         @Override
         public boolean isFileNameChangeable() {
             return true;
         }
+
         @Override
         public String generateFileName(int logLevel, long timestamp) {
             return fileName;
@@ -86,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+
     public void initXlogPrintersFileName() {
         sdf.setTimeZone(TimeZone.getDefault());
         String dateStr = sdf.format(System.currentTimeMillis());
@@ -110,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         boolean needTerminate = false;
         long deltaT;
         Context owner;
+
         RefreshTask(long deltaTMs, Context owner) {
             this.owner = owner;
             this.deltaT = deltaTMs;
@@ -158,7 +172,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             }
         }
     }
+
     /*********************************************************/
+
+    private final String TAG = getClass().getName();
 
     private MapPresenter m_presenter;
     private MapboxMap m_map;
@@ -168,7 +185,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     private SensorCalibrator m_sensorCalibrator = null;
     private boolean m_isLogging = false;
     private boolean m_isCalibrating = false;
-    private RefreshTask m_refreshTask = new RefreshTask(1000l, this);
+    private boolean m_isv4Tracking = false;
+    private RefreshTask m_refreshTask = new RefreshTask(1000L, this);
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -177,8 +195,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     private void set_isLogging(boolean isLogging) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        TextView tvStatus = findViewById(R.id.tvStatus);
+        Button btnCalibrate = findViewById(R.id.btnCalibrate);
         String btnStartStopText;
         String btnTvStatusText;
 
@@ -234,9 +252,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
-        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        Button btnStartStop = findViewById(R.id.btnStartStop);
+        TextView tvStatus = findViewById(R.id.tvStatus);
+        Button btnCalibrate = findViewById(R.id.btnCalibrate);
         String btnCalibrateText;
         String tvStatusText;
 
@@ -260,8 +278,30 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     public void btnStartStop_click(View v) {
         set_isLogging(!m_isLogging);
     }
+
     public void btnCalibrate_click(View v) {
         set_isCalibrating(!m_isCalibrating, true);
+    }
+
+    public void btnStartTrackingV4_click(View v) {
+        setIsTracking(!m_isv4Tracking);
+    }
+
+    public void setIsTracking(boolean isTracking){
+        Button btnStartStopV4 = findViewById(R.id.btnStartTrackingV4);
+        String label;
+
+        if(isTracking){
+            startLocationService();
+            label = "STOP V4 TRACKING";
+        } else {
+            stopLocationService();
+            label = "START V4 TRACKING";
+        }
+
+        btnStartStopV4.setText(label);
+
+        m_isv4Tracking = isTracking;
     }
 
     private void initActivity() {
@@ -330,6 +370,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 m_map.getMyLocationViewSettings().setForegroundTintColor(ContextCompat.getColor(this, R.color.red));
             }
 
+
             m_presenter.locationChanged(location, m_map.getCameraPosition());
         }
     }
@@ -337,18 +378,19 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     public static final int FILTER_KALMAN_ONLY = 0;
     public static final int FILTER_KALMAN_WITH_GEO = 1;
     public static final int GPS_ONLY = 2;
-    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green};
-    private int routeWidths[] = {1, 3, 1};
-    private Polyline lines[] = new Polyline[3];
+    public static final int V4_VERSION = 3;
+    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green, R.color.purple};
+    private int routeWidths[] = {1, 3, 1, 1};
+    private Polyline lines[] = new Polyline[4];
 
     @Override
     public void showRoute(List<LatLng> route, int interestedRoute) {
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
-        cbGps = (CheckBox) findViewById(R.id.cbGPS);
-        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
-        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
-        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked()};
+        cbGps = findViewById(R.id.cbGPS);
+        cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
+        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked(), true};
         if (m_map != null) {
             runOnUiThread(() ->
                     m_mapView.post(() -> {
@@ -504,7 +546,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (m_mapView != null) {
             m_mapView.onPause();
         }
-
         m_refreshTask.needTerminate = true;
         m_refreshTask.cancel(true);
         if (m_sensorCalibrator != null) {
@@ -534,6 +575,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (m_mapView != null) {
             m_mapView.onDestroy();
         }
+
+        if (isBoundToLocationProviderService) {
+            unbindService(mConnection);
+            isBoundToLocationProviderService = false;
+        }
     }
 
     @Override
@@ -554,5 +600,117 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
         return super.onOptionsItemSelected(item);
     }
+
+    /*********************************************************/
+
+    private LocationProviderService mLocationProviderService = null;
+    private boolean isBoundToLocationProviderService = false;
+    public List<Location> v4_locations = new ArrayList<>();
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder binder) {
+            mLocationProviderService = ((LocationProviderService.LocalBinder) binder).getService();
+            isBoundToLocationProviderService = true;
+
+            if (checkPermission()) {
+                mLocationProviderService.startLocationTracking(mLocationListener);
+            }
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.d(TAG, "onServiceDisconnected");
+
+            mLocationProviderService = null;
+            isBoundToLocationProviderService = false;
+        }
+    };
+
+    private LocationProviderService.LocationListener mLocationListener = new LocationProviderService.LocationListener() {
+        @Override
+        public void onLocationTrackingStarted() {
+            Log.v(TAG, "onLocationTrackingStarted");
+        }
+
+        @Override
+        public void onLocationTrackingStopped() {
+            Log.v(TAG, "onLocationTrackingStopped");
+        }
+
+        @Override
+        public void onNewLocation(Location location) {
+            Log.d(TAG, "onNewLocation");
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+            CameraPosition.Builder position =
+                    new CameraPosition.Builder(m_map.getCameraPosition()).target(latLng);
+            moveCamera(position.build());
+
+            getV4Route(latLng);
+
+            v4_locations.add(location);
+        }
+
+        public void getV4Route(LatLng latLng){
+            moveCamera(new CameraPosition.Builder().target(latLng).build());
+
+            List<LatLng> routeV4 = new ArrayList<>(v4_locations.size());
+            for (Location loc : new ArrayList<>(v4_locations)) {
+                routeV4.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
+            }
+            showRoute(routeV4, MainActivity.V4_VERSION);
+        }
+
+        @Override
+        public void onMissingGooglePlayServices() {
+            Log.e(TAG, "onMissingGooglePlayServices");
+            finish();
+        }
+
+        @Override
+        public void onRequestHighAccuracyLocationSettings(ResolvableApiException exception) {
+            Log.w(TAG, "onRequestHighAccuracyLocationSettings");
+        }
+
+        @Override
+        public void onDeviceGPSEnabled() {
+            Log.v(TAG, "onDeviceGPSEnabled");
+
+            if (checkPermission()) {
+                mLocationProviderService.startLocationTracking(this);
+            }
+        }
+
+        @Override
+        public void onDeviceGPSDisabled() {
+            Log.v(TAG, "onDeviceGPSDisabled");
+        }
+
+    };
+
+    public void startLocationService() {
+        Intent service = new Intent(this, LocationProviderService.class);
+        bindService(service, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    public void stopLocationService() {
+        mLocationProviderService.stopLocationTracking();
+
+        unbindService(mConnection);
+        isBoundToLocationProviderService = false;
+        v4_locations.clear();
+
+    }
+
+    private boolean checkPermission() {
+        return ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED;
+    }
+    //       todo: save file for all filters > lat, lng, accur, accel, timestamp
+
 
 }

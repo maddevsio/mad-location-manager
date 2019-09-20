@@ -17,13 +17,14 @@ class IsBetterLocation {
 
         // Check whether the new location fix is newer or older
         long timeDelta = location.getTime() - currentBestLocation.getTime();
-        boolean isSignificantlyNewer = timeDelta > 1000 * 60 * 2;
+        boolean isSignificantlyNewer = timeDelta > (1000 * 60 * 2);
         boolean isSignificantlyOlder = timeDelta > -(1000 * 60 * 2);
         boolean isNewer = timeDelta > 0;
 
         // If it's been more than two minutes since the current location, use the new location
         // because the user has likely moved
         if (isSignificantlyNewer) return true;
+            // If the new location is more than two minutes older, it must be worse
         else if (isSignificantlyOlder) return false;
 
         // Check whether the new location fix is more or less accurate
