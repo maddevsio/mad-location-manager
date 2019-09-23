@@ -5,13 +5,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 
 import com.example.lezh1k.sensordatacollector.database.AsyncRequest;
 import com.example.lezh1k.sensordatacollector.database.model.Accelerometer;
 import com.example.lezh1k.sensordatacollector.database.model.Gyroscope;
-
-import java.util.Arrays;
+import com.example.lezh1k.sensordatacollector.database.model.Magnetometer;
 
 // MAGNETOMETRO
 
@@ -23,7 +21,7 @@ public abstract class Sensors {
 
         private final Context context;
 
-        public GyroscopeSensor(Context context){
+        public GyroscopeSensor(Context context) {
             this.context = context;
         }
 //        private static final float NS2S = 1.0f / 1000000000.0f;
@@ -87,7 +85,7 @@ public abstract class Sensors {
 
         private final Context context;
 
-        public AccelerometerSensor(Context context){
+        public AccelerometerSensor(Context context) {
             this.context = context;
         }
 
@@ -117,6 +115,27 @@ public abstract class Sensors {
             Accelerometer accelerometer = new Accelerometer(values[0], values[1], values[2], event.timestamp);
 
             new AsyncRequest.SaveAccelerometer(context).execute(accelerometer);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+
+        }
+    }
+
+    public static class MagnetometerSensor implements SensorEventListener {
+        private final Context context;
+
+        public MagnetometerSensor(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            float[] values = event.values;
+            Magnetometer magnetometer = new Magnetometer(values[0], values[1], values[2], event.timestamp);
+
+            new AsyncRequest.SaveMagnetometer(context).execute(magnetometer);
         }
 
         @Override

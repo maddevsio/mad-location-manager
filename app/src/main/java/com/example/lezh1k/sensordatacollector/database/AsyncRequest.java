@@ -5,9 +5,11 @@ import android.os.AsyncTask;
 
 import com.example.lezh1k.sensordatacollector.database.model.Accelerometer;
 import com.example.lezh1k.sensordatacollector.database.model.Gyroscope;
+import com.example.lezh1k.sensordatacollector.database.model.Magnetometer;
 import com.example.lezh1k.sensordatacollector.database.model.Tracking;
 import com.example.lezh1k.sensordatacollector.database.repository.AccelerometerRepository;
 import com.example.lezh1k.sensordatacollector.database.repository.GyroscopeRepository;
+import com.example.lezh1k.sensordatacollector.database.repository.MagnetometerRepository;
 import com.example.lezh1k.sensordatacollector.database.repository.TrackingRepository;
 
 public abstract class AsyncRequest {
@@ -68,6 +70,23 @@ public abstract class AsyncRequest {
         @Override
         protected Void doInBackground(Accelerometer... accelerometers) {
             REPOSITORY.saveAccelerometer(accelerometers);
+
+            return null;
+        }
+
+    }
+
+    public static class SaveMagnetometer extends AsyncTask<Magnetometer, Void, Void> {
+
+        private final MagnetometerRepository REPOSITORY;
+
+        public SaveMagnetometer(Context context){
+            REPOSITORY = new MagnetometerRepository(context);
+        }
+
+        @Override
+        protected Void doInBackground(Magnetometer... magnetometers) {
+            REPOSITORY.saveMagnetometer(magnetometers);
 
             return null;
         }

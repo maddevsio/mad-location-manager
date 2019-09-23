@@ -358,9 +358,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         }
         Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        Sensor magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
         sensorManager.registerListener(new Sensors.GyroscopeSensor(getApplicationContext()), gyroscope, Utils.hertz2periodUs(10.0));
         sensorManager.registerListener(new Sensors.AccelerometerSensor(getApplicationContext()), accelerometer, Utils.hertz2periodUs(10.0));
+        sensorManager.registerListener(new Sensors.MagnetometerSensor(getApplicationContext()), magnetometer, Utils.hertz2periodUs(10.0));
 
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
         ServicesHelper.getLocationService(this, value -> {
