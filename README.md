@@ -30,7 +30,7 @@ There is example application in current repository called "Sensor Data Collector
 Right now these sensors should be available:
 TYPE_ROTATION_VECTOR, TYPE_LINEAR_ACCELERATION .
 
-It's possible to use just TYPE_ACCELEROMETER with high-pass filter. Also it's possible to use Madgwick filter instead of rotation vector, but gyroscope and magnetometer sensors should be available in that case.
+It's possible to use just TYPE_ACCELEROMETER with high-pass filter. Also it's possible to use Madgwick filter instead of rotation vector, but gyroscopeSensor and magnetometer sensors should be available in that case.
 
 ### KalmanLocationService
 
@@ -88,7 +88,7 @@ It will calculate distance in 2 ways : Vincenty and haversine formula . Both of 
 - [x] Implement GeoHash function
 - [x] Get device orientation
 	- [x] Get device orientation using magnetometer and accelerometer + android sensor manager
-	- [x] Get device orientation using magnetometer, accelerometer and gyroscope + Madgwick AHRS
+	- [x] Get device orientation using magnetometer, accelerometer and gyroscopeSensor + Madgwick AHRS
 	- [x] Get device orientation using rotation vector virtual sensor
 - [x] Compare result device orientation and choose most stable one
 - [x] Get linear acceleration of device (acceleration without gravity force)
@@ -116,7 +116,7 @@ The project uses 2 data sources: GPS and accelerometer. GPS coordinates are not 
 So first - we need to define matrices and do some math with them. And second - we need to get real acceleration (not in device orientation) . First one is described in current project's wiki. But second one is little bit more complex thing called "sensor fusion". There is a lot information about this in internet. For real acceleration we need to know 2 things : device orientation and "linear acceleration". Linear acceleration is acceleration along each device axis excluding force of gravity. It could be calculated by high pass filter or with more complex algorithms. Device orientation could be calculated in many ways :
 
 - Using accelerometer + magnetometer
-- Using accelerometer + magnetometer + gyroscope
+- Using accelerometer + magnetometer + gyroscopeSensor
 - Using [Madgwick filter](http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/)
 - Using virtual "rotation vector" sensor. 
 

@@ -2,9 +2,13 @@ package com.example.lezh1k.sensordatacollector.database;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
-import java.util.List;
+import com.example.lezh1k.sensordatacollector.database.model.Accelerometer;
+import com.example.lezh1k.sensordatacollector.database.model.Gyroscope;
+import com.example.lezh1k.sensordatacollector.database.model.Tracking;
+import com.example.lezh1k.sensordatacollector.database.repository.AccelerometerRepository;
+import com.example.lezh1k.sensordatacollector.database.repository.GyroscopeRepository;
+import com.example.lezh1k.sensordatacollector.database.repository.TrackingRepository;
 
 public abstract class AsyncRequest {
 
@@ -22,35 +26,51 @@ public abstract class AsyncRequest {
 
     public static class SaveTrackings extends AsyncTask<Tracking, Void, Void> {
 
-        private final TrackingRepository TRACKING_REPOSITORY;
+        private final TrackingRepository REPOSITORY;
 
         public SaveTrackings(Context context){
-            TRACKING_REPOSITORY = new TrackingRepository(context);
+            REPOSITORY = new TrackingRepository(context);
         }
 
         @Override
         protected Void doInBackground(Tracking... trackings) {
-            TRACKING_REPOSITORY.saveTracking(trackings);
+            REPOSITORY.saveTracking(trackings);
 
             return null;
         }
     }
 
-    public static class ListTrackings extends AsyncTask<Void, Void, List<Tracking>> {
+    public static class SaveGyroscope extends AsyncTask<Gyroscope, Void, Void> {
 
-        private final TrackingRepository TRACKING_REPOSITORY;
+        private final GyroscopeRepository REPOSITORY;
 
-        public ListTrackings(Context context){
-            TRACKING_REPOSITORY = new TrackingRepository(context);
+        public SaveGyroscope(Context context){
+            REPOSITORY = new GyroscopeRepository(context);
         }
 
         @Override
-        protected List<Tracking> doInBackground(Void... voids) {
-            List<Tracking> trackings = TRACKING_REPOSITORY.getAll(Tracking.Filter.V4);
+        protected Void doInBackground(Gyroscope... gyroscopes) {
+            REPOSITORY.saveGyroscope(gyroscopes);
 
-            Log.i("DB", trackings.toString());
-
-            return trackings;
+            return null;
         }
+
+    }
+
+    public static class SaveAccelerometer extends AsyncTask<Accelerometer, Void, Void> {
+
+        private final AccelerometerRepository REPOSITORY;
+
+        public SaveAccelerometer(Context context){
+            REPOSITORY = new AccelerometerRepository(context);
+        }
+
+        @Override
+        protected Void doInBackground(Accelerometer... accelerometers) {
+            REPOSITORY.saveAccelerometer(accelerometers);
+
+            return null;
+        }
+
     }
 }

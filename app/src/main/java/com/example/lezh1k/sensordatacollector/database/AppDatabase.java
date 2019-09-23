@@ -6,7 +6,14 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {Tracking.class}, version = 1)
+import com.example.lezh1k.sensordatacollector.database.dao.AccelerometerDao;
+import com.example.lezh1k.sensordatacollector.database.dao.GyroscopeDao;
+import com.example.lezh1k.sensordatacollector.database.dao.TrackingDao;
+import com.example.lezh1k.sensordatacollector.database.model.Accelerometer;
+import com.example.lezh1k.sensordatacollector.database.model.Gyroscope;
+import com.example.lezh1k.sensordatacollector.database.model.Tracking;
+
+@Database(entities = {Tracking.class, Accelerometer.class, Gyroscope.class}, version = 1)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase APP_DATABASE;
@@ -19,5 +26,9 @@ public abstract class AppDatabase extends RoomDatabase {
         return APP_DATABASE;
     }
 
-    abstract TrackingDao trackingDao();
+    public abstract TrackingDao trackingDao();
+
+    public abstract GyroscopeDao gyroscopeDao();
+
+    public abstract AccelerometerDao accelerometerDao();
 }

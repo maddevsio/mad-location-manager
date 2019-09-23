@@ -37,12 +37,12 @@ public class SensorRawDataLogger implements SensorEventListener {
             Sensor.TYPE_MAGNETIC_FIELD
     };
     private static String[] sensorDataPrefix = {
-            "Accelerometer uncalibrated : ",
-            "Accelerometer : ",
+            "AccelerometerSensor uncalibrated : ",
+            "AccelerometerSensor : ",
             "Linear accelerometer : ",
             "Gravity : ",
-            "Gyroscope uncalibrated : ",
-            "Gyroscope : ",
+            "GyroscopeSensor uncalibrated : ",
+            "GyroscopeSensor : ",
             "Rotation vector : ",
             "Magnetic uncalibrated : ",
             "Magnetic : "

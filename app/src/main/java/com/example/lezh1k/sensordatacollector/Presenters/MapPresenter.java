@@ -12,7 +12,7 @@ import android.support.v4.app.ActivityCompat;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.MainActivity;
 import com.example.lezh1k.sensordatacollector.database.AsyncRequest;
-import com.example.lezh1k.sensordatacollector.database.Tracking;
+import com.example.lezh1k.sensordatacollector.database.model.Tracking;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 

@@ -1,8 +1,9 @@
-package com.example.lezh1k.sensordatacollector.database;
+package com.example.lezh1k.sensordatacollector.database.repository;
 
 import android.content.Context;
 
-import java.util.List;
+import com.example.lezh1k.sensordatacollector.database.AppDatabase;
+import com.example.lezh1k.sensordatacollector.database.model.Tracking;
 
 public class TrackingRepository {
 
@@ -21,18 +22,5 @@ public class TrackingRepository {
         database().trackingDao().insertAll(trackings);
 
         return true;
-
-    }
-
-    public List<Tracking> getAll() {
-        return database().trackingDao().getAll();
-    }
-
-    public List<Tracking> getAll(Tracking.Filter filter) {
-        return database().trackingDao().getAll(filter.toString());
-    }
-
-    public void clearAllTables() {
-        database().clearAllTables();
     }
 }

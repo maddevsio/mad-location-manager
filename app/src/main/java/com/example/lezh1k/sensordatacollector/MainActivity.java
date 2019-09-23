@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -42,7 +43,7 @@ import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
 import com.example.lezh1k.sensordatacollector.database.AsyncRequest;
-import com.example.lezh1k.sensordatacollector.database.Tracking;
+import com.example.lezh1k.sensordatacollector.database.model.Tracking;
 import com.example.lezh1k.sensordatacollector.v4.LocationProviderService;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -355,6 +356,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (sensorManager == null || locationManager == null) {
             System.exit(1);
         }
+        Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        sensorManager.registerListener(new Sensors.GyroscopeSensor(getApplicationContext()), gyroscope, Utils.hertz2periodUs(10.0));
+        sensorManager.registerListener(new Sensors.AccelerometerSensor(getApplicationContext()), accelerometer, Utils.hertz2periodUs(10.0));
 
         m_sensorCalibrator = new SensorCalibrator(sensorManager);
         ServicesHelper.getLocationService(this, value -> {
@@ -371,15 +377,12 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 m_map.getMyLocationViewSettings().setForegroundTintColor(ContextCompat.getColor(this, R.color.red));
             }
 
-
             m_presenter.locationChanged(location, m_map.getCameraPosition());
         }
     }
 
     @Override
     public void showRoute(List<LatLng> route, int interestedRoute) {
-
-        new AsyncRequest.ListTrackings(getApplicationContext()).execute();
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
         cbGps = findViewById(R.id.cbGPS);

@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.database;
+package com.example.lezh1k.sensordatacollector.database.model;
 
 import android.location.Location;
 
