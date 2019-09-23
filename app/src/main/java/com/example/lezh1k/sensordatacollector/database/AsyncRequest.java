@@ -10,17 +10,9 @@ public abstract class AsyncRequest {
 
     public static class SetupDatabase extends AsyncTask<Context, Void, AppDatabase> {
 
-        private final TrackingRepository TRACKING_REPOSITORY;
-
-        public SetupDatabase(Context context){
-            TRACKING_REPOSITORY = new TrackingRepository(context);
-        }
-
         @Override
         protected AppDatabase doInBackground(Context... context) {
             if (context.length > 0) {
-                TRACKING_REPOSITORY.clearAllTables();
-
                 return AppDatabase.getAppDatabase(context[0]);
             }
 

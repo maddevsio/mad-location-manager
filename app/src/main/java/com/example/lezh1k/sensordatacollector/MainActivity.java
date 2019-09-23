@@ -601,7 +601,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     public void setupDatabase() {
-        new AsyncRequest.SetupDatabase(getApplicationContext()).execute(getApplication());
+        new AsyncRequest.SetupDatabase().execute(getApplication());
     }
 
     public void startLocationService() {
@@ -671,8 +671,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
         @Override
         protected void onProgressUpdate(Object... values) {
-            TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-            TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
+            TextView tvStatus = findViewById(R.id.tvStatus);
+            TextView tvDistance = findViewById(R.id.tvDistance);
             if (m_isLogging) {
                 if (m_geoHashRTFilter == null)
                     return;
@@ -699,6 +699,5 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             }
         }
     }
-    //       todo: save file for all filters > lat, lng, accur, accel, timestamp
 
 }
