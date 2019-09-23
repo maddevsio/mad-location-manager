@@ -12,6 +12,15 @@ android {
 
         buildConfigField "String", "lightMapStyle", "\"https://maps.swift.kg/styles/basic.json\""
         buildConfigField "String", "access_token", "\"pk.eyJ1IjoicGVuZG9sZiIsImEiOiJjaWVnNTN4Zm4wMDAxc3FtODA3bWo4OXVnIn0.6hwSXZEBAA7Kv7uiKk5LWQ\""
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "room.schemaLocation":"$projectDir/schemas".toString(),
+                        "room.incremental":"true",
+                        "room.expandProjection":"true"]
+            }
+        }
     }
     buildTypes {
         release {
@@ -26,8 +35,14 @@ android {
 }
 
 dependencies {
+    def room_version = "2.2.0-rc01"
+
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

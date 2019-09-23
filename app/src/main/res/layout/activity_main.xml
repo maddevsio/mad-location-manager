@@ -47,22 +47,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cbFilteredKalman" />
 
-    <Button
-        android:id="@+id/btnStartTrackingV4"
-        android:layout_width="348dp"
-        android:layout_height="50dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:onClick="btnStartTrackingV4_click"
-        android:text="@string/start_tracking_v4"
-        android:visibility="visible"
-        app:layout_constraintBottom_toTopOf="@+id/btnStartStop"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnCalibrate" />
-
     <TextView
         android:id="@+id/tvDistance"
         android:layout_width="354dp"

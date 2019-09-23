@@ -9,16 +9,18 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 
-import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Loggers.GeohashRTFilter;
-
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.MainActivity;
+import com.example.lezh1k.sensordatacollector.database.AsyncRequest;
+import com.example.lezh1k.sensordatacollector.database.Tracking;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Loggers.GeohashRTFilter;
 
 import static android.content.Context.LOCATION_SERVICE;
 
@@ -47,13 +49,21 @@ public class MapPresenter implements LocationListener {
         getRoute();
         m_lstKalmanFilteredCoordinates.add(loc);
         m_geoHashRTFilter.filter(loc);
+
+        new AsyncRequest.SaveTrackings(context).execute(new Tracking(loc, Tracking.Filter.KALMAN));
+
     }
+
+    private List<Tracking> captured_geoHashTrackings = new ArrayList<>();
 
     public void getRoute() {
         List<LatLng> routGpsAsIs = new ArrayList<>(m_lstGpsCoordinates.size());
         List<LatLng> routeFilteredKalman = new ArrayList<>(m_lstKalmanFilteredCoordinates.size());
         List<LatLng> routeFilteredWithGeoHash =
                 new ArrayList<>(m_geoHashRTFilter.getGeoFilteredTrack().size());
+        int index = 0;
+
+        List<Tracking> geoHashTrackings = new ArrayList<>(routeFilteredWithGeoHash.size());
 
         for (Location loc : new ArrayList<>(m_lstKalmanFilteredCoordinates)) {
             routeFilteredKalman.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
@@ -61,10 +71,18 @@ public class MapPresenter implements LocationListener {
 
         for (Location loc : new ArrayList<>(m_geoHashRTFilter.getGeoFilteredTrack())) {
             routeFilteredWithGeoHash.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
+            geoHashTrackings.add(new Tracking(loc, Tracking.Filter.GEOHASH));
         }
 
         for (Location loc : new ArrayList<>(m_lstGpsCoordinates)) {
             routGpsAsIs.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
+        }
+
+        // Saving GeoHash to databse
+        if (geoHashTrackings.size() > 0 && !(captured_geoHashTrackings.containsAll(geoHashTrackings))) {
+            captured_geoHashTrackings = new ArrayList<>(geoHashTrackings);
+
+            new AsyncRequest.SaveTrackings(context).execute(geoHashTrackings.toArray(new Tracking[geoHashTrackings.size()]));
         }
 
         mapInterface.showRoute(routeFilteredKalman, MainActivity.FILTER_KALMAN_ONLY);
@@ -75,12 +93,12 @@ public class MapPresenter implements LocationListener {
 
     public void start() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            //todo something
+
         } else {
             LocationManager lm = (LocationManager) context.getSystemService(LOCATION_SERVICE);
             lm.removeUpdates(this);
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    Utils.GPS_MIN_TIME, Utils.GPS_MIN_DISTANCE, this );
+                    Utils.GPS_MIN_TIME, Utils.GPS_MIN_DISTANCE, this);
         }
     }
 
@@ -94,8 +112,9 @@ public class MapPresenter implements LocationListener {
     @Override
     public void onLocationChanged(Location loc) {
         if (loc == null) return;
-//        if (loc.isFromMockProvider()) return;
+
         m_lstGpsCoordinates.add(loc);
+        new AsyncRequest.SaveTrackings(context).execute(new Tracking(loc, Tracking.Filter.GPS));
     }
 
     @Override

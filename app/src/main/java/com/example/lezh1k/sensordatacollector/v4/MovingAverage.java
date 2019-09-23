@@ -5,11 +5,21 @@ import android.support.annotation.NonNull;
 
 class MovingAverage {
 
-    private static double mOldAverageLatitude = 1.0;
-    private static double mOldAverageLongitude = 1.0;
-    static int currentNumOfSamples = 0;
+    private static MovingAverage INSTANCE = new MovingAverage();
 
-    static Location calcMovingAverage(@NonNull Location location) {
+    private double mOldAverageLatitude = 1.0;
+    private double mOldAverageLongitude = 1.0;
+    int currentNumOfSamples = 0;
+
+    static MovingAverage getInstance(){
+        if(INSTANCE == null){
+            INSTANCE = new MovingAverage();
+        }
+
+        return INSTANCE;
+    }
+
+    Location calcMovingAverage(@NonNull Location location) {
         int windowSize = 3;
 
         if (currentNumOfSamples < windowSize) {
@@ -32,5 +42,9 @@ class MovingAverage {
         mOldAverageLatitude = 1.0;
         mOldAverageLongitude = 1.0;
         currentNumOfSamples = 0;
+    }
+
+    public int getCurrentNumOfSamples() {
+        return currentNumOfSamples;
     }
 }

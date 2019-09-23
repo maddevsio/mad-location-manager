@@ -70,7 +70,6 @@ public class LocationProviderService extends Service {
 
         try {
             unregisterReceiver(mDeviceGPSStatusReceiver);
-            unregisterReceiver(mActivityRecognitionReceiver);
             mFusedLocationClient.removeLocationUpdates(mFusedLocationUpdateCallback);
         } catch (Exception e) {
             // safely ignore if the receivers are already unregistered
@@ -113,6 +112,7 @@ public class LocationProviderService extends Service {
             }
         });
 
+        initLocationCallback();
         mFusedLocationClient.requestLocationUpdates(locationRequest, mFusedLocationUpdateCallback, null)
                 .addOnFailureListener(exception -> Log.e(TAG, exception.getMessage()));
 
@@ -163,8 +163,6 @@ public class LocationProviderService extends Service {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ActivityRecognitionService.ACTIVITY_RECOGNITION_INTENT_FLAG);
-
-        registerReceiver(mActivityRecognitionReceiver, intentFilter);
     }
 
     private final BroadcastReceiver mDeviceGPSStatusReceiver = new BroadcastReceiver() {
@@ -180,27 +178,24 @@ public class LocationProviderService extends Service {
         }
     };
 
-    private final BroadcastReceiver mActivityRecognitionReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            isDeviceStill = intent.getStringExtra("Activity").equals(ActivityRecognitionService.STILL);
-        }
-    };
+    private LocationCallback mFusedLocationUpdateCallback;
 
-    private final LocationCallback mFusedLocationUpdateCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            if (locationResult == null) return;
+    private void initLocationCallback(){
+        mFusedLocationUpdateCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult == null) return;
 
-            for (Location location : locationResult.getLocations()) {
-                if (location != null) {
-                    onNewLocationFromFusedProvider(location);
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        onNewLocationFromFusedProvider(location);
 
-                    Log.d(TAG, "accur: " + location.getAccuracy() + " => " + location.getLatitude() + " ; " + location.getLongitude());
+                        Log.d(TAG, "accur: " + location.getAccuracy() + " => " + location.getLatitude() + " ; " + location.getLongitude());
+                    }
                 }
             }
-        }
-    };
+        };
+    }
 
     private void onNewLocationFromFusedProvider(@NonNull Location pLocation) {
         Log.v(TAG, "received new location data from ${pLocation.provider}");
@@ -220,17 +215,13 @@ public class LocationProviderService extends Service {
     }
 
     private Location fineLocation(@NonNull Location location) {
-        return MovingAverage.calcMovingAverage(location);
+        return MovingAverage.getInstance().calcMovingAverage(location);
     }
 
     private boolean testLocationAgainstValidityCriteria(@NonNull Location oldLocation, @NonNull Location newLocation) {
-//        if(true) return true; // debug line
-        if (isDeviceStill && newLocation.getAccuracy() < oldLocation.getAccuracy()) {
-            return false;
-        }
 
-        boolean isBetterLocation = IsBetterLocation.isBetterLocation(newLocation, oldLocation);
-        if (!isBetterLocation && MovingAverage.currentNumOfSamples > 1) {
+        boolean isBetterLocation = IsBetterLocation.getInstance().isBetterLocation(newLocation, oldLocation);
+        if (!isBetterLocation && MovingAverage.getInstance().currentNumOfSamples > 1) {
             return false;
         }
 
@@ -238,8 +229,7 @@ public class LocationProviderService extends Service {
     }
 
     private void notifyAppLocationListener(Location location) {
-        if (mListener != null)
-            mListener.onNewLocation(location);
+        mListener.onNewLocation(location);
     }
 
     public interface LocationListener {
@@ -308,10 +298,20 @@ public class LocationProviderService extends Service {
 
     public void stopLocationTracking() {
 
+        //
         if (mListener != null) {
             mListener.onLocationTrackingStopped();
         }
-        mFusedLocationClient.removeLocationUpdates(mFusedLocationUpdateCallback);
+        mListener = null;
+
+        setLastLocationSharedPreferences();
+
+        try {
+            unregisterReceiver(mDeviceGPSStatusReceiver);
+            mFusedLocationClient.removeLocationUpdates(mFusedLocationUpdateCallback);
+        } catch (Exception e) {
+            // safely ignore if the receivers are already unregistered
+        }
     }
 
 }

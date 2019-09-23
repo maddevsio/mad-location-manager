@@ -39,17 +39,10 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
-
-import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Interfaces.ILogger;
-import mad.location.manager.lib.Interfaces.LocationServiceInterface;
-import mad.location.manager.lib.Loggers.GeohashRTFilter;
-import mad.location.manager.lib.SensorAux.SensorCalibrator;
-import mad.location.manager.lib.Services.KalmanLocationService;
-import mad.location.manager.lib.Services.ServicesHelper;
-
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
+import com.example.lezh1k.sensordatacollector.database.AsyncRequest;
+import com.example.lezh1k.sensordatacollector.database.Tracking;
 import com.example.lezh1k.sensordatacollector.v4.LocationProviderService;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -69,35 +62,141 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Interfaces.ILogger;
+import mad.location.manager.lib.Interfaces.LocationServiceInterface;
+import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.SensorAux.SensorCalibrator;
+import mad.location.manager.lib.Services.KalmanLocationService;
+import mad.location.manager.lib.Services.ServicesHelper;
+
 public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
 
-    private SharedPreferences mSharedPref;
-
-    private String xLogFolderPath;
+    public static final int FILTER_KALMAN_ONLY = 0;
+    public static final int FILTER_KALMAN_WITH_GEO = 1;
+    public static final int GPS_ONLY = 2;
+    public static final int V4_VERSION = 3;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    /*********************************************************/
 
-    class ChangableFileNameGenerator implements FileNameGenerator {
-        private String fileName;
-
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public ChangableFileNameGenerator() {
-        }
-
-        @Override
-        public boolean isFileNameChangeable() {
-            return true;
-        }
-
-        @Override
-        public String generateFileName(int logLevel, long timestamp) {
-            return fileName;
-        }
-    }
-
+    private final String TAG = getClass().getName();
+    public List<Location> v4_locations = new ArrayList<>();
     ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+    private SharedPreferences mSharedPref;
+    private String xLogFolderPath;
+    private MapPresenter m_presenter;
+    private MapboxMap m_map;
+    private MapView m_mapView;
+    private GeohashRTFilter m_geoHashRTFilter;
+    private SensorCalibrator m_sensorCalibrator = null;
+    private boolean m_isLogging = false;
+    private boolean m_isCalibrating = false;
+    private RefreshTask m_refreshTask = new RefreshTask(1000L, this);
+    //uncaught exceptions
+    private Thread.UncaughtExceptionHandler defaultUEH;
+    // handler listener
+    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread thread, Throwable ex) {
+            try {
+                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
+            } catch (Exception e) {
+                Log.i("SensorDataCollector", String.format("Megaunhandled exception : %s, %s, %s",
+                        e.toString(), ex.toString(), ex.getStackTrace()));
+            }
+            defaultUEH.uncaughtException(thread, ex);
+        }
+    };
+    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green, R.color.purple};
+    private int routeWidths[] = {1, 3, 1, 1};
+    private Polyline lines[] = new Polyline[4];
+    /*********************************************************/
+
+    private LocationProviderService mLocationProviderService = null;
+    private boolean isBoundToLocationProviderService = false;
+    private LocationProviderService.LocationListener mLocationListener = new LocationProviderService.LocationListener() {
+        @Override
+        public void onLocationTrackingStarted() {
+            Log.v(TAG, "onLocationTrackingStarted");
+        }
+
+        @Override
+        public void onLocationTrackingStopped() {
+            Log.v(TAG, "onLocationTrackingStopped");
+        }
+
+        @Override
+        public void onNewLocation(Location location) {
+            Log.d(TAG, "onNewLocation");
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+            CameraPosition.Builder position =
+                    new CameraPosition.Builder(m_map.getCameraPosition()).target(latLng);
+            moveCamera(position.build());
+
+
+            v4_locations.add(location);
+            getV4Route(latLng);
+
+            new AsyncRequest.SaveTrackings(getApplicationContext()).execute(new Tracking(location, Tracking.Filter.V4));
+        }
+
+        @Override
+        public void onMissingGooglePlayServices() {
+            Log.e(TAG, "onMissingGooglePlayServices");
+            finish();
+        }
+
+        @Override
+        public void onRequestHighAccuracyLocationSettings(ResolvableApiException exception) {
+            Log.w(TAG, "onRequestHighAccuracyLocationSettings");
+        }
+
+        @Override
+        public void onDeviceGPSEnabled() {
+            Log.v(TAG, "onDeviceGPSEnabled");
+
+            if (checkPermission()) {
+                mLocationProviderService.startLocationTracking(this);
+            }
+        }
+
+        @Override
+        public void onDeviceGPSDisabled() {
+            Log.v(TAG, "onDeviceGPSDisabled");
+        }
+
+
+        void getV4Route(LatLng latLng) {
+            moveCamera(new CameraPosition.Builder().target(latLng).build());
+
+            List<LatLng> routeV4 = new ArrayList<>(v4_locations.size());
+            for (Location loc : new ArrayList<>(v4_locations)) {
+                routeV4.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
+            }
+            showRoute(routeV4, MainActivity.V4_VERSION);
+        }
+    };
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder binder) {
+            mLocationProviderService = ((LocationProviderService.LocalBinder) binder).getService();
+            isBoundToLocationProviderService = true;
+
+            if (checkPermission()) {
+                mLocationProviderService.startLocationTracking(mLocationListener);
+            }
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.d(TAG, "onServiceDisconnected");
+
+            mLocationProviderService = null;
+            isBoundToLocationProviderService = false;
+        }
+    };
 
     public void initXlogPrintersFileName() {
         sdf.setTimeZone(TimeZone.getDefault());
@@ -118,76 +217,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         XLog.i(format, args);
     }
 
-
-    class RefreshTask extends AsyncTask {
-        boolean needTerminate = false;
-        long deltaT;
-        Context owner;
-
-        RefreshTask(long deltaTMs, Context owner) {
-            this.owner = owner;
-            this.deltaT = deltaTMs;
-        }
-
-        @Override
-        protected Object doInBackground(Object[] objects) {
-            while (!needTerminate) {
-                try {
-                    Thread.sleep(deltaT);
-                    publishProgress();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Object... values) {
-            TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-            TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
-            if (m_isLogging) {
-                if (m_geoHashRTFilter == null)
-                    return;
-
-                tvDistance.setText(String.format(
-                        "Distance (geo): %fm\n" +
-                                "Distance (geo) HP: %fm\n" +
-                                "Distance as is : %fm\n" +
-                                "Distance as is HP: %fm",
-                        m_geoHashRTFilter.getDistanceGeoFiltered(),
-                        m_geoHashRTFilter.getDistanceGeoFilteredHP(),
-                        m_geoHashRTFilter.getDistanceAsIs(),
-                        m_geoHashRTFilter.getDistanceAsIsHP()));
-            } else {
-                if (!m_sensorCalibrator.isInProgress())
-                    return;
-
-                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
-                if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
-                    set_isCalibrating(false, false);
-                    tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
-                }
-            }
-        }
-    }
-
-    /*********************************************************/
-
-    private final String TAG = getClass().getName();
-
-    private MapPresenter m_presenter;
-    private MapboxMap m_map;
-    private MapView m_mapView;
-
-    private GeohashRTFilter m_geoHashRTFilter;
-    private SensorCalibrator m_sensorCalibrator = null;
-    private boolean m_isLogging = false;
-    private boolean m_isCalibrating = false;
-    private boolean m_isv4Tracking = false;
-    private RefreshTask m_refreshTask = new RefreshTask(1000L, this);
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -201,6 +230,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         String btnTvStatusText;
 
         if (isLogging) {
+
+            startLocationService(); // start V4
+
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             m_presenter.stop();
             m_presenter.start();
@@ -234,12 +266,18 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             btnTvStatusText = "Tracking is in progress";
 
         } else {
+
+
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
             m_presenter.stop();
             ServicesHelper.getLocationService(this, value -> {
                 value.stop();
             });
+
+            if (mLocationProviderService != null) {
+                stopLocationService(); // stop V4
+            }
         }
 
         if (btnStartStop != null)
@@ -281,27 +319,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     public void btnCalibrate_click(View v) {
         set_isCalibrating(!m_isCalibrating, true);
-    }
-
-    public void btnStartTrackingV4_click(View v) {
-        setIsTracking(!m_isv4Tracking);
-    }
-
-    public void setIsTracking(boolean isTracking){
-        Button btnStartStopV4 = findViewById(R.id.btnStartTrackingV4);
-        String label;
-
-        if(isTracking){
-            startLocationService();
-            label = "STOP V4 TRACKING";
-        } else {
-            stopLocationService();
-            label = "START V4 TRACKING";
-        }
-
-        btnStartStopV4.setText(label);
-
-        m_isv4Tracking = isTracking;
     }
 
     private void initActivity() {
@@ -346,22 +363,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         set_isCalibrating(false, true);
     }
 
-    //uncaught exceptions
-    private Thread.UncaughtExceptionHandler defaultUEH;
-    // handler listener
-    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
-        @Override
-        public void uncaughtException(Thread thread, Throwable ex) {
-            try {
-                XLog.i("UNHANDLED EXCEPTION: %s, stack : %s", ex.toString(), ex.getStackTrace());
-            } catch (Exception e) {
-                Log.i("SensorDataCollector", String.format("Megaunhandled exception : %s, %s, %s",
-                        e.toString(), ex.toString(), ex.getStackTrace()));
-            }
-            defaultUEH.uncaughtException(thread, ex);
-        }
-    };
-
     @Override
     public void locationChanged(Location location) {
         if (m_map != null && m_presenter != null) {
@@ -375,16 +376,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         }
     }
 
-    public static final int FILTER_KALMAN_ONLY = 0;
-    public static final int FILTER_KALMAN_WITH_GEO = 1;
-    public static final int GPS_ONLY = 2;
-    public static final int V4_VERSION = 3;
-    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green, R.color.purple};
-    private int routeWidths[] = {1, 3, 1, 1};
-    private Polyline lines[] = new Polyline[4];
-
     @Override
     public void showRoute(List<LatLng> route, int interestedRoute) {
+
+        new AsyncRequest.ListTrackings(getApplicationContext()).execute();
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
         cbGps = findViewById(R.id.cbGPS);
@@ -434,7 +429,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     public void setupMap(@Nullable Bundle savedInstanceState) {
-        m_mapView = (MapView) findViewById(R.id.mapView);
+        m_mapView = findViewById(R.id.mapView);
         m_mapView.onCreate(savedInstanceState);
 
         m_presenter = new MapPresenter(this, this, m_geoHashRTFilter);
@@ -479,10 +474,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         m_geoHashRTFilter = new GeohashRTFilter(Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT);
         setupMap(savedInstanceState);
 
+
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
-        cbGps = (CheckBox) findViewById(R.id.cbGPS);
-        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
-        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
+        cbGps = findViewById(R.id.cbGPS);
+        cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
         CheckBox cb[] = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps};
         for (int i = 0; i < 3; ++i) {
             if (cb[i] == null)
@@ -505,6 +501,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         } else {
             //todo set some status
         }
+
+        setupDatabase();
+
     }
 
     @Override
@@ -601,94 +600,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         return super.onOptionsItemSelected(item);
     }
 
-    /*********************************************************/
-
-    private LocationProviderService mLocationProviderService = null;
-    private boolean isBoundToLocationProviderService = false;
-    public List<Location> v4_locations = new ArrayList<>();
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder binder) {
-            mLocationProviderService = ((LocationProviderService.LocalBinder) binder).getService();
-            isBoundToLocationProviderService = true;
-
-            if (checkPermission()) {
-                mLocationProviderService.startLocationTracking(mLocationListener);
-            }
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            Log.d(TAG, "onServiceDisconnected");
-
-            mLocationProviderService = null;
-            isBoundToLocationProviderService = false;
-        }
-    };
-
-    private LocationProviderService.LocationListener mLocationListener = new LocationProviderService.LocationListener() {
-        @Override
-        public void onLocationTrackingStarted() {
-            Log.v(TAG, "onLocationTrackingStarted");
-        }
-
-        @Override
-        public void onLocationTrackingStopped() {
-            Log.v(TAG, "onLocationTrackingStopped");
-        }
-
-        @Override
-        public void onNewLocation(Location location) {
-            Log.d(TAG, "onNewLocation");
-            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-            CameraPosition.Builder position =
-                    new CameraPosition.Builder(m_map.getCameraPosition()).target(latLng);
-            moveCamera(position.build());
-
-            getV4Route(latLng);
-
-            v4_locations.add(location);
-        }
-
-        public void getV4Route(LatLng latLng){
-            moveCamera(new CameraPosition.Builder().target(latLng).build());
-
-            List<LatLng> routeV4 = new ArrayList<>(v4_locations.size());
-            for (Location loc : new ArrayList<>(v4_locations)) {
-                routeV4.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
-            }
-            showRoute(routeV4, MainActivity.V4_VERSION);
-        }
-
-        @Override
-        public void onMissingGooglePlayServices() {
-            Log.e(TAG, "onMissingGooglePlayServices");
-            finish();
-        }
-
-        @Override
-        public void onRequestHighAccuracyLocationSettings(ResolvableApiException exception) {
-            Log.w(TAG, "onRequestHighAccuracyLocationSettings");
-        }
-
-        @Override
-        public void onDeviceGPSEnabled() {
-            Log.v(TAG, "onDeviceGPSEnabled");
-
-            if (checkPermission()) {
-                mLocationProviderService.startLocationTracking(this);
-            }
-        }
-
-        @Override
-        public void onDeviceGPSDisabled() {
-            Log.v(TAG, "onDeviceGPSDisabled");
-        }
-
-    };
+    public void setupDatabase() {
+        new AsyncRequest.SetupDatabase(getApplicationContext()).execute(getApplication());
+    }
 
     public void startLocationService() {
         Intent service = new Intent(this, LocationProviderService.class);
@@ -710,7 +624,81 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED;
     }
-    //       todo: save file for all filters > lat, lng, accur, accel, timestamp
 
+    class ChangableFileNameGenerator implements FileNameGenerator {
+        private String fileName;
+
+        public ChangableFileNameGenerator() {
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        @Override
+        public boolean isFileNameChangeable() {
+            return true;
+        }
+
+        @Override
+        public String generateFileName(int logLevel, long timestamp) {
+            return fileName;
+        }
+    }
+
+    class RefreshTask extends AsyncTask {
+        boolean needTerminate = false;
+        long deltaT;
+        Context owner;
+
+        RefreshTask(long deltaTMs, Context owner) {
+            this.owner = owner;
+            this.deltaT = deltaTMs;
+        }
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            while (!needTerminate) {
+                try {
+                    Thread.sleep(deltaT);
+                    publishProgress();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+            TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
+            if (m_isLogging) {
+                if (m_geoHashRTFilter == null)
+                    return;
+
+                tvDistance.setText(String.format(
+                        "Distance (geo): %fm\n" +
+                                "Distance (geo) HP: %fm\n" +
+                                "Distance as is : %fm\n" +
+                                "Distance as is HP: %fm",
+                        m_geoHashRTFilter.getDistanceGeoFiltered(),
+                        m_geoHashRTFilter.getDistanceGeoFilteredHP(),
+                        m_geoHashRTFilter.getDistanceAsIs(),
+                        m_geoHashRTFilter.getDistanceAsIsHP()));
+            } else {
+                if (!m_sensorCalibrator.isInProgress())
+                    return;
+
+                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
+                if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
+                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
+                    set_isCalibrating(false, false);
+                    tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
+                }
+            }
+        }
+    }
+    //       todo: save file for all filters > lat, lng, accur, accel, timestamp
 
 }

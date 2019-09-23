@@ -4,13 +4,23 @@ import android.location.Location;
 
 class IsBetterLocation {
 
+    private static IsBetterLocation INSTANCE = new IsBetterLocation();
+
+    static IsBetterLocation getInstance(){
+        if(INSTANCE == null){
+            INSTANCE = new IsBetterLocation();
+        }
+
+        return INSTANCE;
+    }
+
     /**
      * Determines whether one Location reading is better than the current Location fix
      *
      * @param location            The new Location that you want to evaluate
      * @param currentBestLocation The current Location fix, to which you want to compare the new one
      */
-    static boolean isBetterLocation(Location location, Location currentBestLocation) {
+    boolean isBetterLocation(Location location, Location currentBestLocation) {
 
         // A new location is always better than no location
         if (currentBestLocation == null) return true;
@@ -18,7 +28,7 @@ class IsBetterLocation {
         // Check whether the new location fix is newer or older
         long timeDelta = location.getTime() - currentBestLocation.getTime();
         boolean isSignificantlyNewer = timeDelta > (1000 * 60 * 2);
-        boolean isSignificantlyOlder = timeDelta > -(1000 * 60 * 2);
+        boolean isSignificantlyOlder = timeDelta < -(1000 * 60 * 2);
         boolean isNewer = timeDelta > 0;
 
         // If it's been more than two minutes since the current location, use the new location
@@ -44,17 +54,15 @@ class IsBetterLocation {
             return true;
         } else if (isNewer && !isLessAccurate) {
             return true;
-        } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
-            return true;
         }
 
-        return false;
+        return (isNewer && !isSignificantlyLessAccurate && isFromSameProvider);
     }
 
     /**
      * Checks whether two providers are the same
      */
-    private static boolean isSameProvider(String provider1, String provider2) {
+    private boolean isSameProvider(String provider1, String provider2) {
         boolean isSame;
 
         if (provider1 == null) {
