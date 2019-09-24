@@ -1,8 +1,13 @@
 package com.example.lezh1k.sensordatacollector.database;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
+import android.os.Looper;
+import android.widget.Toast;
 
+import com.example.lezh1k.sensordatacollector.R;
 import com.example.lezh1k.sensordatacollector.database.model.Accelerometer;
 import com.example.lezh1k.sensordatacollector.database.model.Gyroscope;
 import com.example.lezh1k.sensordatacollector.database.model.Magnetometer;
@@ -30,7 +35,7 @@ public abstract class AsyncRequest {
 
         private final TrackingRepository REPOSITORY;
 
-        public SaveTrackings(Context context){
+        public SaveTrackings(Context context) {
             REPOSITORY = new TrackingRepository(context);
         }
 
@@ -46,7 +51,7 @@ public abstract class AsyncRequest {
 
         private final GyroscopeRepository REPOSITORY;
 
-        public SaveGyroscope(Context context){
+        public SaveGyroscope(Context context) {
             REPOSITORY = new GyroscopeRepository(context);
         }
 
@@ -63,7 +68,7 @@ public abstract class AsyncRequest {
 
         private final AccelerometerRepository REPOSITORY;
 
-        public SaveAccelerometer(Context context){
+        public SaveAccelerometer(Context context) {
             REPOSITORY = new AccelerometerRepository(context);
         }
 
@@ -80,7 +85,7 @@ public abstract class AsyncRequest {
 
         private final MagnetometerRepository REPOSITORY;
 
-        public SaveMagnetometer(Context context){
+        public SaveMagnetometer(Context context) {
             REPOSITORY = new MagnetometerRepository(context);
         }
 
@@ -89,6 +94,44 @@ public abstract class AsyncRequest {
             REPOSITORY.saveMagnetometer(magnetometers);
 
             return null;
+        }
+
+    }
+
+    public static class ClearDatabase extends AsyncTask<Context, Void, Context> {
+
+        private final AppDatabase appDatabase;
+        private boolean execute = true;
+
+        public ClearDatabase(Context context) {
+            appDatabase = AppDatabase.getAppDatabase(context);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Context doInBackground(Context... contexts) {
+
+            if (execute && contexts != null && contexts.length > 0) {
+                appDatabase.clearAllTables();
+                return contexts[0];
+
+            }
+            return null;
+
+        }
+
+        @Override
+        protected void onPostExecute(Context context) {
+            super.onPostExecute(context);
+
+            if (execute && context != null) {
+                Toast.makeText(context, "Tracking data successfully cleared.", Toast.LENGTH_SHORT).show();
+            }
+
         }
 
     }

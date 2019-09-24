@@ -13,6 +13,10 @@
     <string name="filtered_geo">GEO</string>
     <!-- Preferences -->
     <string name="settings">Configurações</string>
+    <string name="clear_database">Limpar banco de dados</string>
+    <string name="pref_dialog_clear_database">Você realmente deseja limpar todos os dados?</string>
+    <string name="pref_dialog_confirm">Confirmar</string>
+    <string name="pref_dialog_cancel">Cancelar</string>
     <string name="pref_gps_min_time">Intervalo de consulta ao GPS</string>
     <string name="pref_gps_min_time_summ">Intervalo de tempo mínimo entre as atualizações de localização (vinda do GPS), em milissegundos</string>
     <string name="pref_gps_min_distance">Distância mínima de GPS</string>

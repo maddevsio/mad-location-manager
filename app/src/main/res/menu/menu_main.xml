@@ -8,4 +8,10 @@
         android:id="@+id/action_settings"
         android:title="@string/settings"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/clear_database"
+        android:title="@string/clear_database"
+        app:showAsAction="never" />
+
 </menu>

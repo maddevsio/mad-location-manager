@@ -89,9 +89,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     private MapboxMap m_map;
     private MapView m_mapView;
     private GeohashRTFilter m_geoHashRTFilter;
-    private SensorCalibrator m_sensorCalibrator = null;
     private boolean m_isLogging = false;
-    private boolean m_isCalibrating = false;
     private RefreshTask m_refreshTask = new RefreshTask(1000L, this);
     //uncaught exceptions
     private Thread.UncaughtExceptionHandler defaultUEH;
@@ -288,34 +286,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         m_isLogging = isLogging;
     }
 
-    private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
-        Button btnStartStop = findViewById(R.id.btnStartStop);
-        TextView tvStatus = findViewById(R.id.tvStatus);
-        String btnCalibrateText;
-        String tvStatusText;
-
-        if (isCalibrating) {
-            btnCalibrateText = "Stop calibration";
-            tvStatusText = "Calibrating";
-            m_sensorCalibrator.reset();
-            m_sensorCalibrator.start();
-        } else {
-            btnCalibrateText = "Start calibration";
-            tvStatusText = byUser ? "Calibration finished by user" : "Calibration finished";
-            m_sensorCalibrator.stop();
-        }
-
-        tvStatus.setText(tvStatusText);
-        btnStartStop.setEnabled(!isCalibrating);
-        m_isCalibrating = isCalibrating;
-    }
-
     public void btnStartStop_click(View v) {
         set_isLogging(!m_isLogging);
-    }
-
-    public void btnCalibrate_click(View v) {
-        set_isCalibrating(!m_isCalibrating, true);
     }
 
     private void initActivity() {
@@ -361,11 +333,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         sensorManager.registerListener(new Sensors.AccelerometerSensor(getApplicationContext()), accelerometer, Utils.hertz2periodUs(10.0));
         sensorManager.registerListener(new Sensors.MagnetometerSensor(getApplicationContext()), magnetometer, Utils.hertz2periodUs(10.0));
 
-        m_sensorCalibrator = new SensorCalibrator(sensorManager);
         ServicesHelper.getLocationService(this, value -> {
             set_isLogging(value.IsRunning());
         });
-        set_isCalibrating(false, true);
     }
 
     @Override
@@ -538,9 +508,18 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (m_mapView != null) {
             m_mapView.onResume();
         }
-        m_refreshTask = new RefreshTask(1000, this);
-        m_refreshTask.needTerminate = false;
-        m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+        if(m_isLogging){
+            ((Button)findViewById(R.id.btnStartStop)).setText("STOP TRACKING");
+        }else {
+            ((Button)findViewById(R.id.btnStartStop)).setText("START TRACKING");
+        }
+
+        if(m_refreshTask.needTerminate) {
+            m_refreshTask = new RefreshTask(1000, this);
+            m_refreshTask.needTerminate = false;
+            m_refreshTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
     }
 
     @Override
@@ -548,11 +527,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         super.onPause();
         if (m_mapView != null) {
             m_mapView.onPause();
-        }
-        m_refreshTask.needTerminate = true;
-        m_refreshTask.cancel(true);
-        if (m_sensorCalibrator != null) {
-            m_sensorCalibrator.stop();
         }
     }
 
@@ -598,6 +572,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             case R.id.action_settings:
                 Intent intent = new Intent(this, SettingsActivity.class);
                 startActivity(intent);
+                return true;
+            case R.id.clear_database:
+                new AsyncRequest.ClearDatabase(getApplicationContext()).execute(getApplicationContext());
                 return true;
         }
 
@@ -671,22 +648,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 }
             }
             return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Object... values) {
-            TextView tvStatus = findViewById(R.id.tvStatus);
-            if (m_isLogging) {
-            } else {
-                if (!m_sensorCalibrator.isInProgress())
-                    return;
-
-                tvStatus.setText(m_sensorCalibrator.getCalibrationStatus());
-                if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
-                        m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
-                    set_isCalibrating(false, false);
-                }
-            }
         }
     }
 
