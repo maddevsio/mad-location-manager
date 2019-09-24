@@ -8,8 +8,9 @@
     <string name="calibrate">Calibrar</string>
     <string name="distance">Distância:</string>
     <string name="gps">GPS</string>
-    <string name="filtered">Filtrado</string>
-    <string name="filtered_geo">Filtrado+Geo</string>
+    <string name="v4">V4</string>
+    <string name="filtered">KALMAN</string>
+    <string name="filtered_geo">GEO</string>
     <!-- Preferences -->
     <string name="settings">Configurações</string>
     <string name="pref_gps_min_time">Intervalo de consulta ao GPS</string>

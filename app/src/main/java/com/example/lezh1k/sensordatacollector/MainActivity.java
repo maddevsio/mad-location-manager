@@ -226,7 +226,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     private void set_isLogging(boolean isLogging) {
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
         TextView tvStatus = findViewById(R.id.tvStatus);
-        Button btnCalibrate = findViewById(R.id.btnCalibrate);
         String btnStartStopText;
         String btnTvStatusText;
 
@@ -286,14 +285,12 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (tvStatus != null)
             tvStatus.setText(btnTvStatusText);
 
-        btnCalibrate.setEnabled(!isLogging);
         m_isLogging = isLogging;
     }
 
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
         Button btnStartStop = findViewById(R.id.btnStartStop);
         TextView tvStatus = findViewById(R.id.tvStatus);
-        Button btnCalibrate = findViewById(R.id.btnCalibrate);
         String btnCalibrateText;
         String tvStatusText;
 
@@ -308,7 +305,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             m_sensorCalibrator.stop();
         }
 
-        btnCalibrate.setText(btnCalibrateText);
         tvStatus.setText(tvStatusText);
         btnStartStop.setEnabled(!isCalibrating);
         m_isCalibrating = isCalibrating;
@@ -356,7 +352,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         if (sensorManager == null || locationManager == null) {
             System.exit(1);
         }
-        Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         Sensor magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
@@ -386,11 +383,12 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     @Override
     public void showRoute(List<LatLng> route, int interestedRoute) {
 
-        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
+        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo, cbV4;
         cbGps = findViewById(R.id.cbGPS);
         cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
         cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
-        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked(), true};
+        cbV4 = findViewById(R.id.cbV4);
+        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked(), cbV4.isChecked()};
         if (m_map != null) {
             runOnUiThread(() ->
                     m_mapView.post(() -> {
@@ -480,12 +478,13 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         setupMap(savedInstanceState);
 
 
-        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
+        CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo, cbV4;
         cbGps = findViewById(R.id.cbGPS);
         cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
         cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
-        CheckBox cb[] = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps};
-        for (int i = 0; i < 3; ++i) {
+        cbV4 = findViewById(R.id.cbV4);
+        CheckBox cb[] = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps, cbV4};
+        for (int i = 0; i < routeColors.length; ++i) {
             if (cb[i] == null)
                 continue;
             cb[i].setBackgroundColor(ContextCompat.getColor(this, routeColors[i]));
@@ -677,20 +676,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         @Override
         protected void onProgressUpdate(Object... values) {
             TextView tvStatus = findViewById(R.id.tvStatus);
-            TextView tvDistance = findViewById(R.id.tvDistance);
             if (m_isLogging) {
-                if (m_geoHashRTFilter == null)
-                    return;
-
-                tvDistance.setText(String.format(
-                        "Distance (geo): %fm\n" +
-                                "Distance (geo) HP: %fm\n" +
-                                "Distance as is : %fm\n" +
-                                "Distance as is HP: %fm",
-                        m_geoHashRTFilter.getDistanceGeoFiltered(),
-                        m_geoHashRTFilter.getDistanceGeoFilteredHP(),
-                        m_geoHashRTFilter.getDistanceAsIs(),
-                        m_geoHashRTFilter.getDistanceAsIsHP()));
             } else {
                 if (!m_sensorCalibrator.isInProgress())
                     return;
@@ -699,7 +685,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 if (m_sensorCalibrator.getDcAbsLinearAcceleration().isCalculated() &&
                         m_sensorCalibrator.getDcLinearAcceleration().isCalculated()) {
                     set_isCalibrating(false, false);
-                    tvDistance.setText(m_sensorCalibrator.getDcLinearAcceleration().deviationInfoString());
                 }
             }
         }
