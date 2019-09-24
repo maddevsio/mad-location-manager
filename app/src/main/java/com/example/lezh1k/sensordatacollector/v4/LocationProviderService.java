@@ -71,6 +71,7 @@ public class LocationProviderService extends Service {
         try {
             unregisterReceiver(mDeviceGPSStatusReceiver);
             mFusedLocationClient.removeLocationUpdates(mFusedLocationUpdateCallback);
+            unregisterReceiver(mActivityRecognitionReceiver);
         } catch (Exception e) {
             // safely ignore if the receivers are already unregistered
         }
@@ -163,6 +164,7 @@ public class LocationProviderService extends Service {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ActivityRecognitionService.ACTIVITY_RECOGNITION_INTENT_FLAG);
+        registerReceiver(mActivityRecognitionReceiver, intentFilter);
     }
 
     private final BroadcastReceiver mDeviceGPSStatusReceiver = new BroadcastReceiver() {
@@ -175,6 +177,13 @@ public class LocationProviderService extends Service {
                     mListener.onDeviceGPSDisabled();
                 }
             }
+        }
+    };
+
+    private final BroadcastReceiver mActivityRecognitionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            isDeviceStill = intent.getStringExtra("Activity").equals(ActivityRecognitionService.STILL);
         }
     };
 
@@ -219,6 +228,8 @@ public class LocationProviderService extends Service {
     }
 
     private boolean testLocationAgainstValidityCriteria(@NonNull Location oldLocation, @NonNull Location newLocation) {
+
+        if(isDeviceStill) return false;
 
         boolean isBetterLocation = IsBetterLocation.getInstance().isBetterLocation(newLocation, oldLocation);
         if (!isBetterLocation && MovingAverage.getInstance().currentNumOfSamples > 1) {
