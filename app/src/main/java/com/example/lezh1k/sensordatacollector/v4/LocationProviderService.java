@@ -1,5 +1,6 @@
 package com.example.lezh1k.sensordatacollector.v4;
 
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -14,6 +15,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -57,6 +59,7 @@ public class LocationProviderService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        startForeground(1, getNotification("Habilitado"));
         getLastLocationSharedPreferences();
 
         setupSelf();
@@ -75,6 +78,13 @@ public class LocationProviderService extends Service {
         } catch (Exception e) {
             // safely ignore if the receivers are already unregistered
         }
+    }
+
+    private Notification getNotification(@NonNull String notificationText) {
+        return new NotificationCompat.Builder(this, "ag.strider.scout.notification")
+                .setContentTitle("Rastreamento de Localizacao")
+                .setContentText(notificationText)
+                .build();
     }
 
     private void setupSelf() {
