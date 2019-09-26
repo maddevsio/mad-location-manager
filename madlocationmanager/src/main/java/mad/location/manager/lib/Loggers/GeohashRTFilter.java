@@ -71,7 +71,6 @@ public class GeohashRTFilter {
 
     public void reset(ILogger logger) {
         m_logger = logger;
-        m_geoFilteredTrack.clear();
         geoHashBuffers = new long[2];
         pointsInCurrentGeohashCount = 0;
         lastApprovedGeoPoint = new GeoPoint(COORD_NOT_INITIALIZED, COORD_NOT_INITIALIZED);

@@ -595,7 +595,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
         unbindService(mConnection);
         isBoundToLocationProviderService = false;
-        v4_locations.clear();
 
     }
 

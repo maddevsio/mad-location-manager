@@ -105,8 +105,6 @@ public class MapPresenter implements LocationListener {
     public void stop() {
         LocationManager lm = (LocationManager) context.getSystemService(LOCATION_SERVICE);
         lm.removeUpdates(this);
-        m_lstGpsCoordinates.clear();
-        m_lstKalmanFilteredCoordinates.clear();
     }
 
     @Override
