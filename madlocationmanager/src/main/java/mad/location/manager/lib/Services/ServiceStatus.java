@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services.edlar;
+package mad.location.manager.lib.Services;
 
 public enum ServiceStatus {
     PERMISSION_DENIED(0),

@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services.edlar;
+package mad.location.manager.lib.Services;
 
 import android.Manifest;
 import android.content.Context;

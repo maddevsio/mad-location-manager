@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services.edlar;
+package mad.location.manager.lib.Services;
 
 import mad.location.manager.lib.Interfaces.ILogger;
 

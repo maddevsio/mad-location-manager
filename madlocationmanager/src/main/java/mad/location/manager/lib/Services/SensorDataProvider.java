@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services.edlar;
+package mad.location.manager.lib.Services;
 
 import android.content.Context;
 import android.hardware.Sensor;

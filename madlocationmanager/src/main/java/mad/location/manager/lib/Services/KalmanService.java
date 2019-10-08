@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services.edlar;
+package mad.location.manager.lib.Services;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -37,7 +35,6 @@ import mad.location.manager.lib.Interfaces.ISensorDataProvider;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
-import mad.location.manager.lib.Services.KalmanLocationService;
 
 public class KalmanService extends Service implements ISensorDataProvider.Client, ILocationDataProvider.Client {
 
