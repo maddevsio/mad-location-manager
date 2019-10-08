@@ -12,6 +12,7 @@ import java.util.List;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Interfaces.SimpleTempCallback;
+import mad.location.manager.lib.Services.edlar.KalmanService;
 
 /**
  * Created by lezh1k on 2/13/18.
@@ -22,8 +23,8 @@ public class ServicesHelper {
 
     //Location Service
     private boolean connectingLocationService = false;
-    private KalmanLocationService kalmanLocationService;
-    private List<SimpleTempCallback<KalmanLocationService>> locationServiceRequests = new ArrayList<>();
+    private KalmanService kalmanLocationService;
+    private List<SimpleTempCallback<KalmanService>> locationServiceRequests = new ArrayList<>();
 
     private List<LocationServiceInterface> locationServiceInterfaces = new ArrayList<>();
     private List<LocationServiceStatusInterface> locationServiceStatusInterfaces = new ArrayList<>();
@@ -64,9 +65,9 @@ public class ServicesHelper {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             connectingLocationService = false;
-            kalmanLocationService = ((KalmanLocationService.LocalBinder) service).getService();
+            kalmanLocationService = ((KalmanService.LocalBinder) service).getService();
             if (!locationServiceRequests.isEmpty()) {
-                for (SimpleTempCallback<KalmanLocationService> callback : locationServiceRequests) {
+                for (SimpleTempCallback<KalmanService> callback : locationServiceRequests) {
                     if (callback != null) {
                         callback.onCall(kalmanLocationService);
                     }
@@ -89,7 +90,7 @@ public class ServicesHelper {
         }
     };
 
-    public static void getLocationService(Context context, SimpleTempCallback<KalmanLocationService> callback) {
+    public static void getLocationService(Context context, SimpleTempCallback<KalmanService> callback) {
         if (instance.kalmanLocationService != null) {
             if (callback != null) {
                 callback.onCall(instance.kalmanLocationService);
@@ -101,13 +102,13 @@ public class ServicesHelper {
             if (!instance.connectingLocationService) {
                 instance.connectingLocationService = true;
                 Intent serviceIntent = new Intent(context.getApplicationContext(),
-                        KalmanLocationService.class);
+                        KalmanService.class);
                 context.getApplicationContext().bindService(serviceIntent, instance.locationServiceConnection, Context.BIND_AUTO_CREATE);
             }
         }
     }
 
-    public static KalmanLocationService getLocationService() {
+    public static KalmanService getLocationService() {
         return instance.kalmanLocationService;
     }
 }

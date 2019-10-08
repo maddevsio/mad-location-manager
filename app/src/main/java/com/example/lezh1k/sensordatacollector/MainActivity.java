@@ -1,43 +1,70 @@
 package com.example.lezh1k.sensordatacollector;
 
-import android.hardware.SensorEvent;
+import android.Manifest;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.TextView;
 
-import com.example.lezh1k.sensordatacollector.Eldar.AccelerometerDataProvider;
-import com.example.lezh1k.sensordatacollector.Eldar.ISensorDataProvider;
-import com.example.lezh1k.sensordatacollector.Loggers.SensorRawDataLogger;
+import com.elvishew.xlog.LogLevel;
+import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.AndroidPrinter;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
+import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
+import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Interfaces.ILogger;
+import mad.location.manager.lib.Interfaces.LocationServiceInterface;
+import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.SensorAux.SensorCalibrator;
+import mad.location.manager.lib.Services.edlar.KalmanService;
+import mad.location.manager.lib.Services.ServicesHelper;
+import mad.location.manager.lib.Services.edlar.Settings;
 
-import java.util.Arrays;
+import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
+import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Polyline;
+import com.mapbox.mapboxsdk.annotations.PolylineOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.constants.Style;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 
-public class MainActivity extends AppCompatActivity implements ISensorDataProvider {
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        SensorRawDataLogger s = new SensorRawDataLogger((SensorManager) getSystemService(SENSOR_SERVICE));
-        s.start();
-    }
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
-    @Override
-    public void AccelerometerData(SensorEvent event) {
-        Log.d("1111111111", Arrays.toString(event.values));
-    }
-
-    @Override
-    public void GyroscopeData(SensorEvent event) {
-        Log.d("2222222222", Arrays.toString(event.values));
-    }
-
-    @Override
-    public void MagnetometerData(SensorEvent event) {
-        Log.d("3333333333", Arrays.toString(event.values));
-    }
-
-
-    /*implements LocationServiceInterface, MapInterface, ILogger {
+public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
 
     private SharedPreferences mSharedPref;
 
@@ -133,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements ISensorDataProvid
             }
         }
     }
-
+    /*********************************************************/
 
     private MapPresenter m_presenter;
     private MapboxMap m_map;
@@ -169,8 +196,8 @@ public class MainActivity extends AppCompatActivity implements ISensorDataProvid
                 }
                 value.stop();
                 initXlogPrintersFileName();
-                KalmanLocationService.Settings settings =
-                        new KalmanLocationService.Settings(
+                Settings settings =
+                        new Settings(
                                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                                 Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "")),
                                 Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "")),
@@ -529,5 +556,5 @@ public class MainActivity extends AppCompatActivity implements ISensorDataProvid
 
         return super.onOptionsItemSelected(item);
     }
-    */
+
 }

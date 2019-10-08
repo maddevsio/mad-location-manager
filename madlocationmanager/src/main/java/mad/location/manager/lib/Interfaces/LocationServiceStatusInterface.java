@@ -1,6 +1,7 @@
 package mad.location.manager.lib.Interfaces;
 
-import static mad.location.manager.lib.Services.KalmanLocationService.ServiceStatus;
+
+import mad.location.manager.lib.Services.edlar.ServiceStatus;
 
 /**
  * Created by lezh1k on 2/13/18.

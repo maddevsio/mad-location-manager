@@ -3,7 +3,6 @@ package com.example.lezh1k.sensordatacollector.Presenters;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.SensorEvent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,7 +12,6 @@ import android.support.v4.app.ActivityCompat;
 import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
 
-import com.example.lezh1k.sensordatacollector.Eldar.ISensorDataProvider;
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.MainActivity;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -28,7 +26,7 @@ import static android.content.Context.LOCATION_SERVICE;
  * Created by lezh1k on 1/30/18.
  */
 
-public class MapPresenter implements LocationListener, ISensorDataProvider {
+public class MapPresenter implements LocationListener {
     private MapInterface mapInterface;
     private Context context;
 
@@ -68,12 +66,10 @@ public class MapPresenter implements LocationListener, ISensorDataProvider {
         for (Location loc : new ArrayList<>(m_lstGpsCoordinates)) {
             routGpsAsIs.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
         }
-/*
+
         mapInterface.showRoute(routeFilteredKalman, MainActivity.FILTER_KALMAN_ONLY);
         mapInterface.showRoute(routeFilteredWithGeoHash, MainActivity.FILTER_KALMAN_WITH_GEO);
         mapInterface.showRoute(routGpsAsIs, MainActivity.GPS_ONLY);
-
- */
     }
     //////////////////////////////////////////////////////////
 
@@ -115,20 +111,5 @@ public class MapPresenter implements LocationListener, ISensorDataProvider {
     @Override
     public void onProviderDisabled(String provider) {
         /*do nothing*/
-    }
-
-    @Override
-    public void AccelerometerData(SensorEvent event) {
-
-    }
-
-    @Override
-    public void GyroscopeData(SensorEvent event) {
-
-    }
-
-    @Override
-    public void MagnetometerData(SensorEvent event) {
-
     }
 }
