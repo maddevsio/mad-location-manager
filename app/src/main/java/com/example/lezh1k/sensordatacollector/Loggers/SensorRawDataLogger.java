@@ -8,9 +8,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
-import com.elvishew.xlog.XLog;
+
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -69,7 +70,6 @@ public class SensorRawDataLogger implements SensorEventListener {
             logStr += sensorDataPrefix[i];
             for (float fv : data)
                 logStr += String.format("%f ", fv); //%)
-            XLog.i(logStr);
         }
     }
 
@@ -134,6 +134,10 @@ public class SensorRawDataLogger implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            Log.d("SSSSS", Arrays.toString(event.values));
+        }
+        Log.d("SSSSS11111", Arrays.toString(event.values));
         DataItem di = new DataItem(event.sensor.getType(), event.values, System.currentTimeMillis());
         m_sensorDataQueue.add(di);
     }
