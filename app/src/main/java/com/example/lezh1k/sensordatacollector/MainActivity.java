@@ -41,9 +41,9 @@ import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
 import mad.location.manager.lib.SensorAux.SensorCalibrator;
-import mad.location.manager.lib.Services.edlar.KalmanService;
+import mad.location.manager.lib.Services.KalmanService;
 import mad.location.manager.lib.Services.ServicesHelper;
-import mad.location.manager.lib.Services.edlar.Settings;
+import mad.location.manager.lib.Services.Settings;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;

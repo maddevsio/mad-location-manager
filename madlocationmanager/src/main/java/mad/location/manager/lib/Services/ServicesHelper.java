@@ -12,7 +12,7 @@ import java.util.List;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Interfaces.SimpleTempCallback;
-import mad.location.manager.lib.Services.edlar.KalmanService;
+import mad.location.manager.lib.Services.KalmanService;
 
 /**
  * Created by lezh1k on 2/13/18.

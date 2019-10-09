@@ -1,7 +1,7 @@
 package mad.location.manager.lib.Interfaces;
 
 
-import mad.location.manager.lib.Services.edlar.ServiceStatus;
+import mad.location.manager.lib.Services.ServiceStatus;
 
 /**
  * Created by lezh1k on 2/13/18.

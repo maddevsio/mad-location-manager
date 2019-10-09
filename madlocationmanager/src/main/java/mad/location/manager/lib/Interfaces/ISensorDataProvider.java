@@ -14,4 +14,26 @@ public interface ISensorDataProvider {
     interface Client {
         void absAccelerationDate(float[] absAcceleration);
     }
+
+    /*
+
+    interface Provider {
+        interface AccelerometerDataProvider {
+
+        }
+
+        interface GyroscopeDataProvider {
+
+        }
+
+        interface MagnetometerDataProvider {
+
+        }
+    }
+
+    interface Client {
+        \\ void SHOWDATE();
+    }
+
+     */
 }

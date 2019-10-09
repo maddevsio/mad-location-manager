@@ -4,8 +4,8 @@ import android.hardware.SensorEvent;
 import android.location.GpsStatus;
 import android.location.Location;
 
-import mad.location.manager.lib.Services.edlar.ServiceStatus;
-import mad.location.manager.lib.Services.edlar.Settings;
+import mad.location.manager.lib.Services.ServiceStatus;
+import mad.location.manager.lib.Services.Settings;
 
 public interface ILocationDataProvider {
     interface Provider {

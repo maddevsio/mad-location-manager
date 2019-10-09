@@ -14,7 +14,7 @@ import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Interfaces.ISensorDataProvider;
 
 import static android.content.Context.SENSOR_SERVICE;
-import static mad.location.manager.lib.Services.edlar.KalmanService.m_settings;
+import static mad.location.manager.lib.Services.KalmanService.m_settings;
 
 public class SensorDataProvider implements SensorEventListener, ISensorDataProvider.Provider {
 
@@ -58,6 +58,24 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
             m_lstSensors.add(sensor);
         }
     }
+
+    /*
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        switch (event.sensor.getType()) {
+            case Sensor.TYPE_ACCELEROMETER:
+
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+
+                break;
+
+        }
+    }
+     */
 
     @Override
     public void onSensorChanged(SensorEvent event) {
