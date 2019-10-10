@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services;
+package mad.location.manager.lib.Provider;
 
 import android.Manifest;
 import android.content.Context;
@@ -13,6 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import mad.location.manager.lib.Interfaces.ILocationDataProvider;
+import mad.location.manager.lib.Services.ServiceStatus;
+import mad.location.manager.lib.Services.Settings;
 
 public class LocationDataProvider implements LocationListener, ILocationDataProvider.Provider, GpsStatus.Listener {
 

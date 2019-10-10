@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Services;
+package mad.location.manager.lib.Provider;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Interfaces.IOrientationProvider;
 import mad.location.manager.lib.Interfaces.ISensorDataProvider;
 
 import static android.content.Context.SENSOR_SERVICE;
@@ -30,7 +31,8 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
             Sensor.TYPE_ROTATION_VECTOR,
     };
 
-    private ISensorDataProvider.Client client;
+    private IOrientationProvider.IProvide orientationProvider = null;
+    private ISensorDataProvider.Client client = null;
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
 
@@ -88,6 +90,7 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
                 android.opengl.Matrix.invertM(rotationMatrixInv, 0, rotationMatrix, 0);
+
                 break;
         }
     }

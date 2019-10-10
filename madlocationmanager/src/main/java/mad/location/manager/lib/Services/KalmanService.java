@@ -35,6 +35,8 @@ import mad.location.manager.lib.Interfaces.ISensorDataProvider;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.Provider.LocationDataProvider;
+import mad.location.manager.lib.Provider.SensorDataProvider;
 
 public class KalmanService extends Service implements ISensorDataProvider.Client, ILocationDataProvider.Client {
 
@@ -360,6 +362,11 @@ public class KalmanService extends Service implements ISensorDataProvider.Client
                 SensorGpsDataItem.NOT_INITIALIZED,
                 m_magneticDeclination);
         m_sensorDataQueue.add(sdi);
+    }
+
+    @Override
+    public void rotationMatrixInv(float[] rotationMatrixInv, float[] rotationMatrix) {
+
     }
 
     @Override

@@ -13,6 +13,7 @@ public interface ISensorDataProvider {
 
     interface Client {
         void absAccelerationDate(float[] absAcceleration);
+        void rotationMatrixInv(float[] rotationMatrixInv, float[] rotationMatrix);
     }
 
     /*
