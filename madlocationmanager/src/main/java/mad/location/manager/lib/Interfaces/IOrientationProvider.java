@@ -1,16 +1,12 @@
 package mad.location.manager.lib.Interfaces;
 
+import mad.location.manager.lib.Commons.Matrix;
+import mad.location.manager.lib.Commons.Quaternion;
+
 public interface IOrientationProvider {
-    void GetQuaternion(float[] rotationMatrix, float[] rotationMatrixInv);
-    void GetMatrix(float[] absAcceleration);
+    Quaternion getQuaternion();
+    Matrix getMatrix();
 
-    interface IProvide {
-        void start();
-        void stop();
-    }
-
-    interface IClient {
-        void GetQuaternion(float[] rotationMatrix, float[] rotationMatrixInv);
-        void GetMatrix(float[] absAcceleration);
-    }
+    boolean start();
+    void stop();
 }

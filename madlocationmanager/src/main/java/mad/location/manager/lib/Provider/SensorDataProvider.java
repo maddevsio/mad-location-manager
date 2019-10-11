@@ -19,6 +19,11 @@ import static mad.location.manager.lib.Services.KalmanService.m_settings;
 
 public class SensorDataProvider implements SensorEventListener, ISensorDataProvider.Provider {
 
+    //ВОТ такую хуйню должно возвращать IOrientationProvider.
+    class OrientationMatrixGL {
+        float[] rotationMatrix = new float[16];
+    }
+
     private float[] rotationMatrix = new float[16];
     private float[] rotationMatrixInv = new float[16];
     private float[] absAcceleration = new float[4];
@@ -31,7 +36,7 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
             Sensor.TYPE_ROTATION_VECTOR,
     };
 
-    private IOrientationProvider.IProvide orientationProvider = null;
+
     private ISensorDataProvider.Client client = null;
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
@@ -79,6 +84,7 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
     }
      */
 
+    private IOrientationProvider m_orientationProvider = new MadgwickOrientationProvider(null);
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
@@ -87,6 +93,7 @@ public class SensorDataProvider implements SensorEventListener, ISensorDataProvi
                 android.opengl.Matrix.multiplyMV(absAcceleration, 0, rotationMatrixInv, 0, linearAcceleration, 0);
                 client.absAccelerationDate(absAcceleration);
                 break;
+                //ВоТ ЗДЕСЬ ЮЗАТЬ не TYPE ROTATION VECTOR, а значение из m_orientationProvider
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
                 android.opengl.Matrix.invertM(rotationMatrixInv, 0, rotationMatrix, 0);
