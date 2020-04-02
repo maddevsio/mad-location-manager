@@ -117,7 +117,7 @@ SensorControllerParseDataString(const char *str, SensorData_t *sd) {
   int pi = -1;
   sd->gpsAlt = sd->gpsLat = sd->gpsLon = 0.0;
   pi = str[0] - '0';
-  if (pi < 0 || pi > LMT_UNKNOWN)
+  if (pi < 0 || pi >= LMT_UNKNOWN)
     return LMT_UNKNOWN;
   return parsers[pi](str+1, sd) ? (LogMessageType)pi : LMT_UNKNOWN;
 }
