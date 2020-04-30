@@ -1,0 +1,11 @@
+framework module MLMSensor {
+  umbrella header "MLMSensor.h"
+
+  export *
+  module * { export * }
+}
+
+module MLMSensor.Swift {
+    header "MLMSensor-Swift.h"
+    requires objc
+}
