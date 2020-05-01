@@ -1,0 +1,15 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.2.2 (swiftlang-1103.0.32.6 clang-1103.0.32.51)
+// swift-module-flags: -target armv7-apple-ios10.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name MLMSensor
+import CoreLocation
+import CoreMotion
+import Foundation
+@_exported import MLMSensor
+import Swift
+import UIKit
+@objc @_inheritsConvenienceInitializers public class MLMViewController : UIKit.UIViewController {
+  @objc deinit
+  @objc override dynamic public func viewDidLoad()
+  @objc override dynamic public init(nibName nibNameOrNil: Swift.String?, bundle nibBundleOrNil: Foundation.Bundle?)
+  @objc required dynamic public init?(coder: Foundation.NSCoder)
+}
