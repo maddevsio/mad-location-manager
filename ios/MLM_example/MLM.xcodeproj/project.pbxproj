@@ -11,8 +11,8 @@
 		844375FE2456F86D00DEDBF3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844375FD2456F86D00DEDBF3 /* Assets.xcassets */; };
 		844376012456F86D00DEDBF3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 844375FF2456F86D00DEDBF3 /* LaunchScreen.storyboard */; };
 		8443760C2456F86D00DEDBF3 /* MLMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443760B2456F86D00DEDBF3 /* MLMTests.swift */; };
-		84D2CAC0245AED9A00897276 /* MLMSensor.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84D2CABF245AED9A00897276 /* MLMSensor.xcframework */; };
-		84D2CAC1245AEDA400897276 /* MLMSensor.xcframework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84D2CABF245AED9A00897276 /* MLMSensor.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F42231245C124500AE0550 /* MLMSensor.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F42230245C124500AE0550 /* MLMSensor.xcframework */; };
+		84F42232245C124B00AE0550 /* MLMSensor.xcframework in Copy Files */ = {isa = PBXBuildFile; fileRef = 84F42230245C124500AE0550 /* MLMSensor.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,14 +36,15 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		84D2CABD245AEC5200897276 /* CopyFiles */ = {
+		84D2CABD245AEC5200897276 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				84D2CAC1245AEDA400897276 /* MLMSensor.xcframework in CopyFiles */,
+				84F42232245C124B00AE0550 /* MLMSensor.xcframework in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -57,7 +58,7 @@
 		844376072456F86D00DEDBF3 /* MLMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MLMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8443760B2456F86D00DEDBF3 /* MLMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLMTests.swift; sourceTree = "<group>"; };
 		8443760D2456F86D00DEDBF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		84D2CABF245AED9A00897276 /* MLMSensor.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = MLMSensor.xcframework; sourceTree = "<group>"; };
+		84F42230245C124500AE0550 /* MLMSensor.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MLMSensor.xcframework; path = ../../MLMSensor/build/MLMSensor.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,7 +66,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84D2CAC0245AED9A00897276 /* MLMSensor.xcframework in Frameworks */,
+				84F42231245C124500AE0550 /* MLMSensor.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,7 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				844375F42456F86C00DEDBF3 /* AppDelegate.swift */,
-				84D2CABF245AED9A00897276 /* MLMSensor.xcframework */,
+				84F42230245C124500AE0550 /* MLMSensor.xcframework */,
 				844375FD2456F86D00DEDBF3 /* Assets.xcassets */,
 				844375FF2456F86D00DEDBF3 /* LaunchScreen.storyboard */,
 				844376022456F86D00DEDBF3 /* Info.plist */,
@@ -137,7 +138,7 @@
 				844375EE2456F86C00DEDBF3 /* Frameworks */,
 				844375EF2456F86C00DEDBF3 /* Resources */,
 				84C56D29245AC14F00EFB07F /* Embed Frameworks */,
-				84D2CABD245AEC5200897276 /* CopyFiles */,
+				84D2CABD245AEC5200897276 /* Copy Files */,
 			);
 			buildRules = (
 			);

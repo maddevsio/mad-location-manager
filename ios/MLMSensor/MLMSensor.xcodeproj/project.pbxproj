@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		840FC3AC245C0B0700766481 /* MLMAltitude.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840FC3A9245C0B0700766481 /* MLMAltitude.swift */; };
+		840FC3AD245C0B0700766481 /* MadLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840FC3AA245C0B0700766481 /* MadLocationManager.swift */; };
+		840FC3AE245C0B0700766481 /* OutputStreamExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840FC3AB245C0B0700766481 /* OutputStreamExtension.swift */; };
+		840FC3B3245C0B2400766481 /* MLMViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840FC3AF245C0B2300766481 /* MLMViewController.swift */; };
 		84C56CED245AB7F700EFB07F /* MLMSensor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C56CE3245AB7F700EFB07F /* MLMSensor.framework */; };
 		84C56CF2245AB7F700EFB07F /* MLMSensorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56CF1245AB7F700EFB07F /* MLMSensorTests.swift */; };
 		84C56CF4245AB7F700EFB07F /* MLMSensor.h in Headers */ = {isa = PBXBuildFile; fileRef = 84C56CE6245AB7F700EFB07F /* MLMSensor.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		84C56D06245AB82200EFB07F /* MLMMotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56CFE245AB82200EFB07F /* MLMMotionManager.swift */; };
-		84C56D07245AB82200EFB07F /* OutputStreamExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D00245AB82200EFB07F /* OutputStreamExtension.swift */; };
-		84C56D08245AB82200EFB07F /* MLMAltitude.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D01245AB82200EFB07F /* MLMAltitude.swift */; };
-		84C56D09245AB82200EFB07F /* MadLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D02245AB82200EFB07F /* MadLocationManager.swift */; };
-		84C56D0A245AB82200EFB07F /* MLMViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D03245AB82200EFB07F /* MLMViewController.swift */; };
 		84C56D0B245AB82200EFB07F /* MLMLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D04245AB82200EFB07F /* MLMLocationManager.swift */; };
 		84C56D0C245AB82200EFB07F /* MLMFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C56D05245AB82200EFB07F /* MLMFileManager.swift */; };
 /* End PBXBuildFile section */
@@ -30,6 +30,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		840FC3A9245C0B0700766481 /* MLMAltitude.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMAltitude.swift; sourceTree = "<group>"; };
+		840FC3AA245C0B0700766481 /* MadLocationManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MadLocationManager.swift; sourceTree = "<group>"; };
+		840FC3AB245C0B0700766481 /* OutputStreamExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamExtension.swift; sourceTree = "<group>"; };
+		840FC3AF245C0B2300766481 /* MLMViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMViewController.swift; sourceTree = "<group>"; };
 		84C56CE3245AB7F700EFB07F /* MLMSensor.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MLMSensor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		84C56CE6245AB7F700EFB07F /* MLMSensor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MLMSensor.h; sourceTree = "<group>"; };
 		84C56CE7245AB7F700EFB07F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -37,10 +41,6 @@
 		84C56CF1245AB7F700EFB07F /* MLMSensorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLMSensorTests.swift; sourceTree = "<group>"; };
 		84C56CF3245AB7F700EFB07F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84C56CFE245AB82200EFB07F /* MLMMotionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMMotionManager.swift; sourceTree = "<group>"; };
-		84C56D00245AB82200EFB07F /* OutputStreamExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamExtension.swift; sourceTree = "<group>"; };
-		84C56D01245AB82200EFB07F /* MLMAltitude.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMAltitude.swift; sourceTree = "<group>"; };
-		84C56D02245AB82200EFB07F /* MadLocationManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MadLocationManager.swift; sourceTree = "<group>"; };
-		84C56D03245AB82200EFB07F /* MLMViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMViewController.swift; sourceTree = "<group>"; };
 		84C56D04245AB82200EFB07F /* MLMLocationManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMLocationManager.swift; sourceTree = "<group>"; };
 		84C56D05245AB82200EFB07F /* MLMFileManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MLMFileManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -104,7 +104,7 @@
 		84C56CFD245AB82200EFB07F /* MLMManagers */ = {
 			isa = PBXGroup;
 			children = (
-				84C56D03245AB82200EFB07F /* MLMViewController.swift */,
+				840FC3AF245C0B2300766481 /* MLMViewController.swift */,
 				84C56CFE245AB82200EFB07F /* MLMMotionManager.swift */,
 				84C56D04245AB82200EFB07F /* MLMLocationManager.swift */,
 				84C56D05245AB82200EFB07F /* MLMFileManager.swift */,
@@ -116,9 +116,9 @@
 		84C56CFF245AB82200EFB07F /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				84C56D00245AB82200EFB07F /* OutputStreamExtension.swift */,
-				84C56D01245AB82200EFB07F /* MLMAltitude.swift */,
-				84C56D02245AB82200EFB07F /* MadLocationManager.swift */,
+				840FC3AB245C0B0700766481 /* OutputStreamExtension.swift */,
+				840FC3A9245C0B0700766481 /* MLMAltitude.swift */,
+				840FC3AA245C0B0700766481 /* MadLocationManager.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -232,12 +232,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84C56D0A245AB82200EFB07F /* MLMViewController.swift in Sources */,
 				84C56D0C245AB82200EFB07F /* MLMFileManager.swift in Sources */,
-				84C56D08245AB82200EFB07F /* MLMAltitude.swift in Sources */,
-				84C56D09245AB82200EFB07F /* MadLocationManager.swift in Sources */,
-				84C56D07245AB82200EFB07F /* OutputStreamExtension.swift in Sources */,
+				840FC3B3245C0B2400766481 /* MLMViewController.swift in Sources */,
 				84C56D06245AB82200EFB07F /* MLMMotionManager.swift in Sources */,
+				840FC3AD245C0B0700766481 /* MadLocationManager.swift in Sources */,
+				840FC3AC245C0B0700766481 /* MLMAltitude.swift in Sources */,
+				840FC3AE245C0B0700766481 /* OutputStreamExtension.swift in Sources */,
 				84C56D0B245AB82200EFB07F /* MLMLocationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

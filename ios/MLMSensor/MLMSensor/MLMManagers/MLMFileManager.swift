@@ -26,6 +26,7 @@ class MLMFileManager {
     }
 
     internal init() {
+        removeFile()
         setupFolder()
     }
 

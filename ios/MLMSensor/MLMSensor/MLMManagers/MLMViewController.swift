@@ -204,7 +204,13 @@ extension MLMViewController {
         let activityViewController = UIActivityViewController(activityItems: filesToShare, applicationActivities: nil)
         activityViewController.popoverPresentationController?.sourceView = self.view
         activityViewController.excludedActivityTypes = [.airDrop, .mail]
-        
+
+        activityViewController.completionWithItemsHandler = { (activityType: UIActivity.ActivityType?, completed: Bool, returnedItems: [Any]?, error: Error?) -> Void in
+            if completed {
+                self.fileManager.removeFile()
+            }
+        }
+
         self.present(activityViewController, animated: true, completion: nil)
     }
 }

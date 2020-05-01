@@ -26,7 +26,7 @@
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/i386-apple-ios-simulator.swiftmodule</key>
 		<data>
-		LFZAxy9jhOHtnqt8woJHUVTywh8=
+		9ttxZm3ze5oNysnIroCPs5COxx8=
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/i386.swiftdoc</key>
 		<data>
@@ -38,7 +38,7 @@
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/i386.swiftmodule</key>
 		<data>
-		LFZAxy9jhOHtnqt8woJHUVTywh8=
+		9ttxZm3ze5oNysnIroCPs5COxx8=
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		5zpxZYUWFLkDbzV6rEPtte6a6O8=
+		M88gY+RglpCovJBvDdJlj/gNFOQ=
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/x86_64.swiftdoc</key>
 		<data>
@@ -62,7 +62,7 @@
 		</data>
 		<key>Modules/MLMSensor.swiftmodule/x86_64.swiftmodule</key>
 		<data>
-		5zpxZYUWFLkDbzV6rEPtte6a6O8=
+		M88gY+RglpCovJBvDdJlj/gNFOQ=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -119,11 +119,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			LFZAxy9jhOHtnqt8woJHUVTywh8=
+			9ttxZm3ze5oNysnIroCPs5COxx8=
 			</data>
 			<key>hash2</key>
 			<data>
-			TRAnMAuJkNEabNhzYO0W+t++O4uz9LJ6UQa3unqlUWk=
+			cRdxL/BM2R7hH0/VB8bZ6kd0WwFqSPmRpZzOkZS8XgE=
 			</data>
 		</dict>
 		<key>Modules/MLMSensor.swiftmodule/i386.swiftdoc</key>
@@ -152,11 +152,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			LFZAxy9jhOHtnqt8woJHUVTywh8=
+			9ttxZm3ze5oNysnIroCPs5COxx8=
 			</data>
 			<key>hash2</key>
 			<data>
-			TRAnMAuJkNEabNhzYO0W+t++O4uz9LJ6UQa3unqlUWk=
+			cRdxL/BM2R7hH0/VB8bZ6kd0WwFqSPmRpZzOkZS8XgE=
 			</data>
 		</dict>
 		<key>Modules/MLMSensor.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
@@ -185,11 +185,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			5zpxZYUWFLkDbzV6rEPtte6a6O8=
+			M88gY+RglpCovJBvDdJlj/gNFOQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			J41xwQL6DtY61mAWUnJuhzFR8gPKN8vl761kymvUGLU=
+			cFlAwM3UnKI6TOCuY1erSKepPo+WHCtgK+Y2w8NwN7w=
 			</data>
 		</dict>
 		<key>Modules/MLMSensor.swiftmodule/x86_64.swiftdoc</key>
@@ -218,11 +218,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			5zpxZYUWFLkDbzV6rEPtte6a6O8=
+			M88gY+RglpCovJBvDdJlj/gNFOQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			J41xwQL6DtY61mAWUnJuhzFR8gPKN8vl761kymvUGLU=
+			cFlAwM3UnKI6TOCuY1erSKepPo+WHCtgK+Y2w8NwN7w=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
