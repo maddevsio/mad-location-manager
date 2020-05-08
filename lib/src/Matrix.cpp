@@ -173,9 +173,9 @@ void MatrixSubtractFromIdentity(matrix_t *m) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixMultiply(restrict matrix_t *ma,
-                    restrict matrix_t *mb,
-                    restrict matrix_t *mc) {
+void MatrixMultiply(matrix_t *ma,
+                    matrix_t *mb,
+                    matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);

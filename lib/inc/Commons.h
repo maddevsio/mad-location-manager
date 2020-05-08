@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#ifdef __cplusplus
-#define restrict __restrict__
-#endif
-
 #define UNUSED_ARG(x) ((void)x)
 
 inline double Degree2Rad(double degree) {
@@ -46,9 +42,11 @@ inline int RandomBetween2Vals(int low, int hi) {
   assert(low <= hi);
   return (rand() % (hi - low)) + low;
 }
+///////////////////////////////////////////////////////
 
 inline double LowPassFilter(double prev, double measured, double alpha) {
   return prev + alpha * (measured - prev);
 }
+///////////////////////////////////////////////////////
 
 #endif // COMMONS_H
