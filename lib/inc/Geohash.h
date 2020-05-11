@@ -1,7 +1,7 @@
 #ifndef GEOHASH_H
 #define GEOHASH_H
 
-#include <stdint.h>
+#include <cstdint>
 
 static const int GEOHASH_MAX_PRECISION = 12;
 

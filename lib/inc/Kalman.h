@@ -1,9 +1,11 @@
 #ifndef KALMAN_H
 #define KALMAN_H
 
+#include <cstdint>
+
 typedef struct matrix matrix_t;
 
-typedef struct KalmanFilter {
+struct kalman_filter_t {
   /*these matrices should be provided by user*/
   matrix_t *F; //state transition model
   matrix_t *H; //observation model
@@ -30,15 +32,14 @@ typedef struct KalmanFilter {
   matrix_t *auxBxU;
   matrix_t *auxSDxSD;
   matrix_t *auxSDxMD;
+} ;
 
-} KalmanFilter_t;
+kalman_filter_t *KalmanFilterCreate(uint32_t stateDimension,
+                                    uint32_t measureDimension,
+                                    uint32_t controlDimension);
+void KalmanFilterFree(kalman_filter_t *k);
 
-KalmanFilter_t *KalmanFilterCreate(int stateDimension,
-                                   int measureDimension,
-                                   int controlDimension);
-void KalmanFilterFree(KalmanFilter_t *k);
-
-void KalmanFilterPredict(KalmanFilter_t *k);
-void KalmanFilterUpdate(KalmanFilter_t *k);
+void KalmanFilterPredict(kalman_filter_t *k);
+void KalmanFilterUpdate(kalman_filter_t *k);
 
 #endif // KALMAN_H

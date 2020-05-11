@@ -1,4 +1,5 @@
 #include <assert.h>
+
 #include "GPSAccKalman.h"
 #include "Matrix.h"
 #include "Kalman.h"
@@ -10,16 +11,17 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
                                         double accDev,
                                         double posDev,
                                         double timeStamp) {
-  GPSAccKalmanFilter_t *f = (GPSAccKalmanFilter_t*) malloc(sizeof(GPSAccKalmanFilter_t));
+  GPSAccKalmanFilter_t *f = new GPSAccKalmanFilter_t;
   assert(f);
-  f->kf = KalmanFilterCreate(4, 2, 2);
+  f->kf = KalmanFilterCreate(4, 2, 2); //2, 2, 2
   /*initialization*/
   f->predictTime = f->updateTime = timeStamp;
   f->predictCount = 0;
-  f->accDev = accDev;
+  f->accDeviation = accDev;
 
   MatrixSet(f->kf->Xk_k,
-            x, y, xVel, yVel);
+            x, y,
+            xVel, yVel);
   MatrixSetIdentityDiag(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
 
   MatrixSetIdentity(f->kf->Pk_k);
@@ -32,7 +34,6 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
 void GPSAccKalmanFree(GPSAccKalmanFilter_t *k) {
   assert(k);
   KalmanFilterFree(k->kf);
-  free(k);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +105,7 @@ void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
   rebuildU(k, xAcc, yAcc);
 
   ++k->predictCount;
-  rebuildQ(k, k->accDev);
+  rebuildQ(k, k->accDeviation);
 
   k->predictTime = timeNow;
   KalmanFilterPredict(k->kf);

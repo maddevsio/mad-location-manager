@@ -1,11 +1,11 @@
 #include "Kalman.h"
 #include "Matrix.h"
 
-KalmanFilter_t *KalmanFilterCreate(int stateDimension,
-                                   int measureDimension,
-                                   int controlDimension)
+kalman_filter_t *KalmanFilterCreate(uint32_t stateDimension,
+                                    uint32_t measureDimension,
+                                    uint32_t controlDimension)
 {
-  KalmanFilter_t *f = (KalmanFilter_t*) malloc(sizeof(KalmanFilter_t));
+  kalman_filter_t *f = new kalman_filter_t;
   f->F = MatrixAlloc(stateDimension, stateDimension);
   f->H = MatrixAlloc(measureDimension, stateDimension);
   f->Q = MatrixAlloc(stateDimension, stateDimension);
@@ -36,7 +36,7 @@ KalmanFilter_t *KalmanFilterCreate(int stateDimension,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterFree(KalmanFilter_t *k) {
+void KalmanFilterFree(kalman_filter_t *k) {
   MatrixFree(k->F);
   MatrixFree(k->H);
   MatrixFree(k->B);
@@ -61,10 +61,11 @@ void KalmanFilterFree(KalmanFilter_t *k) {
   MatrixFree(k->auxBxU);
   MatrixFree(k->auxSDxSD);
   MatrixFree(k->auxSDxMD);
+  delete k;
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterPredict(KalmanFilter_t *k) {
+void KalmanFilterPredict(kalman_filter_t *k) {
   //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
   MatrixMultiply(k->F, k->Xk_k, k->Xk_km1);
   MatrixMultiply(k->B, k->Uk, k->auxBxU);
@@ -77,7 +78,7 @@ void KalmanFilterPredict(KalmanFilter_t *k) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterUpdate(KalmanFilter_t *k) {
+void KalmanFilterUpdate(kalman_filter_t *k) {
   //Yk = Zk - Hk*Xk|k-1
   MatrixMultiply(k->H, k->Xk_km1, k->Yk);
   MatrixSubtract(k->Zk, k->Yk, k->Yk);

@@ -1,16 +1,12 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "Commons.h"
+#include <cstdint>
 
 typedef struct matrix {
-  double **data;
-
+  double **data; //todo make 1D arr.
   uint32_t rows;
   uint32_t cols;
-  //seems aligned, right?
 } matrix_t;
 
 matrix_t* MatrixAlloc(uint32_t rows, uint32_t cols);

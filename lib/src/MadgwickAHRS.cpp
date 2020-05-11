@@ -15,10 +15,11 @@
 //---------------------------------------------------------------------------------------------------
 // Header files
 
-#include "MadgwickAHRS.h"
-#include <stdint.h>
 #include <math.h>
+#include <cstdint>
 #include <assert.h>
+
+#include "MadgwickAHRS.h"
 //---------------------------------------------------------------------------------------------------
 // Definitions
 
@@ -38,9 +39,9 @@ static float invSqrt(float x);
 // Functions
 
 
-MadgwickFilter_t *MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
-  MadgwickFilter_t *f = (MadgwickFilter_t*) malloc(sizeof(MadgwickFilter_t));
-  assert(f);
+madgwick_filter_t *MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
+  madgwick_filter_t *f = new madgwick_filter_t;
+  assert(f); //todo add checks or try/catch(bad_allocation_exception) and return some result
   f->beta = beta;
   f->q0 = 1.0f;
   f->q1 = 0.0f;
@@ -51,14 +52,14 @@ MadgwickFilter_t *MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MadgwickFilterFree(MadgwickFilter_t *f) {
-  if (f) free(f);
+void MadgwickFilterFree(madgwick_filter_t *f) {
+  delete f;
 }
 
 //---------------------------------------------------------------------------------------------------
 // AHRS algorithm update
 
-void MadgwickAHRSupdate(MadgwickFilter_t *f,
+void MadgwickAHRSupdate(madgwick_filter_t *f,
                         float gx, float gy, float gz,
                         float ax, float ay, float az,
                         float mx, float my, float mz) {
@@ -162,7 +163,7 @@ void MadgwickAHRSupdate(MadgwickFilter_t *f,
 //---------------------------------------------------------------------------------------------------
 // IMU algorithm update
 
-void MadgwickAHRSupdateIMU(MadgwickFilter_t *f,
+void MadgwickAHRSupdateIMU(madgwick_filter_t *f,
                            float gx, float gy, float gz,
                            float ax, float ay, float az) {
 	float recipNorm;
@@ -249,7 +250,7 @@ float invSqrt(float x) {
 }
 
 void
-MadgwickRotationMatrix(MadgwickFilter_t *mf, float *mtx) {
+MadgwickRotationMatrix(madgwick_filter_t *mf, float *mtx) {
   mtx[0] = 1.0f - 2.0f*mf->q2*mf->q2 - 2.0f*mf->q3*mf->q3;
   mtx[1] = 2.0f*mf->q1*mf->q2 - 2.0f*mf->q3*mf->q0;
   mtx[2] = 2.0f*mf->q1*mf->q3 + 2.0f*mf->q2*mf->q0;

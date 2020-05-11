@@ -13,35 +13,30 @@
 #ifndef MadgwickAHRS_h
 #define MadgwickAHRS_h
 
-//----------------------------------------------------------------------------------------------------
-// Variable declaration
+#include "Quaternion.h"
 
-typedef struct quaternion {
-  float w, x, y, z;
-} quaternion_t;
-
-typedef struct MadgwickFilterAlloc {
+struct madgwick_filter_t {
   float beta;             //algorithm gain
   float sampleFreq;
   float q0, q1, q2, q3;   //quaternion of sensor frame relative to auxiliary frame
-} MadgwickFilter_t;
+};
 
 //---------------------------------------------------------------------------------------------------
 // Function declarations
 
-MadgwickFilter_t* MadgwickFilterAlloc(float beta, float sampleFreqHZ);
-void MadgwickFilterFree(MadgwickFilter_t *f);
-void MadgwickAHRSupdate(MadgwickFilter_t *f,
+madgwick_filter_t* MadgwickFilterAlloc(float beta, float sampleFreqHZ);
+void MadgwickFilterFree(madgwick_filter_t *f);
+void MadgwickAHRSupdate(madgwick_filter_t *f,
                         float gx, float gy, float gz,
                         float ax, float ay, float az,
                         float mx, float my, float mz);
 
-void MadgwickAHRSupdateIMU( MadgwickFilter_t *f,
+void MadgwickAHRSupdateIMU( madgwick_filter_t *f,
                             float gx, float gy, float gz,
                             float ax, float ay, float az);
 
-void MadgwickRotationMatrix (MadgwickFilter_t *mf,
-                              float *mtx);
+void MadgwickRotationMatrix (madgwick_filter_t *mf,
+                             float *mtx);
 
 #endif
 //=====================================================================================================
