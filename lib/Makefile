@@ -19,7 +19,7 @@ iOS: SDKVERSION=8.0
 
 iOS: CXX=$(shell xcrun -sdk iphoneos -find clang++)
 iOS: LINK=$(CXX)
-iOS: CXXFLAGS += -arch ${TARGET_ARCH} -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk -miphoneos-version-min=$(SDKVERSION)
+iOS: CXXFLAGS += -arch ${TARGET_ARCH} -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk -miphoneos-version-min=$(IPHONEOS_DEPLOYMENT_TARGET)
 iOS: LDFLAGS += -arch $(TARGET_ARCH) -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk
 
 BUILD_DIR=build
