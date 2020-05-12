@@ -223,7 +223,7 @@ bool MatrixEq(matrix_t *ma,
 
   for (uint32_t r = 0; r < ma->rows; ++r) {
     for (uint32_t c = 0; c < ma->cols; ++c) {
-      if (abs(ma->data[r][c] - mb->data[r][c]) <= eps)
+      if (fabs(ma->data[r][c] - mb->data[r][c]) <= eps)
         continue;
       return false;
     } //for col
