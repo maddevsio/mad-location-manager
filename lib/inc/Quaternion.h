@@ -38,6 +38,8 @@ public:
   void normalize();
   float len() const;
 
+  quaternion_t invert() const;
+
   // do we really need this?
   float pitch() const;
   float roll() const;
@@ -46,6 +48,9 @@ public:
 ///////////////////////////////////////////////////////
 
 quaternion_t operator*(quaternion_t lhs, const quaternion_t& rhs);
+quaternion_t operator*(const quaternion_t &q, const vector3d_t &v);
+quaternion_t operator*(const vector3d_t &v, const quaternion_t &q);
+
 vector3d_t quaternion_transform_vec(const quaternion_t &q,
                                     const vector3d_t &v);
 

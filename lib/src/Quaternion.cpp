@@ -46,35 +46,11 @@ void vector3d_t::normalize() {
 }
 ///////////////////////////////////////////////////////
 
-static quaternion_t quaternion_inv(const quaternion_t &q);
-static quaternion_t quaternion_mul_qv(const quaternion_t &a, const vector3d_t &b);
-
-quaternion_t quaternion_inv(const quaternion_t &q) {
-  quaternion_t r(q.w, -q.x, -q.y, -q.z);
-  r.normalize();
-  return r;
-}
-///////////////////////////////////////////////////////
-
-quaternion_t quaternion_mul_qv(const quaternion_t &a,
-                               const vector3d_t &b) {
-  quaternion_t r;
-  r.w = -a.x * b.x() - a.y * b.y() - a.z * b.z();
-  r.x = a.w * b.x() + a.y * b.z() - a.z * b.y();
-  r.y = a.w * b.y() - a.x * b.z() + a.z * b.x();
-  r.z = a.w * b.z() + a.x * b.y() - a.y * b.x();
-  return r;
-}
-///////////////////////////////////////////////////////
 
 vector3d_t quaternion_transform_vec(const quaternion_t &q,
-                                    const vector3d_t &v) {
-  /*Quaternion t = quatMulVector(q, v);
-        Quaternion qi = invert(q);
-        Quaternion qmq = quatMulQuat(t, qi);
-        return new Vector3D(qmq.x, qmq.y, qmq.z);*/
-  quaternion_t t = quaternion_mul_qv(q, v);
-  quaternion_t qi = quaternion_inv(q);
+                                    const vector3d_t &v) {  
+  quaternion_t t = q * v;
+  quaternion_t qi = q.invert();
   t *= qi;
   return vector3d_t(t.x, t.y, t.z);
 }
@@ -140,8 +116,17 @@ quaternion_t::normalize() {
 }
 ///////////////////////////////////////////////////////
 
-float quaternion_t::len() const {
+float
+quaternion_t::len() const {
   return sqrtf(w*w + x*x + y*y + z*z);
+}
+///////////////////////////////////////////////////////
+
+quaternion_t
+quaternion_t::invert() const {
+  quaternion_t r(w, -x, -y, -z);
+  r.normalize();
+  return r;
 }
 ///////////////////////////////////////////////////////
 
@@ -162,3 +147,18 @@ quaternion_t::yaw() const {
   return atan2f(x*y + w*z, 0.5f - y*y - z*z);
 }
 ///////////////////////////////////////////////////////
+
+quaternion_t
+operator*(const vector3d_t &v, const quaternion_t &q) {
+  return q*v;
+}
+
+quaternion_t
+operator*(const quaternion_t &q, const vector3d_t &v) {
+  quaternion_t r;
+  r.w = -q.x * v.x() - q.y * v.y() - q.z * v.z();
+  r.x = q.w * v.x() + q.y * v.z() - q.z * v.y();
+  r.y = q.w * v.y() - q.x * v.z() + q.z * v.x();
+  r.z = q.w * v.z() + q.x * v.y() - q.y * v.x();
+  return r;
+}

@@ -209,7 +209,7 @@ geopoint_t pointPlusDistanceNorthHQ(geopoint_t point, double distance) {
 
 geopoint_t CoordMetersToGeopoint(double lonMeters,
                                  double latMeters) {
-  geopoint_t point = {0.0, 0.0};
+  geopoint_t point(0.0, 0.0)
   geopoint_t pointEast = pointPlusDistanceEast(point, lonMeters);
   geopoint_t pointNorthEast = pointPlusDistanceNorth(pointEast, latMeters);
   return pointNorthEast;
@@ -217,7 +217,7 @@ geopoint_t CoordMetersToGeopoint(double lonMeters,
 
 geopoint_t CoordMetersToGeopointHQ(double lonMeters,
                                    double latMeters) {
-  geopoint_t point = {0.0, 0.0};
+  geopoint_t point(0.0, 0.0);
   geopoint_t pointEast = pointPlusDistanceEastHQ(point, lonMeters);
   geopoint_t pointNorthEast = pointPlusDistanceNorthHQ(pointEast, latMeters);
   return pointNorthEast;
@@ -234,23 +234,3 @@ double CoordDistanceBetweenPointsMetersHQ(double lat1, double lon1,
   return geoDistanceMetersHQ(lon1, lat1, lon2, lat2);
 }
 ///////////////////////////////////////////////////////
-
-double CoordCaclulateDistance(const std::vector<geopoint_t> &lst) {
-  double distance = 0.0;
-  double llon, llat;
-
-  if (lst.empty() || lst.size() == 1)
-    return 0.0;
-
-  llon = lst[0].Longitude;
-  llat = lst[0].Latitude;
-
-  for (auto pp = lst.begin()+1; pp != lst.end(); ++pp) {
-    distance += CoordDistanceBetweenPointsMeters(llat, llon,
-                                                 pp->Latitude, pp->Longitude);
-    llat = pp->Latitude;
-    llon = pp->Longitude;
-  }
-  return distance;
-}
-//////////////////////////////////////////////////////////////////////////

@@ -1,8 +1,6 @@
 #ifndef COORDINATES_H
 #define COORDINATES_H
 
-#include <vector>
-
 struct geopoint_t {
   double Latitude, Longitude;
   geopoint_t() : Latitude(0.0), Longitude(0.0) {
