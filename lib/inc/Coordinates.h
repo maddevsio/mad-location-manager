@@ -1,13 +1,14 @@
 #ifndef COORDINATES_H
 #define COORDINATES_H
 
-struct geopoint_t {
-  double Latitude, Longitude;
-  geopoint_t() : Latitude(0.0), Longitude(0.0) {
-  }
-  geopoint_t(double lat, double lon) : Latitude(lat), Longitude(lon) {
-  }
-};
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+typedef struct geopoint {
+  double Latitude, Longitude;  
+} geopoint_t;
 
 /*todo write tests*/
 double CoordDistanceBetweenPointsMeters(double lat1,
@@ -29,6 +30,7 @@ geopoint_t CoordMetersToGeopoint(double lonMeters,
 geopoint_t CoordMetersToGeopointHQ(double lonMeters,
                                    double latMeters);
 
-
-
+#ifdef __cplusplus
+}
+#endif // extern "C"
 #endif // COORDINATES_H

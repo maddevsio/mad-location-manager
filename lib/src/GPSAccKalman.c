@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include "GPSAccKalman.h"
 #include "Matrix.h"
@@ -11,7 +12,7 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
                                         double accDev,
                                         double posDev,
                                         double timeStamp) {
-  GPSAccKalmanFilter_t *f = new GPSAccKalmanFilter_t;
+  GPSAccKalmanFilter_t *f = (GPSAccKalmanFilter_t*) malloc(sizeof(GPSAccKalmanFilter_t));
   assert(f);
   f->kf = KalmanFilterCreate(4, 2, 2); //2, 2, 2
   /*initialization*/
@@ -34,6 +35,7 @@ GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
 void GPSAccKalmanFree(GPSAccKalmanFilter_t *k) {
   assert(k);
   KalmanFilterFree(k->kf);
+  free(k);
 }
 //////////////////////////////////////////////////////////////////////////
 

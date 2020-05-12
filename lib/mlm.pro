@@ -4,17 +4,20 @@ CONFIG += c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
+DEFINES += _USE_MATH_DEFINES
 INCLUDEPATH += inc/
 LIBS += -lgtest
 
 SOURCES += \
-    src/Coordinates.cpp \
-    src/GPSAccKalman.cpp \
-    src/Geohash.cpp \
-    src/Kalman.cpp \
-    src/MadgwickAHRS.cpp \
-    src/Matrix.cpp \
-    src/Quaternion.cpp \
+    src/Commons.c \
+    src/Coordinates.c \
+    src/GPSAccKalman.c \
+    src/Geohash.c \
+    src/Kalman.c \
+    src/MadgwickAHRS.c \
+    src/Matrix.c \
+    src/Quaternion.c \
+    src/Vector3d.c \
     tests/CoordinatesTest.cpp \
     tests/GeohashTest.cpp \
     tests/MatrixTest.cpp \
@@ -28,4 +31,5 @@ HEADERS += \
     inc/Kalman.h \
     inc/MadgwickAHRS.h \
     inc/Matrix.h \
-    inc/Quaternion.h
+    inc/Quaternion.h \
+    inc/Vector3d.h

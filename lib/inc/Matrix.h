@@ -1,7 +1,12 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include <cstdint>
+#include <stdint.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct matrix {
   double **data; //todo make 1D arr.
@@ -66,4 +71,8 @@ bool MatrixDestructiveInvert(matrix_t *input,
 void MatrixSetIdentity(matrix_t *m);
 
 void MatrixSetIdentityDiag(matrix_t *m);
+
+#ifdef __cplusplus
+}
+#endif // extern "C"
 #endif // MATRIX_H

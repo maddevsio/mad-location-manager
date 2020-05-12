@@ -1,6 +1,6 @@
 # desktop definitions
-desktop: CXX=g++
-desktop: LINK=$(CXX)
+desktop: CC=gcc
+desktop: LINK=$(CC)
 
 # iOS definitions
 iOS_armv7: TARGET_ARCH=armv7 
@@ -19,9 +19,9 @@ iOS: TOOLSPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefaul
 iOS: IPHONEOS_DEPLOYMENT_TARGET=8.0
 iOS: SDKVERSION=8.0
 
-iOS: CXX=$(shell xcrun -sdk iphoneos -find clang++)
-iOS: LINK=$(CXX)
-iOS: CXXFLAGS += -arch ${TARGET_ARCH} -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk -miphoneos-version-min=$(IPHONEOS_DEPLOYMENT_TARGET)
+iOS: CC=$(shell xcrun -sdk iphoneos -find clang)
+iOS: LINK=$(CC)
+iOS: CFLAGS += -arch ${TARGET_ARCH} -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk -miphoneos-version-min=$(IPHONEOS_DEPLOYMENT_TARGET)
 iOS: LDFLAGS += -arch $(TARGET_ARCH) -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk
 
 # android definitions
@@ -34,25 +34,25 @@ BUILD_DIR=build
 OBJ_DIR=$(BUILD_DIR)/obj
 BIN_DIR=bin
 
-LIBS := 
-DEFS := 
+LIBS := -lm
+DEFS := -D_USE_MATH_DEFINES 
 WARN_LEVEL = -Wall -pedantic
 
 PRG = mlm
 
 INCLUDES := -Iinc
-CXXFLAGS := $(INCLUDES) $(DEFS) $(WARN_LEVEL) -fPIC -std=c++11
+CFLAGS := $(INCLUDES) $(DEFS) $(WARN_LEVEL) -fPIC #-std=c11
 LIBS :=
 TARGET_LIB := lib$(PRG).so.1.0.0
 LDFLAGS := $(LIBS) -shared 
 
-debug: CXXFLAGS += -O0 -g3
+debug: CFLAGS += -O0 -g3
 debug: all
-release: CXXFLAGS += -O2
+release: CFLAGS += -O2
 release: all
 
-SRC := $(wildcard src/*.cpp) $(wildcard src/*/*.cpp)
-OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
+OBJECTS := $(SRC:%.c=$(OBJ_DIR)/%.o)
 
 all: directories $(TARGET_LIB)
 desktop: directories $(TARGET_LIB)
@@ -65,9 +65,9 @@ iOS_i386: iOS
 iOS_x86_64: iOS
 
 $(TARGET_LIB): $(BIN_DIR)/$(TARGET_LIB)
-$(OBJ_DIR)/%.o: %.cpp
+$(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BIN_DIR)/$(TARGET_LIB): $(OBJECTS)
 	@mkdir -p $(@D)

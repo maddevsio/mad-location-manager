@@ -2,7 +2,6 @@
 #include <math.h>
 #include "Coordinates.h"
 
-
 //http://www.onlineconversion.com/map_greatcircle_distance.htm
 TEST (coordinates, longitudeToMetersTest) {
   double eps = 1e-08;

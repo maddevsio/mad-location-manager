@@ -1,9 +1,13 @@
 #ifndef GEOHASH_H
 #define GEOHASH_H
 
-#include <cstdint>
+#include <stdint.h>
 
-static const int GEOHASH_MAX_PRECISION = 12;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define GEOHASH_MAX_PRECISION 12
 
 uint64_t GeohashEncodeU64(double lat,
                           double lon,
@@ -16,4 +20,7 @@ int GeohashComparePointsU64(double lon1,
                             int precision);
 
 
+#ifdef __cplusplus
+}
+#endif // extern "C"
 #endif // GEOHASH_H

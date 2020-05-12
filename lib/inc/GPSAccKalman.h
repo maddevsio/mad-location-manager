@@ -1,16 +1,20 @@
 #ifndef GPSACCKALMAN_H
 #define GPSACCKALMAN_H
 
-#include <cstdint>
+#include <stdint.h>
 
-struct kalman_filter_t;
-struct GPSAccKalmanFilter_t {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct kalman_filter kalman_filter_t;
+typedef struct GPSAccKalmanFilter {
   double predictTime;
   double updateTime;
   double accDeviation;
   uint32_t predictCount;
   kalman_filter_t *kf;
-};
+} GPSAccKalmanFilter_t;
 
 GPSAccKalmanFilter_t* GPSAccKalmanAlloc(
     double x, double y,
@@ -38,4 +42,7 @@ double GPSAccKalmanGetY(const GPSAccKalmanFilter_t *k);
 double GPSAccKalmanGetXVel(const GPSAccKalmanFilter_t *k);
 double GPSAccKalmanGetYVel(const GPSAccKalmanFilter_t *k);
 
+#ifdef __cplusplus
+}
+#endif // extern "C"
 #endif // GPSACCKALMAN_H

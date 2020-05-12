@@ -15,17 +15,22 @@
 
 #include "Quaternion.h"
 
-struct madgwick_filter_t {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct madgwick_filter {
   float beta;             //algorithm gain
-  float sampleFreq;
-  float q0, q1, q2, q3;   //quaternion of sensor frame relative to auxiliary frame
-};
+  float sample_freq;
+  quaternion_t q;
+} madgwick_filter_t;
 
 //---------------------------------------------------------------------------------------------------
 // Function declarations
 
 madgwick_filter_t* MadgwickFilterAlloc(float beta, float sampleFreqHZ);
 void MadgwickFilterFree(madgwick_filter_t *f);
+
 void MadgwickAHRSupdate(madgwick_filter_t *f,
                         float gx, float gy, float gz,
                         float ax, float ay, float az,
@@ -38,7 +43,7 @@ void MadgwickAHRSupdateIMU( madgwick_filter_t *f,
 void MadgwickRotationMatrix (madgwick_filter_t *mf,
                              float *mtx);
 
-#endif
-//=====================================================================================================
-// End of file
-//=====================================================================================================
+#ifdef __cplusplus
+}
+#endif // extern "C"
+#endif // MadgwickAHRS_h

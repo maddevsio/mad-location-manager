@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <stdint.h>
 #include <assert.h>
 #include "Geohash.h"
 
@@ -10,8 +10,8 @@ uint64_t GeohashEncodeU64(double lat,
   uint64_t ilat, ilon;
   lat = lat/180.0 + 1.5;
   lon = lon/360.0 + 1.5;
-  ilat = *(reinterpret_cast<uint64_t*>(&lat));
-  ilon = *(reinterpret_cast<uint64_t*>(&lon));
+  ilat = *(uint64_t*)(&lat);
+  ilon = *(uint64_t*)(&lon);
   ilat >>= 20;
   ilon >>= 20;
   ilat &= 0x00000000ffffffff;
@@ -26,7 +26,7 @@ int GeohashComparePointsU64(double lon1, double lat1,
   assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
   uint64_t gh1 = GeohashEncodeU64(lat1, lon1, precision);
   uint64_t gh2 = GeohashEncodeU64(lat2, lon2, precision);
-  return static_cast<int>(gh1 - gh2);
+  return (int)(gh1 - gh2);
 }
 ///////////////////////////////////////////////////////
 

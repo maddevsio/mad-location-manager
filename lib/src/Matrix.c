@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include <algorithm>
 
 #include "Commons.h"
 #include "Matrix.h"
@@ -28,15 +27,15 @@ matrix_t *MatrixAlloc(uint32_t rows,
                       uint32_t cols) {
   assert(rows);
   assert(cols);
-  matrix_t *mtx = new matrix_t;
+  matrix_t *mtx = (matrix_t*) malloc(sizeof(matrix_t));
   assert(mtx);
   mtx->rows = rows;
   mtx->cols = cols;
-  mtx->data = new double*[rows];
+  mtx->data = (double**) malloc(sizeof(double*) * rows);
   assert(mtx->data);
 
   for (uint32_t r = 0; r < rows; ++r) {
-    mtx->data[r] = new double[cols];
+    mtx->data[r] = (double*) malloc (sizeof(double) * cols);
     assert(mtx->data[r]);
     for (uint32_t c = 0; c < cols; ++c)
       mtx->data[r][c] = 0.0;
@@ -48,9 +47,9 @@ matrix_t *MatrixAlloc(uint32_t rows,
 void MatrixFree(matrix_t *m) {
   assert(m);
   while (m->rows--)
-    delete [] m->data[m->rows];
-  delete [] m->data;
-  delete m;
+    free(m->data[m->rows]);
+  free(m->data);
+  free(m);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -249,7 +248,9 @@ void swapRows(matrix_t *m,
               uint32_t r2) {
   assert(m);  
   assert(r1 < m->rows && r2 < m->rows);
-  std::swap<double*>(m->data[r1], m->data[r2]);
+  double *tmp = m->data[r1];
+  m->data[r1] = m->data[r2];
+  m->data[r2] = tmp;
 }
 //////////////////////////////////////////////////////////////////////////
 

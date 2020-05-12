@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "Kalman.h"
 #include "Matrix.h"
 
@@ -5,7 +6,7 @@ kalman_filter_t *KalmanFilterCreate(uint32_t stateDimension,
                                     uint32_t measureDimension,
                                     uint32_t controlDimension)
 {
-  kalman_filter_t *f = new kalman_filter_t;
+  kalman_filter_t *f = (kalman_filter_t*) malloc(sizeof(kalman_filter_t));
   f->F = MatrixAlloc(stateDimension, stateDimension);
   f->H = MatrixAlloc(measureDimension, stateDimension);
   f->Q = MatrixAlloc(stateDimension, stateDimension);
@@ -61,7 +62,7 @@ void KalmanFilterFree(kalman_filter_t *k) {
   MatrixFree(k->auxBxU);
   MatrixFree(k->auxSDxSD);
   MatrixFree(k->auxSDxMD);
-  delete k;
+  free(k);
 }
 //////////////////////////////////////////////////////////////////////////
 

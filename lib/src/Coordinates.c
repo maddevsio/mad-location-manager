@@ -1,16 +1,16 @@
-#include <vector>
 #include <math.h>
+#include <assert.h>
 
 #include "Coordinates.h"
 #include "Geohash.h"
 #include "Commons.h"
 
-static const double EARTH_RADIUS = (6371.0 * 1000.0); // meters
-static const double ACTUAL_GRAVITY = 9.80665;
+#define EARTH_RADIUS (6371.0 * 1000.0) // meters
+#define ACTUAL_GRAVITY 9.80665
 
-static const double majAxis = 6378137.0;   // meter
-static const double ellipseCoefficient = 1 / 298.257223563;
-static const double minAxis = (1 - ellipseCoefficient) * majAxis; // meter
+#define majAxis 6378137.0   // meter
+#define ellipseCoefficient (1.0 / 298.257223563)
+#define minAxis ((1 - ellipseCoefficient) * majAxis) // meter
 
 //https://en.wikipedia.org/wiki/Great-circle_distance
 static double geoDistanceMeters(double lon1, double lat1,
@@ -28,8 +28,9 @@ static geopoint_t pointPlusDistanceNorth(geopoint_t point, double distance);
 static geopoint_t pointPlusDistanceEastHQ(geopoint_t point, double distance);
 static geopoint_t pointPlusDistanceNorthHQ(geopoint_t point, double distance);
 
-double geoDistanceMeters(double lon1, double lat1,
-                         double lon2, double lat2) {
+double
+geoDistanceMeters(double lon1, double lat1,
+                  double lon2, double lat2) {
   double deltaLon = Degree2Rad(lon2 - lon1);
   double deltaLat = Degree2Rad(lat2 - lat1);
   double a = pow(sin(deltaLat / 2.0), 2.0) +
@@ -41,8 +42,9 @@ double geoDistanceMeters(double lon1, double lat1,
 }
 //////////////////////////////////////////////////////////////////////////
 
-double geoDistanceMetersHQ(double lon1, double lat1,
-                           double lon2, double lat2) {
+double
+geoDistanceMetersHQ(double lon1, double lat1,
+                    double lon2, double lat2) {
   double f1 = Degree2Rad(lat1), l1 = Degree2Rad(lon1);
   double f2 = Degree2Rad(lat2), l2 = Degree2Rad(lon2);
   double L = l2 - l1;
@@ -73,9 +75,9 @@ double geoDistanceMetersHQ(double lon1, double lat1,
     C = ellipseCoefficient/16*cosSqa*(4+ellipseCoefficient*(4-3*cosSqa));
     ll = l;
     l = L + (1-C) * ellipseCoefficient * sina * (sig + C*sins*(cos2sigM+C*coss*(-1+2*cos2sigM*cos2sigM)));
-    if (abs(l) > M_PI)
+    if (fabs(l) > M_PI)
       return 0.0;
-  } while (abs(l-ll) > 1e-12 && iterations--);
+  } while (fabs(l-ll) > 1e-12 && iterations--);
 
   if (!iterations)
     return 0.0;
@@ -91,32 +93,37 @@ double geoDistanceMetersHQ(double lon1, double lat1,
 }
 ///////////////////////////////////////////////////////
 
-double CoordLongitudeToMeters(double lon) {
+double
+CoordLongitudeToMeters(double lon) {
   double distance = geoDistanceMeters(lon, 0.0, 0.0, 0.0);
   return distance * (lon < 0.0 ? -1.0 : 1.0);
 }
 
-double CoordLongitudeToMetersHQ(double lon) {
+double
+CoordLongitudeToMetersHQ(double lon) {
   double distance = geoDistanceMetersHQ(lon, 0.0, 0.0, 0.0);
   return distance * (lon < 0.0 ? -1.0 : 1.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-double CoordLatitudeToMeters(double lat) {
+double
+CoordLatitudeToMeters(double lat) {
   double distance = geoDistanceMeters(0.0, lat, 0.0, 0.0);
   return distance * (lat < 0.0 ? -1.0 : 1.0);
 }
 
 
-double CoordLatitudeToMetersHQ(double lat) {
+double
+CoordLatitudeToMetersHQ(double lat) {
   double distance = geoDistanceMetersHQ(0.0, lat, 0.0, 0.0);
   return distance * (lat < 0.0 ? -1.0 : 1.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t getPointAhead(geopoint_t point,
-                         double distance,
-                         double azimuthDegrees) {
+geopoint_t
+getPointAhead(geopoint_t point,
+              double distance,
+              double azimuthDegrees) {
   geopoint_t res;
   double radiusFraction = distance / EARTH_RADIUS;
   double bearing = Degree2Rad(azimuthDegrees);
@@ -138,9 +145,10 @@ geopoint_t getPointAhead(geopoint_t point,
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t getPointAheadHQ(geopoint_t point,
-                           double distance,
-                           double azimuthDegrees) {
+geopoint_t
+getPointAheadHQ(geopoint_t point,
+                double distance,
+                double azimuthDegrees) {
   double t1 = Degree2Rad(point.Latitude);
   double l1 = Degree2Rad(point.Longitude);
   double a1 = Degree2Rad(azimuthDegrees);
@@ -170,7 +178,7 @@ geopoint_t getPointAheadHQ(geopoint_t point,
                                    B/6*cos2sigM*(-3+4*sinSig*sinSig)*(-3+4*cos2sigM*cos2sigM)));
     ddsig = sig;
     sig = distance / (minAxis*A) + dsig;
-  } while (abs(sig-ddsig) > 1e-12 && iterations--);
+  } while (fabs(sig-ddsig) > 1e-12 && iterations--);
 
   assert(iterations); //hack!
 
@@ -189,48 +197,56 @@ geopoint_t getPointAheadHQ(geopoint_t point,
 }
 ///////////////////////////////////////////////////////
 
-geopoint_t pointPlusDistanceEast(geopoint_t point, double distance) {
+geopoint_t
+pointPlusDistanceEast(geopoint_t point, double distance) {
   return getPointAhead(point, distance, 90.0);
 }
 
-geopoint_t pointPlusDistanceNorth(geopoint_t point, double distance) {
+geopoint_t
+pointPlusDistanceNorth(geopoint_t point, double distance) {
   return getPointAhead(point, distance, 0.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t pointPlusDistanceEastHQ(geopoint_t point, double distance) {
+geopoint_t
+pointPlusDistanceEastHQ(geopoint_t point, double distance) {
   return getPointAheadHQ(point, distance, 90.0);
 }
 
-geopoint_t pointPlusDistanceNorthHQ(geopoint_t point, double distance) {
+geopoint_t
+pointPlusDistanceNorthHQ(geopoint_t point, double distance) {
   return getPointAheadHQ(point, distance, 0.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-geopoint_t CoordMetersToGeopoint(double lonMeters,
-                                 double latMeters) {
-  geopoint_t point(0.0, 0.0)
+geopoint_t
+CoordMetersToGeopoint(double lonMeters,
+                      double latMeters) {
+  geopoint_t point = {.Latitude = 0.0, .Longitude = 0.0};
   geopoint_t pointEast = pointPlusDistanceEast(point, lonMeters);
   geopoint_t pointNorthEast = pointPlusDistanceNorth(pointEast, latMeters);
   return pointNorthEast;
 }
 
-geopoint_t CoordMetersToGeopointHQ(double lonMeters,
-                                   double latMeters) {
-  geopoint_t point(0.0, 0.0);
+geopoint_t
+CoordMetersToGeopointHQ(double lonMeters,
+                        double latMeters) {
+  geopoint_t point = {.Latitude = 0.0, .Longitude = 0.0};
   geopoint_t pointEast = pointPlusDistanceEastHQ(point, lonMeters);
   geopoint_t pointNorthEast = pointPlusDistanceNorthHQ(pointEast, latMeters);
   return pointNorthEast;
 }
 //////////////////////////////////////////////////////////////////////////
 
-double CoordDistanceBetweenPointsMeters(double lat1, double lon1,
-                                        double lat2, double lon2) {
+double
+CoordDistanceBetweenPointsMeters(double lat1, double lon1,
+                                 double lat2, double lon2) {
   return geoDistanceMeters(lon1, lat1, lon2, lat2);
 }
 
-double CoordDistanceBetweenPointsMetersHQ(double lat1, double lon1,
-                                          double lat2, double lon2) {
+double
+CoordDistanceBetweenPointsMetersHQ(double lat1, double lon1,
+                                   double lat2, double lon2) {
   return geoDistanceMetersHQ(lon1, lat1, lon2, lat2);
 }
 ///////////////////////////////////////////////////////
