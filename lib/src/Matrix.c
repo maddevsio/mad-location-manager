@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include "Commons.h"
 #include "Matrix.h"
