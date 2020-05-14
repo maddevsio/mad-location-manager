@@ -5,9 +5,9 @@
 //http://www.onlineconversion.com/map_greatcircle_distance.htm
 TEST (coordinates, longitudeToMetersTest) {
   double eps = 1e-08;
-  double dd1 = abs(CoordLongitudeToMeters(12.348039));
-  double dd2 = abs(CoordLongitudeToMeters(123.2344556));
-  double dd3 = abs(CoordLongitudeToMeters(-122.33434553));
+  double dd1 = abs(coord_longitude_to_meters(12.348039));
+  double dd2 = abs(coord_longitude_to_meters(123.2344556));
+  double dd3 = abs(coord_longitude_to_meters(-122.33434553));
 #if COORDINATES_HIGH_ACCURACY==1
   ASSERT_TRUE(abs(1374577.4137749006 - dd1) < eps);
   ASSERT_TRUE(abs(13718396.84557247  - dd2) < eps);
@@ -22,9 +22,9 @@ TEST (coordinates, longitudeToMetersTest) {
 
 TEST (coordinates, latitudeToMetersTest) {
   double eps = 1e-08;
-  double dd1 = abs(CoordLatitudeToMeters(36.323543));
-  double dd2 = abs(CoordLatitudeToMeters(234.3242144));
-  double dd3 = abs(CoordLatitudeToMeters(-127.342434));
+  double dd1 = abs(coord_latitude_to_meters(36.323543));
+  double dd2 = abs(coord_latitude_to_meters(234.3242144));
+  double dd3 = abs(coord_latitude_to_meters(-127.342434));
 #if COORDINATES_HIGH_ACCURACY==1
   ASSERT_TRUE(abs(4021443.6498243436 - dd1) < eps);
   ASSERT_TRUE(abs(6022003.6913477043 - dd2) < eps);
@@ -40,7 +40,7 @@ TEST (coordinates, latitudeToMetersTest) {
 TEST (coordinates, metersToGeopointTest) {
   double eps = 1e-08;
   geopoint_t t;
-  t = CoordMetersToGeopoint(1373039.2908091505, 4038993.6993554747);
+  t = coord_meters_to_geopoint(1373039.2908091505, 4038993.6993554747);
 #if COORDINATES_HIGH_ACCURACY==1
   ASSERT_TRUE(abs(t.Latitude - 36.481699312213955) < eps);
   ASSERT_TRUE(abs(t.Longitude - 12.33422180630488) < eps);

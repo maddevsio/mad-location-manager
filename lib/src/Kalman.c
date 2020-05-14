@@ -2,111 +2,111 @@
 #include "Kalman.h"
 #include "Matrix.h"
 
-kalman_filter_t *KalmanFilterCreate(uint32_t stateDimension,
-                                    uint32_t measureDimension,
-                                    uint32_t controlDimension)
+kalman_filter_t *kalman_filter_create(uint32_t stateDimension,
+                                      uint32_t measureDimension,
+                                      uint32_t controlDimension)
 {
   kalman_filter_t *f = (kalman_filter_t*) malloc(sizeof(kalman_filter_t));
-  f->F = MatrixAlloc(stateDimension, stateDimension);
-  f->H = MatrixAlloc(measureDimension, stateDimension);
-  f->Q = MatrixAlloc(stateDimension, stateDimension);
-  f->R = MatrixAlloc(measureDimension, measureDimension);
+  f->F = matrix_alloc(stateDimension, stateDimension);
+  f->H = matrix_alloc(measureDimension, stateDimension);
+  f->Q = matrix_alloc(stateDimension, stateDimension);
+  f->R = matrix_alloc(measureDimension, measureDimension);
 
-  f->B = MatrixAlloc(stateDimension, controlDimension);
-  f->Uk = MatrixAlloc(controlDimension, 1);
+  f->B = matrix_alloc(stateDimension, controlDimension);
+  f->Uk = matrix_alloc(controlDimension, 1);
 
-  f->Zk = MatrixAlloc(measureDimension, 1);
+  f->Zk = matrix_alloc(measureDimension, 1);
 
-  f->Xk_km1 = MatrixAlloc(stateDimension, 1);
-  f->Pk_km1 = MatrixAlloc(stateDimension, stateDimension);
+  f->Xk_km1 = matrix_alloc(stateDimension, 1);
+  f->Pk_km1 = matrix_alloc(stateDimension, stateDimension);
 
-  f->Yk = MatrixAlloc(measureDimension, 1);
-  f->Sk = MatrixAlloc(measureDimension, measureDimension);
-  f->SkInv = MatrixAlloc(measureDimension, measureDimension);
+  f->Yk = matrix_alloc(measureDimension, 1);
+  f->Sk = matrix_alloc(measureDimension, measureDimension);
+  f->SkInv = matrix_alloc(measureDimension, measureDimension);
 
-  f->K = MatrixAlloc(stateDimension, measureDimension);
+  f->K = matrix_alloc(stateDimension, measureDimension);
 
-  f->Xk_k = MatrixAlloc(stateDimension, 1);
-  f->Pk_k = MatrixAlloc(stateDimension, stateDimension);
-  f->Yk_k = MatrixAlloc(measureDimension, 1);
+  f->Xk_k = matrix_alloc(stateDimension, 1);
+  f->Pk_k = matrix_alloc(stateDimension, stateDimension);
+  f->Yk_k = matrix_alloc(measureDimension, 1);
 
-  f->auxBxU = MatrixAlloc(stateDimension, 1);
-  f->auxSDxSD = MatrixAlloc(stateDimension, stateDimension);
-  f->auxSDxMD = MatrixAlloc(stateDimension, measureDimension);
+  f->auxBxU = matrix_alloc(stateDimension, 1);
+  f->auxSDxSD = matrix_alloc(stateDimension, stateDimension);
+  f->auxSDxMD = matrix_alloc(stateDimension, measureDimension);
   return f;
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterFree(kalman_filter_t *k) {
-  MatrixFree(k->F);
-  MatrixFree(k->H);
-  MatrixFree(k->B);
-  MatrixFree(k->Q);
-  MatrixFree(k->R);
+void kalman_filter_free(kalman_filter_t *k) {
+  matrix_free(k->F);
+  matrix_free(k->H);
+  matrix_free(k->B);
+  matrix_free(k->Q);
+  matrix_free(k->R);
 
-  MatrixFree(k->Uk);
-  MatrixFree(k->Zk);
+  matrix_free(k->Uk);
+  matrix_free(k->Zk);
 
-  MatrixFree(k->Xk_km1);
-  MatrixFree(k->Pk_km1);
-  MatrixFree(k->Yk);
+  matrix_free(k->Xk_km1);
+  matrix_free(k->Pk_km1);
+  matrix_free(k->Yk);
 
-  MatrixFree(k->Sk);
-  MatrixFree(k->SkInv);
+  matrix_free(k->Sk);
+  matrix_free(k->SkInv);
 
-  MatrixFree(k->K);
-  MatrixFree(k->Xk_k);
-  MatrixFree(k->Pk_k);
-  MatrixFree(k->Yk_k);
+  matrix_free(k->K);
+  matrix_free(k->Xk_k);
+  matrix_free(k->Pk_k);
+  matrix_free(k->Yk_k);
 
-  MatrixFree(k->auxBxU);
-  MatrixFree(k->auxSDxSD);
-  MatrixFree(k->auxSDxMD);
+  matrix_free(k->auxBxU);
+  matrix_free(k->auxSDxSD);
+  matrix_free(k->auxSDxMD);
   free(k);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterPredict(kalman_filter_t *k) {
+void kalman_filter_predict(kalman_filter_t *k) {
   //Xk|k-1 = Fk*Xk-1|k-1 + Bk*Uk
-  MatrixMultiply(k->F, k->Xk_k, k->Xk_km1);
-  MatrixMultiply(k->B, k->Uk, k->auxBxU);
-  MatrixAdd(k->Xk_km1, k->auxBxU, k->Xk_km1);
+  matrix_multiply(k->F, k->Xk_k, k->Xk_km1);
+  matrix_multiply(k->B, k->Uk, k->auxBxU);
+  matrix_add(k->Xk_km1, k->auxBxU, k->Xk_km1);
 
   //Pk|k-1 = Fk*Pk-1|k-1*Fk(t) + Qk
-  MatrixMultiply(k->F, k->Pk_k, k->auxSDxSD);
-  MatrixMultiplyByTranspose(k->auxSDxSD, k->F, k->Pk_km1);
-  MatrixAdd(k->Pk_km1, k->Q, k->Pk_km1);
+  matrix_multiply(k->F, k->Pk_k, k->auxSDxSD);
+  matrix_multiply_by_transpose(k->auxSDxSD, k->F, k->Pk_km1);
+  matrix_add(k->Pk_km1, k->Q, k->Pk_km1);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void KalmanFilterUpdate(kalman_filter_t *k) {
+void kalman_filter_update(kalman_filter_t *k) {
   //Yk = Zk - Hk*Xk|k-1
-  MatrixMultiply(k->H, k->Xk_km1, k->Yk);
-  MatrixSubtract(k->Zk, k->Yk, k->Yk);
+  matrix_multiply(k->H, k->Xk_km1, k->Yk);
+  matrix_subtract(k->Zk, k->Yk, k->Yk);
 
   //Sk = Rk + Hk*Pk|k-1*Hk(t)
-  MatrixMultiplyByTranspose(k->Pk_km1, k->H, k->auxSDxMD);
-  MatrixMultiply(k->H, k->auxSDxMD, k->Sk);
-  MatrixAdd(k->R, k->Sk, k->Sk);
+  matrix_multiply_by_transpose(k->Pk_km1, k->H, k->auxSDxMD);
+  matrix_multiply(k->H, k->auxSDxMD, k->Sk);
+  matrix_add(k->R, k->Sk, k->Sk);
 
   //Kk = Pk|k-1*Hk(t)*Sk(inv)
-  if (!(MatrixDestructiveInvert(k->Sk, k->SkInv)))
+  if (!(matrix_destructive_invert(k->Sk, k->SkInv)))
     return; //matrix hasn't inversion
-  MatrixMultiply(k->auxSDxMD, k->SkInv, k->K);
+  matrix_multiply(k->auxSDxMD, k->SkInv, k->K);
 
   //xk|k = xk|k-1 + Kk*Yk
-  MatrixMultiply(k->K, k->Yk, k->Xk_k);
-  MatrixAdd(k->Xk_km1, k->Xk_k, k->Xk_k);
+  matrix_multiply(k->K, k->Yk, k->Xk_k);
+  matrix_add(k->Xk_km1, k->Xk_k, k->Xk_k);
 
   //Pk|k = (I - Kk*Hk) * Pk|k-1 - SEE WIKI!!!
-  MatrixMultiply(k->K, k->H, k->auxSDxSD);
-  MatrixSubtractFromIdentity(k->auxSDxSD);
-  MatrixMultiply(k->auxSDxSD, k->Pk_km1, k->Pk_k);
+  matrix_multiply(k->K, k->H, k->auxSDxSD);
+  matrix_subtract_from_identity(k->auxSDxSD);
+  matrix_multiply(k->auxSDxSD, k->Pk_km1, k->Pk_k);
 
   //we don't use this
   //Yk|k = Zk - Hk*Xk|k
-  MatrixMultiply(k->H, k->Xk_k, k->Yk_k);
-  MatrixSubtract(k->Zk, k->Yk_k, k->Yk_k);
+  matrix_multiply(k->H, k->Xk_k, k->Yk_k);
+  matrix_subtract(k->Zk, k->Yk_k, k->Yk_k);
 }
 //////////////////////////////////////////////////////////////////////////
 

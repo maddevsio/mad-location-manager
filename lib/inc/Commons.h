@@ -9,22 +9,22 @@
 extern "C" {
 #endif
 
-double Degree2Rad(double degree);
+double degree_to_rad(double degree);
 //////////////////////////////////////////////////////////////////////////
 
-double Rad2Degree(double rad);
+double rad_to_degree(double rad);
 //////////////////////////////////////////////////////////////////////////
 
-double MilesPerHour2MeterPerSecond(double mph);
+double miles_per_hour_to_meters_per_second(double mph);
 //////////////////////////////////////////////////////////////////////////
 
-int RandomBetween2Vals(int low,
-                       int hi);
+int random_between_2_vals(int low,
+                          int hi);
 ///////////////////////////////////////////////////////
 
-double LowPassFilter(double prev,
-                     double measured,
-                     double alpha);
+double low_pass_filter(double prev,
+                       double measured,
+                       double alpha);
 ///////////////////////////////////////////////////////
 
 #ifdef __cplusplus

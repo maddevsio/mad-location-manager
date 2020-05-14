@@ -16,7 +16,7 @@ TEST (geohash, EncodeU64) {
   double lat = 27.988056;
   double lon = 86.925278;
   uint64_t exp = 0xceb7f254240fd612;
-  uint64_t act = GeohashEncodeU64(lat, lon, GEOHASH_MAX_PRECISION);
+  uint64_t act = geohash_encode(lat, lon, GEOHASH_MAX_PRECISION);
   ASSERT_EQ(exp, act);  
 }
 ///////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ TEST (geohash, Encode) {
 
   TestEncodeItem_t *tmp;
   for (tmp = posTests; tmp->expected; ++tmp) {
-    uint64_t geohash = GeohashEncodeU64(tmp->lat, tmp->lon, tmp->precision);
+    uint64_t geohash = geohash_encode(tmp->lat, tmp->lon, tmp->precision);
     const char *geostr = geohash_str(geohash);
     EXPECT_EQ(strcmp(geostr, tmp->expected), 0) << "expected geohash not equals actual" << geostr << tmp->expected;
   }

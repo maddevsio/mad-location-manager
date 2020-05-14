@@ -8,7 +8,7 @@
 static float inv_sqrt(float x);
 
 madgwick_filter_t*
-MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
+madgwick_filter_alloc(float beta, float sampleFreqHZ) {
   madgwick_filter_t *f = (madgwick_filter_t*) malloc(sizeof(madgwick_filter_t));
   assert(f);
   f->beta = beta;
@@ -22,15 +22,15 @@ MadgwickFilterAlloc(float beta, float sampleFreqHZ) {
 //////////////////////////////////////////////////////////////////////////
 
 void
-MadgwickFilterFree(madgwick_filter_t *f) {
+madgwick_filter_free(madgwick_filter_t *f) {
   free(f);
 }
 
 void
-MadgwickAHRSupdate(madgwick_filter_t *f,
-                        float gx, float gy, float gz,
-                        float ax, float ay, float az,
-                        float mx, float my, float mz) {
+madgwick_filter_AHRS_update(madgwick_filter_t *f,
+                            float gx, float gy, float gz,
+                            float ax, float ay, float az,
+                            float mx, float my, float mz) {
   float recipNorm;
   float s0, s1, s2, s3;
   float qDot1, qDot2, qDot3, qDot4;
@@ -40,7 +40,7 @@ MadgwickAHRSupdate(madgwick_filter_t *f,
 
   // Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
   if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
-    MadgwickAHRSupdateIMU(f, gx, gy, gz, ax, ay, az);
+    madgwick_filter_AHRS_update_IMU(f, gx, gy, gz, ax, ay, az);
     return;
   }
 
@@ -129,9 +129,9 @@ MadgwickAHRSupdate(madgwick_filter_t *f,
 }
 ///////////////////////////////////////////////////////
 
-void MadgwickAHRSupdateIMU(madgwick_filter_t *f,
-                           float gx, float gy, float gz,
-                           float ax, float ay, float az) {
+void madgwick_filter_AHRS_update_IMU(madgwick_filter_t *f,
+                                     float gx, float gy, float gz,
+                                     float ax, float ay, float az) {
   float recipNorm;
   float s0, s1, s2, s3;
   float qDot1, qDot2, qDot3, qDot4;
@@ -201,7 +201,7 @@ void MadgwickAHRSupdateIMU(madgwick_filter_t *f,
 ///////////////////////////////////////////////////////
 
 float inv_sqrt(float x) {
-// Fast inverse square-root
-// See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
+  // Fast inverse square-root
+  // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
   return 1.0f / sqrtf(x);
 }

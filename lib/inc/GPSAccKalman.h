@@ -8,39 +8,39 @@ extern "C" {
 #endif
 
 typedef struct kalman_filter kalman_filter_t;
-typedef struct GPSAccKalmanFilter {
+typedef struct gps_accelerometer_fusion_filter {
   double predictTime;
   double updateTime;
   double accDeviation;
   uint32_t predictCount;
   kalman_filter_t *kf;
-} GPSAccKalmanFilter_t;
+} gps_accelerometer_fusion_filter_t;
 
-GPSAccKalmanFilter_t* GPSAccKalmanAlloc(
+gps_accelerometer_fusion_filter_t* gps_accelerometer_fusion_filter_alloc(
     double x, double y,
     double xVel, double yVel,
     double accDev, double posDev,
     double timeStamp);
 
-void GPSAccKalmanFree(GPSAccKalmanFilter_t *k);
+void gps_accelerometer_fusion_filter_free(gps_accelerometer_fusion_filter_t *k);
 
-void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
-                         double timeNow,
-                         double xAcc,
-                         double yAcc);
+void gps_accelerometer_fusion_filter_predict(gps_accelerometer_fusion_filter_t *k,
+                                             double timeNow,
+                                             double xAcc,
+                                             double yAcc);
 
-void GPSAccKalmanUpdate(GPSAccKalmanFilter_t *k,
-                        double timeStamp,
-                        double x,
-                        double y,
-                        double xVel,
-                        double yVel,
-                        double posDev);
+void gps_accelerometer_fusion_filter_update(gps_accelerometer_fusion_filter_t *k,
+                                            double timeStamp,
+                                            double x,
+                                            double y,
+                                            double xVel,
+                                            double yVel,
+                                            double posDev);
 
-double GPSAccKalmanGetX(const GPSAccKalmanFilter_t *k);
-double GPSAccKalmanGetY(const GPSAccKalmanFilter_t *k);
-double GPSAccKalmanGetXVel(const GPSAccKalmanFilter_t *k);
-double GPSAccKalmanGetYVel(const GPSAccKalmanFilter_t *k);
+double gps_accelerometer_fusion_filter_get_x(const gps_accelerometer_fusion_filter_t *k);
+double gps_accelerometer_fusion_filter_get_y(const gps_accelerometer_fusion_filter_t *k);
+double gps_accelerometer_fusion_filter_get_vel_x(const gps_accelerometer_fusion_filter_t *k);
+double gps_accelerometer_fusion_filter_get_vel_y(const gps_accelerometer_fusion_filter_t *k);
 
 #ifdef __cplusplus
 }

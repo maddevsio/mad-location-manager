@@ -5,101 +5,119 @@
 #include "Matrix.h"
 #include "Kalman.h"
 
-GPSAccKalmanFilter_t *GPSAccKalmanAlloc(double x,
-                                        double y,
-                                        double xVel,
-                                        double yVel,
-                                        double accDev,
-                                        double posDev,
-                                        double timeStamp) {
-  GPSAccKalmanFilter_t *f = (GPSAccKalmanFilter_t*) malloc(sizeof(GPSAccKalmanFilter_t));
+static void rebuildF(gps_accelerometer_fusion_filter_t *f, double dt);
+static void rebuildU(gps_accelerometer_fusion_filter_t *f,
+                     double xAcc,
+                     double yAcc);
+static void rebuildB(gps_accelerometer_fusion_filter_t *f,
+                     double dt);
+static void rebuildR(gps_accelerometer_fusion_filter_t *f,
+                     double posSigma);
+static void rebuildQ(gps_accelerometer_fusion_filter_t *f,
+                     double accDeviation);
+
+gps_accelerometer_fusion_filter_t *
+gps_accelerometer_fusion_filter_alloc(double x,
+                                      double y,
+                                      double xVel,
+                                      double yVel,
+                                      double accDev,
+                                      double posDev,
+                                      double timeStamp) {
+  gps_accelerometer_fusion_filter_t *f =
+      malloc(sizeof(gps_accelerometer_fusion_filter_t));
   assert(f);
 
-  f->kf = KalmanFilterCreate(4, 2, 2);
+  f->kf = kalman_filter_create(4, 2, 2);
   f->predictTime = f->updateTime = timeStamp;
   f->predictCount = 0;
   f->accDeviation = accDev;
 
-  MatrixSet(f->kf->Xk_k,
-            x, y,
-            xVel, yVel);
-  MatrixSetIdentityDiag(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
+  matrix_set(f->kf->Xk_k,
+             x, y,
+             xVel, yVel);
+  matrix_set_identity_diag(f->kf->H); //state has 4d and measurement has 4d too. so here is identity
 
-  MatrixSetIdentity(f->kf->Pk_k);
-  MatrixScale(f->kf->Pk_k, posDev); //todo get speed accuracy if possible
+  matrix_set_identity(f->kf->Pk_k);
+  matrix_scale(f->kf->Pk_k, posDev); //todo get speed accuracy if possible
 
   return f;
 }
 //////////////////////////////////////////////////////////////////////////
 
-void GPSAccKalmanFree(GPSAccKalmanFilter_t *k) {
+void
+gps_accelerometer_fusion_filter_free(gps_accelerometer_fusion_filter_t *k) {
   assert(k);
-  KalmanFilterFree(k->kf);
+  kalman_filter_free(k->kf);
   free(k);
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildF(GPSAccKalmanFilter_t *f, double dt) {
-  MatrixSet(f->kf->F,
-            1.0, 0.0, dt,  0.0,
-            0.0, 1.0, 0.0, dt,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0);
+void
+rebuildF(gps_accelerometer_fusion_filter_t *f,
+         double dt) {
+  matrix_set(f->kf->F,
+             1.0, 0.0, dt,  0.0,
+             0.0, 1.0, 0.0, dt,
+             0.0, 0.0, 1.0, 0.0,
+             0.0, 0.0, 0.0, 1.0);
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildU(GPSAccKalmanFilter_t *f,
-                     double xAcc,
-                     double yAcc) {
-  MatrixSet(f->kf->Uk,
-            xAcc,
-            yAcc);
+void
+rebuildU(gps_accelerometer_fusion_filter_t *f,
+         double xAcc,
+         double yAcc) {
+  matrix_set(f->kf->Uk,
+             xAcc,
+             yAcc);
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildB(GPSAccKalmanFilter_t *f,
-                     double dt) {
+void
+rebuildB(gps_accelerometer_fusion_filter_t *f,
+         double dt) {
   double dt2 = 0.5*dt*dt;
-  MatrixSet(f->kf->B,
-            dt2, 0.0,
-            0.0, dt2,
-            dt, 0.0,
-            0.0, dt);
+  matrix_set(f->kf->B,
+             dt2, 0.0,
+             0.0, dt2,
+             dt, 0.0,
+             0.0, dt);
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildR(GPSAccKalmanFilter_t *f,
-                     double posSigma) {
-//  MatrixSetIdentity(f->kf->R);
-//  MatrixScale(f->kf->R, posSigma*posSigma);
+void
+rebuildR(gps_accelerometer_fusion_filter_t *f,
+         double posSigma) {
+  //  MatrixSetIdentity(f->kf->R);
+  //  MatrixScale(f->kf->R, posSigma*posSigma);
   double velSigma = posSigma * 1.0e-01;
-  MatrixSet(f->kf->R,
-            posSigma, 0.0, 0.0, 0.0,
-            0.0, posSigma, 0.0, 0.0,
-            0.0, 0.0, velSigma, 0.0,
-            0.0, 0.0, 0.0, velSigma);
+  matrix_set(f->kf->R,
+             posSigma, 0.0, 0.0, 0.0,
+             0.0, posSigma, 0.0, 0.0,
+             0.0, 0.0, velSigma, 0.0,
+             0.0, 0.0, 0.0, velSigma);
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void rebuildQ(GPSAccKalmanFilter_t *f,
-              double accDeviation) {
-//  MatrixSetIdentity(f->kf->Q);
-//  MatrixScale(f->kf->Q, accSigma * dt);
-
+void
+rebuildQ(gps_accelerometer_fusion_filter_t *f,
+         double accDeviation) {
   double velDev = accDeviation * f->predictCount;
   double posDev = velDev * f->predictCount / 2;
   double covDev = velDev*posDev;
-  MatrixSet(f->kf->Q,
-            posDev*posDev, 0.0,           covDev,        0.0,
-            0.0,           posDev*posDev, 0.0,           covDev,
-            covDev,        0.0,           velDev*velDev, 0.0,
-            0.0,           covDev,        0.0,           velDev*velDev);
+  matrix_set(f->kf->Q,
+             posDev*posDev, 0.0,           covDev,        0.0,
+             0.0,           posDev*posDev, 0.0,           covDev,
+             covDev,        0.0,           velDev*velDev, 0.0,
+             0.0,           covDev,        0.0,           velDev*velDev);
 }
 
-void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
-                         double timeNow,
-                         double xAcc,
-                         double yAcc) {
+void
+gps_accelerometer_fusion_filter_predict(gps_accelerometer_fusion_filter_t *k,
+                                        double timeNow,
+                                        double xAcc,
+                                        double yAcc) {
   double dt = (timeNow - k->predictTime) / 1.0e+3;
 
   rebuildF(k, dt);
@@ -110,40 +128,45 @@ void GPSAccKalmanPredict(GPSAccKalmanFilter_t *k,
   rebuildQ(k, k->accDeviation);
 
   k->predictTime = timeNow;
-  KalmanFilterPredict(k->kf);
-  MatrixCopy(k->kf->Xk_km1, k->kf->Xk_k);
+  kalman_filter_predict(k->kf);
+  matrix_copy(k->kf->Xk_km1, k->kf->Xk_k);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void GPSAccKalmanUpdate(GPSAccKalmanFilter_t *k,
-                        double timeNow,
-                        double x,
-                        double y,
-                        double xVel,
-                        double yVel,
-                        double posDev) {
-//  double dt = timeNow - k->updateTime;
+void
+gps_accelerometer_fusion_filter_update(gps_accelerometer_fusion_filter_t *k,
+                                       double timeNow,
+                                       double x,
+                                       double y,
+                                       double xVel,
+                                       double yVel,
+                                       double posDev) {
+  //  double dt = timeNow - k->updateTime;
   k->predictCount = 0;
   k->updateTime = timeNow;
   rebuildR(k, posDev);
-  MatrixSet(k->kf->Zk, x, y, xVel, yVel);
-  KalmanFilterUpdate(k->kf);
+  matrix_set(k->kf->Zk, x, y, xVel, yVel);
+  kalman_filter_update(k->kf);
 }
 //////////////////////////////////////////////////////////////////////////
 
-double GPSAccKalmanGetX(const GPSAccKalmanFilter_t *k) {
+double
+gps_accelerometer_fusion_filter_get_x(const gps_accelerometer_fusion_filter_t *k) {
   return k->kf->Xk_k->data[0][0];
 }
 
-double GPSAccKalmanGetY(const GPSAccKalmanFilter_t *k) {
+double
+gps_accelerometer_fusion_filter_get_y(const gps_accelerometer_fusion_filter_t *k) {
   return k->kf->Xk_k->data[1][0];
 }
 
-double GPSAccKalmanGetXVel(const GPSAccKalmanFilter_t *k) {
+double
+gps_accelerometer_fusion_filter_get_vel_x(const gps_accelerometer_fusion_filter_t *k) {
   return k->kf->Xk_k->data[2][0];
 }
 
-double GPSAccKalmanGetYVel(const GPSAccKalmanFilter_t *k) {
+double
+gps_accelerometer_fusion_filter_get_vel_y(const gps_accelerometer_fusion_filter_t *k) {
   return k->kf->Xk_k->data[3][0];
 }
 //////////////////////////////////////////////////////////////////////////

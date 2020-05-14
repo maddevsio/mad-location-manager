@@ -28,20 +28,18 @@ typedef struct madgwick_filter {
 //---------------------------------------------------------------------------------------------------
 // Function declarations
 
-madgwick_filter_t* MadgwickFilterAlloc(float beta, float sampleFreqHZ);
-void MadgwickFilterFree(madgwick_filter_t *f);
+madgwick_filter_t* madgwick_filter_alloc(float beta,
+                                         float sampleFreqHZ);
+void madgwick_filter_free(madgwick_filter_t *f);
 
-void MadgwickAHRSupdate(madgwick_filter_t *f,
-                        float gx, float gy, float gz,
-                        float ax, float ay, float az,
-                        float mx, float my, float mz);
+void madgwick_filter_AHRS_update(madgwick_filter_t *f,
+                                 float gx, float gy, float gz,
+                                 float ax, float ay, float az,
+                                 float mx, float my, float mz);
 
-void MadgwickAHRSupdateIMU( madgwick_filter_t *f,
-                            float gx, float gy, float gz,
-                            float ax, float ay, float az);
-
-void MadgwickRotationMatrix (madgwick_filter_t *mf,
-                             float *mtx);
+void madgwick_filter_AHRS_update_IMU( madgwick_filter_t *f,
+                                      float gx, float gy, float gz,
+                                      float ax, float ay, float az);
 
 #ifdef __cplusplus
 }

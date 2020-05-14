@@ -3,32 +3,32 @@
 #include <assert.h>
 
 double
-Degree2Rad(double degree) {
+degree_to_rad(double degree) {
   return degree*M_PI/180.0;
 }
 ///////////////////////////////////////////////////////
 
 double
-Rad2Degree(double rad) {
+rad_to_degree(double rad) {
   return rad*180.0/M_PI;
 }
 ///////////////////////////////////////////////////////
 
 double
-MilesPerHour2MeterPerSecond(double mph) {
+miles_per_hour_to_meters_per_second(double mph) {
   return 2.23694 * mph;
 }
 ///////////////////////////////////////////////////////
 
 int
-RandomBetween2Vals(int low, int hi) {
+random_between_2_vals(int low, int hi) {
   assert(low <= hi);
   return (rand() % (hi - low)) + low;
 }
 ///////////////////////////////////////////////////////
 
 double
-LowPassFilter(double prev, double measured, double alpha) {
+low_pass_filter(double prev, double measured, double alpha) {
   return prev + alpha * (measured - prev);
 }
 ///////////////////////////////////////////////////////

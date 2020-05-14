@@ -110,7 +110,7 @@ float quaternion_yaw(const quaternion_t *q) {
 
 matrix_t *
 quaternion_to_matrix(const quaternion_t *q) {
-  matrix_t *mtx = MatrixAlloc(3, 3);
+  matrix_t *mtx = matrix_alloc(3, 3);
   mtx->data[0][0] = (double) (1.0f - 2.0f*q->y*q->y - 2.0f*q->z*q->z);
   mtx->data[0][1] = (double) (2.0f*q->x*q->y - 2.0f*q->z*q->w);
   mtx->data[0][2] = (double) (2.0f*q->x*q->z + 2.0f*q->y*q->w);

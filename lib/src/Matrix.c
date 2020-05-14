@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "Commons.h"
 #include "Matrix.h"
@@ -24,8 +25,8 @@ static void scaleRow(matrix_t *m, uint32_t r, double scalar);
 
 //todo remove asserts. return null if something is wrong
 //and release resources.
-matrix_t *MatrixAlloc(uint32_t rows,
-                      uint32_t cols) {
+matrix_t *matrix_alloc(uint32_t rows,
+                       uint32_t cols) {
   assert(rows);
   assert(cols);
   matrix_t *mtx = (matrix_t*) malloc(sizeof(matrix_t));
@@ -45,7 +46,7 @@ matrix_t *MatrixAlloc(uint32_t rows,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixFree(matrix_t *m) {
+void matrix_free(matrix_t *m) {
   assert(m);
   while (m->rows--)
     free(m->data[m->rows]);
@@ -55,7 +56,7 @@ void MatrixFree(matrix_t *m) {
 //////////////////////////////////////////////////////////////////////////
 
 //todo change . let's use some double *args (for example).
-void MatrixSet(matrix_t *m, ...) {
+void matrix_set(matrix_t *m, ...) {
   assert(m);
   va_list ap;
   va_start(ap, m);
@@ -68,7 +69,7 @@ void MatrixSet(matrix_t *m, ...) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSetIdentityDiag(matrix_t *m) {
+void matrix_set_identity_diag(matrix_t *m) {
   assert(m);
   for (uint32_t r = 0; r < m->rows; ++r) {
     for (uint32_t c = 0; c < m->cols; ++c) {
@@ -79,15 +80,15 @@ void MatrixSetIdentityDiag(matrix_t *m) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSetIdentity(matrix_t *m) {
+void matrix_set_identity(matrix_t *m) {
   assert(m);
   assert(m->rows == m->cols);
-  MatrixSetIdentityDiag(m);
+  matrix_set_identity_diag(m);
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixCopy(matrix_t *src,
-                matrix_t *dst) {
+void matrix_copy(const matrix_t *src,
+                 matrix_t *dst) {
   assert(src);
   assert(dst);
   assert(src->rows == dst->rows);
@@ -101,22 +102,21 @@ void MatrixCopy(matrix_t *src,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixPrint(matrix_t *m) {
+void matrix_print(const matrix_t *m) {
   assert(m);
-  for (uint32_t r = 0; r < m->rows; ++r) {
-//    QString str = "";
+  for (uint32_t r = 0; r < m->rows; ++r) {    
     for (uint32_t c = 0; c < m->cols; ++c) {
-//      str += QString::number(m->data[r][c], 'g', 18) + "   ";
+      printf("%f\t", m->data[r][c]);
     }
-//    qDebug() << str;
+    printf("\n");
   }
-//  qDebug() << "****";
+  printf("*****\n");
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixAdd(matrix_t *ma,
-               matrix_t *mb,
-               matrix_t *mc) {
+void matrix_add(const matrix_t *ma,
+                const matrix_t *mb,
+                matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);
@@ -131,9 +131,9 @@ void MatrixAdd(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSubtract(matrix_t *ma,
-                    matrix_t *mb,
-                    matrix_t *mc) {
+void matrix_subtract(const matrix_t *ma,
+                     const matrix_t *mb,
+                     matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);
@@ -148,8 +148,8 @@ void MatrixSubtract(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixSubtractFromIdentity(matrix_t *m) {
-  assert(m);  
+void matrix_subtract_from_identity(matrix_t *m) {
+  assert(m);
   for (uint32_t r = 0; r < m->rows; ++r) {
     for (uint32_t c = 0; c < m->cols; ++c)
       m->data[r][c] = -m->data[r][c];
@@ -158,9 +158,9 @@ void MatrixSubtractFromIdentity(matrix_t *m) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixMultiply(matrix_t *ma,
-                    matrix_t *mb,
-                    matrix_t *mc) {
+void matrix_multiply(const matrix_t *ma,
+                     const matrix_t *mb,
+                     matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);
@@ -179,9 +179,9 @@ void MatrixMultiply(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixMultiplyByTranspose(matrix_t *ma,
-                               matrix_t *mb,
-                               matrix_t *mc) {
+void matrix_multiply_by_transpose(const matrix_t *ma,
+                                  const matrix_t *mb,
+                                  matrix_t *mc) {
   assert(ma);
   assert(mb);
   assert(mc);
@@ -199,8 +199,8 @@ void MatrixMultiplyByTranspose(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixTranspose(matrix_t *mtxin,
-                     matrix_t *mtxout) {
+void matrix_transpose(const matrix_t *mtxin,
+                      matrix_t *mtxout) {
   assert(mtxin);
   assert(mtxout);
   assert(mtxin->rows == mtxout->cols);
@@ -213,9 +213,9 @@ void MatrixTranspose(matrix_t *mtxin,
 }
 //////////////////////////////////////////////////////////////////////////
 
-bool MatrixEq(matrix_t *ma,
-              matrix_t *mb,
-              double eps) {
+bool matrix_eq(const matrix_t *ma,
+               const matrix_t *mb,
+               double eps) {
   assert(ma);
   assert(mb);
   if (ma->rows != mb->rows || ma->cols != mb->cols)
@@ -232,12 +232,11 @@ bool MatrixEq(matrix_t *ma,
 }
 //////////////////////////////////////////////////////////////////////////
 
-void MatrixScale(matrix_t *m,
-                 double scalar) {
+void matrix_scale(matrix_t *m,
+                  double scalar) {
   assert(m);
-  uint32_t r, c;
-  for (r = 0; r < m->rows; ++r) {
-    for (c = 0; c < m->cols; ++c) {
+  for (uint32_t r = 0; r < m->rows; ++r) {
+    for (uint32_t c = 0; c < m->cols; ++c) {
       m->data[r][c] *= scalar;
     } //for col
   } //for row
@@ -247,8 +246,9 @@ void MatrixScale(matrix_t *m,
 void swapRows(matrix_t *m,
               uint32_t r1,
               uint32_t r2) {
-  assert(m);  
+  assert(m);
   assert(r1 < m->rows && r2 < m->rows);
+  //std::swap<double*>(m->data[r1], m->data[r2]);
   double *tmp = m->data[r1];
   m->data[r1] = m->data[r2];
   m->data[r2] = tmp;
@@ -273,14 +273,13 @@ void shearRow(matrix_t *m,
   assert(m);
   assert(r1 != r2);
   assert(r1 < m->rows && r2 < m->rows);
-  uint32_t c;
-  for (c = 0; c < m->cols; ++c)
+  for (uint32_t c = 0; c < m->cols; ++c)
     m->data[r1][c] += m->data[r2][c] * scalar;
 }
 //////////////////////////////////////////////////////////////////////////
 
-bool MatrixDestructiveInvert(matrix_t *mtxin,
-                             matrix_t *mtxout) {
+bool matrix_destructive_invert(matrix_t *mtxin,
+                               matrix_t *mtxout) {
   assert(mtxin);
   assert(mtxout);
   assert(mtxin->cols == mtxin->rows);
@@ -288,7 +287,7 @@ bool MatrixDestructiveInvert(matrix_t *mtxin,
   assert(mtxout->rows == mtxin->rows);
   uint32_t r, ri;
   double scalar;
-  MatrixSetIdentity(mtxout);
+  matrix_set_identity(mtxout);
 
   for (r = 0; r < mtxin->rows; ++r) {
     if (mtxin->data[r][r] == 0.0) { //we have to swap rows here to make nonzero diagonal
