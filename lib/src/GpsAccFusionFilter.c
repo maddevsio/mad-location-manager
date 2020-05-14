@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "GPSAccKalman.h"
+#include "GpsAccFusionFilter.h"
 #include "Matrix.h"
 #include "Kalman.h"
 

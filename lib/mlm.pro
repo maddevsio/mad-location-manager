@@ -11,8 +11,8 @@ LIBS += -lgtest
 SOURCES += \
     src/Commons.c \
     src/Coordinates.c \
-    src/GPSAccKalman.c \
     src/Geohash.c \
+    src/GpsAccFusionFilter.c \
     src/Kalman.c \
     src/MadgwickAHRS.c \
     src/Matrix.c \
@@ -26,8 +26,8 @@ SOURCES += \
 HEADERS += \
     inc/Commons.h \
     inc/Coordinates.h \
-    inc/GPSAccKalman.h \
     inc/Geohash.h \
+    inc/GpsAccFusionFilter.h \
     inc/Kalman.h \
     inc/MadgwickAHRS.h \
     inc/Matrix.h \
