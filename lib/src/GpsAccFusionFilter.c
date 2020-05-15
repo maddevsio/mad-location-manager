@@ -5,7 +5,8 @@
 #include "Matrix.h"
 #include "Kalman.h"
 
-static void rebuildF(gps_accelerometer_fusion_filter_t *f, double dt);
+static void rebuildF(gps_accelerometer_fusion_filter_t *f,
+                     double dt);
 static void rebuildU(gps_accelerometer_fusion_filter_t *f,
                      double xAcc,
                      double yAcc);
