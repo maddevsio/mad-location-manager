@@ -46,6 +46,8 @@ OBJECTS := $(SRC:%.c=$(OBJ_DIR)/%.o)
 
 all: directories $(TARGET_LIB)
 desktop: directories $(TARGET_LIB)
+iOS: directories $(TARGET_LIB)
+
 printbindir:
 	@echo $(BIN_DIR)
 $(TARGET_LIB): $(BIN_DIR)/$(TARGET_LIB)
