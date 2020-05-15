@@ -20,4 +20,4 @@ buildit i386 iPhoneSimulator
 buildit x86_64 iPhoneSimulator
 
 LIPO=$(xcrun -sdk iphoneos -find lipo)
-$LIPO -create $pwd/bin/armv7/libmlm.so.1.0.0  $pwd/bin/armv7s/libmlm.so.1.0.0 $pwd/bin/arm64/libmlm.so.1.0.0 $pwd/bin/x86_64/libmlm.so.1.0.0 $pwd/bin/i386/libmlm.so.1.0.0 -output libmlm.so.1.0.0
+$LIPO -create $pwd/bin/armv7/libmlm.so.1.0.0  $pwd/bin/armv7s/libmlm.so.1.0.0 $pwd/bin/arm64/libmlm.so.1.0.0 $pwd/bin/x86_64/libmlm.so.1.0.0 $pwd/bin/i386/libmlm.so.1.0.0 -output $pwd/libmlm.so.1.0.0
