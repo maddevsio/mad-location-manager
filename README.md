@@ -1,6 +1,12 @@
-# mad-location-manager 
-This is library for GPS and Accelerometer data "fusion" with Kalman filter. 
-Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 helper applications. Main thing here is GpsAccelerationKalmanFusion module.
+# Mad Location Manager [<img align="right" src="doc/MadLocationManagerlogo.svg">](https://gps.maddevs.io/)
+
+This is library for GPS and Accelerometer data "fusion" with Kalman filter. All code is written in Java. It helps to increase position accuracy and GPS distance calculation on Android devices for the driver's and couriers' apps. And also, it may be used for precise tracking in on-demand services.
+
+Project consists of 2 parts: <br>
+* Main: GpsAccelerationKalmanFusion module; <br>
+* 2 helper applications: <br>
+Visualiser – https://github.com/maddevsio/mad-location-manager/tree/master/C<br>
+Lib Demo – https://github.com/maddevsio/mad-location-manager/tree/master/app 
 
 [Blog (english version)](https://blog.maddevs.io/reduce-gps-data-error-on-android-with-kalman-filter-and-accelerometer-43594faed19c)
 
@@ -12,9 +18,14 @@ Project consists of 2 parts: GpsAccelerationKalmanFusion (AAR module) and 2 help
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Developed by Mad Devs](https://maddevs.io/badge-light.svg)](https://maddevs.io)
 
-## How can mad-location-manager help you to get location more accurately
+## What can "Mad Location Manager" do?
 
-This module helps to increase GPS coordinates accuracy and smooth "jumps" from track. 
+This module helps to increase GPS coordinates accuracy and also:
+* reduces the errors in route tracking;
+* decreases the noise from Low-class smartphones;
+* excludes sharp «jumps» to the points remote from a real route;
+* eliminates additional distance when the object is motionless;
+* filters errors duу to the short-term loss of GPS-signal.
 
 ## How to install
 
@@ -23,19 +34,19 @@ Use last version from link below (jitpack):
 [![](https://jitpack.io/v/maddevsio/mad-location-manager.svg)](https://jitpack.io/#maddevsio/mad-location-manager)
 
 ## How to use
-There is example application in current repository called "Sensor Data Collector" . 
+There is example application in current repository called "Sensor Data Collector".
+
+![](doc/example.gif)
 
 ### WARNING!!
 
-Right now these sensors should be available:
-TYPE_ROTATION_VECTOR, TYPE_LINEAR_ACCELERATION .
-
-It's possible to use just TYPE_ACCELEROMETER with high-pass filter. Also it's possible to use Madgwick filter instead of rotation vector, but gyroscope and magnetometer sensors should be available in that case.
+Right now these sensors should be available: <br> TYPE_ROTATION_VECTOR, TYPE_LINEAR_ACCELERATION. <br><br>
+It's possible to use just TYPE_ACCELEROMETER with high-pass filter.<br> Also it's possible to use Madgwick filter instead of rotation vector, but gyroscope and magnetometer sensors should be available in that case.
 
 ### KalmanLocationService
 
-This is main class. It implements data collecting and processing. You need to make several preparation steps for using it : 
-1. Add to application manifest this : 
+This is main class. It implements data collecting and processing. You need to make several preparation steps for using it:
+1. Add to application manifest this: 
 
 ```
 <service
@@ -113,7 +124,23 @@ The filter is a de-facto standard solution in navigation systems. The project si
 
 The project uses 2 data sources: GPS and accelerometer. GPS coordinates are not very accurate, but each of them doesn't depend on previous values. So, there is no accumulation error in this case. On the other hand, the accelerometer has very accurate readings, but it accumulates error related to noise and integration error. Therefore, it is necessary to "fuse" these two sources. Kalman is the best solution here.
 
-So first - we need to define matrices and do some math with them. And second - we need to get real acceleration (not in device orientation) . First one is described in current project's wiki. But second one is little bit more complex thing called "sensor fusion". There is a lot information about this in internet. For real acceleration we need to know 2 things : device orientation and "linear acceleration". Linear acceleration is acceleration along each device axis excluding force of gravity. It could be calculated by high pass filter or with more complex algorithms. Device orientation could be calculated in many ways :
+So first - we need to define matrices and do some math with them. And second - we need to get real acceleration (not in device orientation).
+
+First one is described in current project's wiki. But second one is little bit more complex thing called "sensor fusion". There is a lot information about this in internet.
+
+#### Algorithms
+
+Sensor fusion is a term that covers a number of methods and algorithms, including:
+
+- [Central limit theorem](https://en.wikipedia.org/wiki/Central_limit_theorem)
+- [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter)
+- [Bayesian networks](https://en.wikipedia.org/wiki/Bayesian_network)
+- [Dempster-Shafer](https://en.wikipedia.org/wiki/Dempster%E2%80%93Shafer_theory)
+- [Convolutional neural network](https://en.wikipedia.org/wiki/Convolutional_neural_network)
+
+
+For real acceleration we need to know 2 things: "linear acceleration" and device orientation.
+Linear acceleration is acceleration along each device axis excluding force of gravity. It could be calculated by high pass filter or with more complex algorithms. Device orientation could be calculated in many ways:
 
 - Using accelerometer + magnetometer
 - Using accelerometer + magnetometer + gyroscope
@@ -130,7 +157,7 @@ Feel free to send pull requests. Also feel free to create issues.
 
 MIT License
 
-Copyright (c) 2017 Mad Devs
+Copyright (c) 2020 Mad Devs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
