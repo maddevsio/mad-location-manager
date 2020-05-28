@@ -38,13 +38,21 @@ typedef struct kalman_filter {
   matrix_t *auxSDxMD;
 } kalman_filter_t;
 
-kalman_filter_t *kalman_filter_create(uint32_t stateDimension,
-                                      uint32_t measureDimension,
-                                      uint32_t controlDimension);
-void kalman_filter_free(kalman_filter_t *k);
+typedef enum kalman_filter_error {
+  KFE_SUCCESS = 0,
+  KFE_MATRIX_INV,
+  KFE_UNKNOWN
+} kalman_filter_error_t;
 
-void kalman_filter_predict(kalman_filter_t *k);
-void kalman_filter_update(kalman_filter_t *k);
+kalman_filter_t *kf_create(uint32_t state_dim,
+                           uint32_t measure_dim,
+                           uint32_t control_dim);
+void kf_free(kalman_filter_t *k);
+
+void kf_predict(kalman_filter_t *k);
+kalman_filter_error_t kf_update(kalman_filter_t *k);
+
+const char *kf_error_str(kalman_filter_error_t err);
 
 #ifdef __cplusplus
 }

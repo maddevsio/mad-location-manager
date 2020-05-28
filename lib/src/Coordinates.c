@@ -191,7 +191,7 @@ getPointAheadHQ(geopoint_t point,
 
   geopoint_t res;
   res.Latitude = rad_to_degree(atan2(sinU1*cosSig + cosU1*sinSig*cosa1,
-                                  (1-ellipseCoefficient)*sqrt(sina*sina + x*x)));
+                                     (1-ellipseCoefficient)*sqrt(sina*sina + x*x)));
   res.Longitude = rad_to_degree(l2);
   return res;
 }
@@ -220,33 +220,53 @@ pointPlusDistanceNorthHQ(geopoint_t point, double distance) {
 //////////////////////////////////////////////////////////////////////////
 
 geopoint_t
-coord_meters_to_geopoint(double lonMeters,
-                      double latMeters) {
+coord_meters_to_geopoint(double lon_meters,
+                         double lat_meters) {
   geopoint_t point = {.Latitude = 0.0, .Longitude = 0.0};
-  geopoint_t pointEast = pointPlusDistanceEast(point, lonMeters);
-  geopoint_t pointNorthEast = pointPlusDistanceNorth(pointEast, latMeters);
+  geopoint_t pointEast = pointPlusDistanceEast(point, lon_meters);
+  geopoint_t pointNorthEast = pointPlusDistanceNorth(pointEast, lat_meters);
   return pointNorthEast;
 }
 
 geopoint_t
-coord_meters_to_geopoint_hq(double lonMeters,
-                        double latMeters) {
+coord_meters_to_geopoint_hq(double lon_meters,
+                            double lat_meters) {
   geopoint_t point = {.Latitude = 0.0, .Longitude = 0.0};
-  geopoint_t pointEast = pointPlusDistanceEastHQ(point, lonMeters);
-  geopoint_t pointNorthEast = pointPlusDistanceNorthHQ(pointEast, latMeters);
+  geopoint_t pointEast = pointPlusDistanceEastHQ(point, lon_meters);
+  geopoint_t pointNorthEast = pointPlusDistanceNorthHQ(pointEast, lat_meters);
   return pointNorthEast;
 }
 //////////////////////////////////////////////////////////////////////////
 
 double
 coord_distance_between_points_meters(double lat1, double lon1,
-                                 double lat2, double lon2) {
+                                     double lat2, double lon2) {
   return geoDistanceMeters(lon1, lat1, lon2, lat2);
 }
 
 double
 coord_distance_between_points_meters_hq(double lat1, double lon1,
-                                   double lat2, double lon2) {
+                                        double lat2, double lon2) {
   return geoDistanceMetersHQ(lon1, lat1, lon2, lat2);
+}
+///////////////////////////////////////////////////////
+
+coordinates_vptr_t coord_vptr() {
+  coordinates_vptr_t res;
+  res.latitude_to_meters = coord_latitude_to_meters;
+  res.meters_to_geopoint = coord_meters_to_geopoint;
+  res.longitude_to_meters = coord_longitude_to_meters;
+  res.distance_between_points = coord_distance_between_points_meters;
+  return res;
+}
+///////////////////////////////////////////////////////
+
+coordinates_vptr_t coord_vptr_hq() {
+  coordinates_vptr_t res;
+  res.latitude_to_meters = coord_latitude_to_meters_hq;
+  res.meters_to_geopoint = coord_meters_to_geopoint_hq;
+  res.longitude_to_meters = coord_longitude_to_meters_hq;
+  res.distance_between_points = coord_distance_between_points_meters_hq;
+  return res;
 }
 ///////////////////////////////////////////////////////

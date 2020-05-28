@@ -1,4 +1,3 @@
-#TEMPLATE = lib
 TEMPLATE = app
 CONFIG += c++11
 CONFIG -= app_bundle
@@ -16,6 +15,7 @@ SOURCES += \
     src/Kalman.c \
     src/MadgwickAHRS.c \
     src/Matrix.c \
+    src/Mlm.c \
     src/Quaternion.c \
     src/Vector3d.c \
     tests/CoordinatesTest.cpp \
@@ -31,5 +31,6 @@ HEADERS += \
     inc/Kalman.h \
     inc/MadgwickAHRS.h \
     inc/Matrix.h \
+    inc/Mlm.h \
     inc/Quaternion.h \
     inc/Vector3d.h
