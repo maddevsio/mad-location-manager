@@ -182,7 +182,7 @@ gps_accelerometer_fusion_filter_update(gps_accelerometer_fusion_filter_t *filter
                                        double pos_dev) {
   //  double dt = timeNow - k->updateTime;
   filter->predicts_count = 0;
-  rebuildR_4D(filter, pos_dev);
+  filter->rebuildR(filter, pos_dev);
   matrix_set(filter->kf->Zk,
              state.x,
              state.y,
