@@ -10,7 +10,7 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 
 import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.Filters.GeohashRTFilter;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.MainActivity;

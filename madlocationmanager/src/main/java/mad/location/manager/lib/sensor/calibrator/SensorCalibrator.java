@@ -1,4 +1,4 @@
-package mad.location.manager.lib.SensorAux;
+package mad.location.manager.lib.sensor.calibrator;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

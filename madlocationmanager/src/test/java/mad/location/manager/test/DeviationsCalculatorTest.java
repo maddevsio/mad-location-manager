@@ -1,6 +1,6 @@
 package mad.location.manager.test;
 
-import mad.location.manager.lib.SensorAux.DeviationCalculator;
+import mad.location.manager.lib.sensor.calibrator.DeviationCalculator;
 
 import org.junit.Test;
 

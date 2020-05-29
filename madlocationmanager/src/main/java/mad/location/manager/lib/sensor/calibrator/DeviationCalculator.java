@@ -1,4 +1,4 @@
-package mad.location.manager.lib.SensorAux;
+package mad.location.manager.lib.sensor.calibrator;
 
 /**
  * Created by lezh1k on 2/13/18.

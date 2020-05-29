@@ -1,4 +1,4 @@
-package mad.location.manager.lib.Loggers;
+package mad.location.manager.lib.Filters;
 
 import android.location.Location;
 

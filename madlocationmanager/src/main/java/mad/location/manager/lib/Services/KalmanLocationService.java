@@ -37,7 +37,7 @@ import mad.location.manager.lib.Filters.GPSAccKalmanFilter;
 import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
-import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.Filters.GeohashRTFilter;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
