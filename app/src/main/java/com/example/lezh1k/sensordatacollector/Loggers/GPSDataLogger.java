@@ -8,9 +8,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 
-import com.elvishew.xlog.XLog;
+import androidx.core.app.ActivityCompat;
+
 import mad.location.manager.lib.Commons.Utils;
 
 /**
@@ -68,7 +68,7 @@ public class GPSDataLogger implements LocationListener {
                 now, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);
-        XLog.i(m_lastLoggedGPSMessage);
+//        XLog.i(m_lastLoggedGPSMessage);
     }
 
     @Override

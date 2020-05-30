@@ -1,17 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "com.example.lezh1k.sensordatacollector"
         minSdkVersion 18
-        targetSdkVersion 26
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "lightMapStyle", "\"https://maps.swift.kg/styles/basic.json\""
-        buildConfigField "String", "access_token", "\"pk.eyJ1IjoicGVuZG9sZiIsImEiOiJjaWVnNTN4Zm4wMDAxc3FtODA3bWo4OXVnIn0.6hwSXZEBAA7Kv7uiKk5LWQ\""
+        buildConfigField "String", "access_token", "\"pk.eyJ1IjoicWIxOXFiIiwiYSI6ImNrYXRtYzR3azMzNjQyc3A2ZG9oZmFheDUifQ.Fw_O_gGTuOhYrVYjsmCWYQ\""
     }
     buildTypes {
         release {
@@ -27,18 +27,12 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    api group: 'net.sf.marineapi', name: 'marineapi', version: '0.10.0'
-    api 'com.google.android.gms:play-services-location:15.0.1'
-    api 'com.android.support:preference-v7:26.1.0'
-    implementation 'com.google.android.gms:play-services-maps:15.0.1'
-    api ('com.mapbox.mapboxsdk:mapbox-android-sdk:5.1.5@aar') {
-        transitive = true
-    }
-    api group: 'com.elvishew', name: 'xlog', version:'1.4.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.2.0'
+
     api project(path: ':madlocationmanager')
 }

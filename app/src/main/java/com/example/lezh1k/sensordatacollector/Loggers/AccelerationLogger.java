@@ -7,7 +7,6 @@ import android.hardware.SensorManager;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.elvishew.xlog.XLog;
 import mad.location.manager.lib.Commons.Utils;
 
 import java.util.ArrayList;
@@ -78,7 +77,7 @@ public class AccelerationLogger implements SensorEventListener {
                 lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         now, accAxis[0], accAxis[1], accAxis[2]);
-                XLog.i(lastAbsAccelerationString);
+//                XLog.i(lastAbsAccelerationString);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getRotationMatrixFromVector(R, event.values);

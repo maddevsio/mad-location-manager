@@ -7,13 +7,13 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
+
+import androidx.core.app.ActivityCompat;
 
 import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Filters.GeohashRTFilter;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
-import com.example.lezh1k.sensordatacollector.MainActivity;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
@@ -67,9 +67,9 @@ public class MapPresenter implements LocationListener {
             routGpsAsIs.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
         }
 
-        mapInterface.showRoute(routeFilteredKalman, MainActivity.FILTER_KALMAN_ONLY);
-        mapInterface.showRoute(routeFilteredWithGeoHash, MainActivity.FILTER_KALMAN_WITH_GEO);
-        mapInterface.showRoute(routGpsAsIs, MainActivity.GPS_ONLY);
+//        mapInterface.showRoute(routeFilteredKalman, MainActivity.FILTER_KALMAN_ONLY);
+//        mapInterface.showRoute(routeFilteredWithGeoHash, MainActivity.FILTER_KALMAN_WITH_GEO);
+//        mapInterface.showRoute(routGpsAsIs, MainActivity.GPS_ONLY);
     }
     //////////////////////////////////////////////////////////
 

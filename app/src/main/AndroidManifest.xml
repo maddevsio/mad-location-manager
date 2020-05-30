@@ -2,10 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.lezh1k.sensordatacollector">
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
@@ -17,7 +14,7 @@
         android:theme="@style/AppTheme">
 
         <provider
-             android:name="android.support.v4.content.FileProvider"
+             android:name="androidx.core.content.FileProvider"
              android:authorities="com.example.lezh1k.sensordatacollector.provider"
              android:exported="false"
              android:grantUriPermissions="true">
@@ -37,16 +34,6 @@
         </activity>
 
         <activity
-            android:name=".MainActivity"
-            android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|orientation|screenSize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <activity
             android:name=".SettingsActivity"
             android:screenOrientation="portrait"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -55,12 +42,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-
-        <service
-            android:name="mad.location.manager.lib.Services.KalmanLocationService"
-            android:enabled="true"
-            android:exported="false"
-            android:stopWithTask="false" />
 
         <service
             android:name="mad.location.manager.lib.MadLocationManagerService"

@@ -6,8 +6,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.support.v4.app.NotificationCompat;
 
+import androidx.core.app.NotificationCompat;
+
+import mad.location.manager.lib.Interfaces.LocationListener;
 import mad.location.manager.lib.utils.BaseService;
 
 public class MadLocationManagerService extends BaseService {
@@ -38,6 +40,36 @@ public class MadLocationManagerService extends BaseService {
     public void setNotification(Notification notification) {
         this.notification = notification;
         notificationManager.notify(NOTIFICATION_ID, notification);
+    }
+
+    public MadLocationManagerService addRawLocationListeners(LocationListener rawLocationListener) {
+        madLocationManager.addRawLocationListeners(rawLocationListener);
+        return this;
+    }
+
+    public MadLocationManagerService removeRawLocationListeners(LocationListener rawLocationListener) {
+        madLocationManager.removeRawLocationListeners(rawLocationListener);
+        return this;
+    }
+
+    public MadLocationManagerService addKalmanFilteredLocationListeners(LocationListener kalmanFilteredLocationListener) {
+        madLocationManager.addKalmanFilteredLocationListeners(kalmanFilteredLocationListener);
+        return this;
+    }
+
+    public MadLocationManagerService removeKalmanFilteredLocationListeners(LocationListener kalmanFilteredLocationListener) {
+        madLocationManager.removeKalmanFilteredLocationListeners(kalmanFilteredLocationListener);
+        return this;
+    }
+
+    public MadLocationManagerService addGeoHashFilteredLocationListeners(LocationListener geoHashFilteredLocationListener) {
+        madLocationManager.addGeoHashFilteredLocationListeners(geoHashFilteredLocationListener);
+        return this;
+    }
+
+    public MadLocationManagerService removeGeoHashFilteredLocationListeners(LocationListener geoHashFilteredLocationListener) {
+        madLocationManager.removeGeoHashFilteredLocationListeners(geoHashFilteredLocationListener);
+        return this;
     }
 
     /** Important! Before using MLM, make sure your application has the necessary permissions

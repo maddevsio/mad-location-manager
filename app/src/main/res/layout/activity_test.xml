@@ -1,14 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
+    android:gravity="center_horizontal"
     android:orientation="vertical">
+
+    <com.mapbox.mapboxsdk.maps.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        mapbox:mapbox_cameraTargetLat="42.876583"
+        mapbox:mapbox_cameraTargetLng="74.588290"
+        mapbox:mapbox_cameraZoom="16"
+        mapbox:mapbox_cameraZoomMax="19"
+        mapbox:mapbox_cameraZoomMin="8" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/show_gps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:checked="true"
+            android:text="GPS"
+            android:background="@color/green"/>
+
+        <Space
+            android:layout_width="40dp"
+            android:layout_height="match_parent"/>
+
+        <CheckBox
+            android:id="@+id/show_kalman"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:checked="true"
+            android:text="Kalman"
+            android:background="@color/orange"/>
+
+        <Space
+            android:layout_width="40dp"
+            android:layout_height="match_parent"/>
+
+        <CheckBox
+            android:id="@+id/show_geohash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:checked="true"
+            android:text="GeoHash"
+            android:background="@color/red"/>
+
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MLM Service"
+        android:layout_marginTop="20dp"
+        android:text="Mad Location Manager"
         android:textColor="@color/black"
         android:textSize="20sp"/>
 
