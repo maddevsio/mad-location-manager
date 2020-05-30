@@ -143,11 +143,11 @@ public class Logger {
      *     android:grantUriPermissions="true">
      *         <meta-data
      *             android:name="android.support.FILE_PROVIDER_PATHS"
-     * android:resource="@xml/provider_paths" />
+     *             android:resource="@xml/provider_paths" />
      * </provider>
      * into AndroidManifest. Inside provider_paths, you need to add
      * <cache-path name="log_file" path="logs/"/>
-     * <p>
+     *
      * Attention! Before sharing log_file, please stop Logger by using Logger.setEnabled(false).
      * Otherwise log_file won't contain all logs.
      **/

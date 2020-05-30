@@ -31,7 +31,6 @@ public class MadLocationManagerService extends BaseService {
             notificationManager.createNotificationChannel(
                     new NotificationChannel(NOTIFICATION_CHANNEL_ID, "MLM service", NotificationManager.IMPORTANCE_LOW));
 
-            notificationManager.notify(NOTIFICATION_ID, notification);
             startForeground(NOTIFICATION_ID, notification);
         }
     }
@@ -57,11 +56,7 @@ public class MadLocationManagerService extends BaseService {
         super.onTaskRemoved(rootIntent);
         stop();
         stopSelf();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+        stopForeground(true);
     }
 
     private Notification getDefaultNotification() {

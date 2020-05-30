@@ -5,20 +5,23 @@ import android.location.Location;
 import mad.location.manager.lib.Commons.Coordinates;
 import mad.location.manager.lib.Commons.GeoPoint;
 import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Filters.GeoHash;
 import mad.location.manager.lib.Interfaces.ILogger;
+import mad.location.manager.lib.Interfaces.SimpleTempCallback;
+import mad.location.manager.lib.logger.LogBuilder;
+import mad.location.manager.lib.logger.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by lezh1k on 2/13/18.
  */
 
-public class GeohashRTFilter {
+public class GeohashRTFilter {//todo refactor or remove
 
-    public static String PROVIDER_NAME = "GeoHashFiltered";
+    public static final String PROVIDER_NAME = "GeoHashFiltered";
+
+    private SimpleTempCallback<Location> callback;
 
     private double m_distanceGeoFiltered = 0.0;
     private double m_distanceGeoFilteredHP = 0.0;
@@ -46,12 +49,32 @@ public class GeohashRTFilter {
     private int m_geohashPrecision;
     private int m_geohashMinPointCount;
 
+    public GeohashRTFilter() {
+        m_geoFilteredTrack = new ArrayList<>();
+        reset(null);
+    }
+
     public GeohashRTFilter(int geohashPrecision,
                            int geohashMinPointCount) {
         m_geohashPrecision = geohashPrecision;
         m_geohashMinPointCount = geohashMinPointCount;
         m_geoFilteredTrack = new ArrayList<>();
         reset(null);
+    }
+
+    public GeohashRTFilter setCallback(SimpleTempCallback<Location> callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    public GeohashRTFilter setGeohashPrecision(int geohashPrecision) {
+        m_geohashPrecision = geohashPrecision;
+        return this;
+    }
+
+    public GeohashRTFilter setGeohashMinPointCount(int geohashMinPointCount) {
+        m_geohashMinPointCount = geohashMinPointCount;
+        return this;
     }
 
     public double getDistanceGeoFiltered() {
@@ -94,6 +117,8 @@ public class GeohashRTFilter {
                     loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
             m_logger.log2file(toLog);
         }
+
+        Logger.write(LogBuilder.buildFilteredGpsData(loc));
 
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (isFirstCoordinate) {
@@ -157,6 +182,10 @@ public class GeohashRTFilter {
                 laLoc.setTime(loc.getTime()); //hack2
                 m_geoFilteredTrack.add(laLoc);
                 currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
+
+                if (callback != null) {
+                    callback.onCall(laLoc);
+                }
             }
 
             pointsInCurrentGeohashCount = 1;
@@ -202,6 +231,10 @@ public class GeohashRTFilter {
             laLoc.setLongitude(lastApprovedGeoPoint.Longitude);
             m_geoFilteredTrack.add(laLoc);
             currentGeoPoint.Latitude = currentGeoPoint.Longitude = 0.0;
+
+            if (callback != null) {
+                callback.onCall(laLoc);
+            }
         }
     }
 }

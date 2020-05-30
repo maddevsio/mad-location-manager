@@ -18,9 +18,8 @@ import mad.location.manager.lib.logger.LogBuilder;
 import mad.location.manager.lib.logger.Logger;
 import mad.location.manager.lib.utils.Settings;
 
-import static mad.location.manager.lib.MadLocationManager.MLM_PROVIDER;
-
 class MadDataHandler {
+    static final String PROVIDER_NAME = "MLM_KalmanFiltered";
 
     private GPSAccKalmanFilter kalmanFilter;
     private Queue<SensorGpsDataItem> sensorDataQueue;
@@ -223,7 +222,7 @@ class MadDataHandler {
         double yVelocity = kalmanFilter.getCurrentYVel();
         double speed = Math.sqrt(xVelocity * xVelocity + yVelocity * yVelocity); //scalar speed without bearing
 
-        Location location = new Location(MLM_PROVIDER);
+        Location location = new Location(PROVIDER_NAME);
         location.setLatitude(pp.Latitude);
         location.setLongitude(pp.Longitude);
         location.setAltitude(item.getGpsAlt());

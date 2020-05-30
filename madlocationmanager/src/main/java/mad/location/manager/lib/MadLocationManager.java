@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import mad.location.manager.lib.Filters.GeohashRTFilter;
 import mad.location.manager.lib.Interfaces.LocationListener;
 import mad.location.manager.lib.Interfaces.SimpleTempCallback;
 import mad.location.manager.lib.location.LocationCallback;
@@ -19,12 +20,12 @@ import mad.location.manager.lib.utils.Settings;
 
 public class MadLocationManager implements LocationCallback, SensorCallback, SimpleTempCallback<Location> {
     private static final String TAG = "MadLocationManager";
-    public static final String MLM_PROVIDER = "MLM_PROVIDER";
 
     private Settings settings;
     private LocationDataManager locationDataManager;
     private SensorDataManager sensorDataManager;
     private MadDataHandler handler;
+    private GeohashRTFilter geoHashRTFilter;
 
     private Location lastRawLocation;
     private Location lastKalmanFilteredLocation;
@@ -48,6 +49,9 @@ public class MadLocationManager implements LocationCallback, SensorCallback, Sim
                 .setCallback(this);
 
         handler = new MadDataHandler()
+                .setCallback(this);
+
+        geoHashRTFilter = new GeohashRTFilter()
                 .setCallback(this);
 
         Logger.init(context);
@@ -78,6 +82,9 @@ public class MadLocationManager implements LocationCallback, SensorCallback, Sim
                 .setVelFactor(settings.getVelFactor())
                 .setPosFactor(settings.getPosFactor())
                 .setPositionMinTime(settings.getPositionMinTime());
+
+        geoHashRTFilter.setGeohashPrecision(settings.getGeoHashPrecision())
+                .setGeohashMinPointCount(settings.getGeoHashMinPointCount());
 
         Logger.setEnabled(settings.isLoggerEnabled());
     }
@@ -174,13 +181,28 @@ public class MadLocationManager implements LocationCallback, SensorCallback, Sim
 
     @Override
     public void onCall(Location location) {//Filtered location data
-        lastKalmanFilteredLocation = location;
+        Log.d(TAG, "onCall: " + location.getProvider());
 
-        //add geoHash filter
+        switch (location.getProvider()) {
+            case MadDataHandler.PROVIDER_NAME:
+                lastKalmanFilteredLocation = location;
 
-        Iterator<LocationListener> iterator = kalmanFilteredLocationListeners.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().onLocationChanged(location);
+                geoHashRTFilter.filter(location);
+
+                Iterator<LocationListener> iterator1 = kalmanFilteredLocationListeners.iterator();
+                while (iterator1.hasNext()) {
+                    iterator1.next().onLocationChanged(location);
+                }
+                break;
+
+            case GeohashRTFilter.PROVIDER_NAME:
+                lastGeoHashFilteredLocation = location;
+
+                Iterator<LocationListener> iterator2 = geoHashFilteredLocationListeners.iterator();
+                while (iterator2.hasNext()) {
+                    iterator2.next().onLocationChanged(location);
+                }
+                break;
         }
     }
 }
