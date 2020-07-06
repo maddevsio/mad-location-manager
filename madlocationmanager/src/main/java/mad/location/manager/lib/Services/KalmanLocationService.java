@@ -10,6 +10,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Criteria;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -18,6 +19,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
@@ -52,6 +54,7 @@ public class KalmanLocationService extends Service
         private double sensorFrequencyHz;
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
+        private boolean onlyGpsSensor;
 
         private double mVelFactor;
         private double mPosFactor;
@@ -66,6 +69,7 @@ public class KalmanLocationService extends Service
                         double sensorFrequencyHz,
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
+                        boolean onlyGpsSensor,
                         double velFactor,
                         double posFactor) {
             this.accelerationDeviation = accelerationDeviation;
@@ -77,6 +81,7 @@ public class KalmanLocationService extends Service
             this.sensorFrequencyHz = sensorFrequencyHz;
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
+            this.onlyGpsSensor = onlyGpsSensor;
             this.mVelFactor = velFactor;
             this.mPosFactor = posFactor;
         }
@@ -101,9 +106,13 @@ public class KalmanLocationService extends Service
 
         int value;
 
-        ServiceStatus(int value) { this.value = value;}
+        ServiceStatus(int value) {
+            this.value = value;
+        }
 
-        public int getValue() { return value; }
+        public int getValue() {
+            return value;
+        }
     }
 
     public boolean isSensorsEnabled() {
@@ -185,6 +194,7 @@ public class KalmanLocationService extends Service
     //endregion
 
     private GeohashRTFilter m_geoHashRTFilter = null;
+
     public GeohashRTFilter getGeoHashRTFilter() {
         return m_geoHashRTFilter;
     }
@@ -199,6 +209,7 @@ public class KalmanLocationService extends Service
                     Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
                     null,
+                    true,
                     true,
                     Utils.DEFAULT_VEL_FACTOR,
                     Utils.DEFAULT_POS_FACTOR
@@ -238,6 +249,8 @@ public class KalmanLocationService extends Service
     private Queue<SensorGpsDataItem> m_sensorDataQueue =
             new PriorityBlockingQueue<>();
 
+    private final HandlerThread thread = new HandlerThread("kalmanThread");
+
     private void log2File(String format, Object... args) {
         if (m_settings.logger != null)
             m_settings.logger.log2file(format, args);
@@ -247,6 +260,7 @@ public class KalmanLocationService extends Service
         boolean needTerminate = false;
         long deltaTMs;
         KalmanLocationService owner;
+
         SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
@@ -255,7 +269,7 @@ public class KalmanLocationService extends Service
         private void handlePredict(SensorGpsDataItem sdi) {
             log2File("%d%d KalmanPredict : accX=%f, accY=%f",
                     Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
-                    (long)sdi.getTimestamp(),
+                    (long) sdi.getTimestamp(),
                     sdi.getAbsEastAcc(),
                     sdi.getAbsNorthAcc());
             m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
@@ -266,7 +280,7 @@ public class KalmanLocationService extends Service
             double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
             log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
                     Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
-                    (long)sdi.getTimestamp(),
+                    (long) sdi.getTimestamp(),
                     sdi.getGpsLon(),
                     sdi.getGpsLat(),
                     xVel,
@@ -296,8 +310,8 @@ public class KalmanLocationService extends Service
             loc.setAltitude(sdi.getGpsAlt());
             xVel = m_kalmanFilter.getCurrentXVel();
             yVel = m_kalmanFilter.getCurrentYVel();
-            double speed = Math.sqrt(xVel*xVel + yVel*yVel); //scalar speed without bearing
-            loc.setBearing((float)sdi.getCourse());
+            double speed = Math.sqrt(xVel * xVel + yVel * yVel); //scalar speed without bearing
+            loc.setBearing((float) sdi.getCourse());
             loc.setSpeed((float) speed);
             loc.setTime(System.currentTimeMillis());
             loc.setElapsedRealtimeNanos(System.nanoTime());
@@ -416,6 +430,7 @@ public class KalmanLocationService extends Service
 
     @Override
     public void onDestroy() {
+        thread.quitSafely();
         super.onDestroy();
     }
 
@@ -429,8 +444,18 @@ public class KalmanLocationService extends Service
             m_locationManager.removeGpsStatusListener(this);
             m_locationManager.addGpsStatusListener(this);
             m_locationManager.removeUpdates(this);
-            m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                    m_settings.gpsMinTime, m_settings.gpsMinDistance, this );
+            if (m_settings.onlyGpsSensor) {
+                m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                        m_settings.gpsMinTime, m_settings.gpsMinDistance, this);
+            } else {
+                thread.start();
+                Criteria criteria = new Criteria();
+                criteria.setSpeedRequired(true);
+                criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                criteria.setSpeedAccuracy(Criteria.ACCURACY_HIGH);
+                criteria.setPowerRequirement(Criteria.POWER_HIGH);
+                m_locationManager.requestLocationUpdates(m_settings.gpsMinTime, m_settings.gpsMinDistance, criteria, this, thread.getLooper());
+            }
         }
 
         m_sensorsEnabled = true;
@@ -575,9 +600,9 @@ public class KalmanLocationService extends Service
         log2File(logStr);
 
         GeomagneticField f = new GeomagneticField(
-                (float)loc.getLatitude(),
-                (float)loc.getLongitude(),
-                (float)loc.getAltitude(),
+                (float) loc.getLatitude(),
+                (float) loc.getLongitude(),
+                (float) loc.getAltitude(),
                 timeStamp);
         m_magneticDeclination = f.getDeclination();
 
