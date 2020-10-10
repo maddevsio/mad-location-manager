@@ -205,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "")),
                                 this,
                                 false,
+                                true,
                                 Utils.DEFAULT_VEL_FACTOR,
                                 Utils.DEFAULT_POS_FACTOR
                         );
