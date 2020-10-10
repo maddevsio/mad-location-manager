@@ -87,7 +87,7 @@ public class KalmanLocationService extends Service
         }
     }
 
-    public static final String TAG = "KalmanLocationService";
+    public static final String TAG = "mlm:Service";
 
     //region Location service implementation. Maybe we need to move it to some abstract class?*/
     protected List<LocationServiceInterface> m_locationServiceInterfaces;
