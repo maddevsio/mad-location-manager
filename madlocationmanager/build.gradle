@@ -9,7 +9,7 @@ group='com.github.maddevsio'
 
 ext {
     // if CI does not set RELEASE_VERSION use hardcoded one
-    releaseVersion = System.getenv('RELEASE_VERSION') ?: '0.0.14'
+    releaseVersion = System.getenv('RELEASE_VERSION') ?: '0.1.14'
 }
 
 android {
@@ -75,8 +75,8 @@ afterEvaluate {
     publishing {
         publications {
             mavenPublication(MavenPublication) {
-                groupId = 'mad-location-manager'
-                artifactId = 'madlocationmanager'
+                groupId = 'com.maddevsio.mad-location-manager'
+                artifactId = 'mad-location-manager'
                 version = releaseVersion
 
                 from components.release
