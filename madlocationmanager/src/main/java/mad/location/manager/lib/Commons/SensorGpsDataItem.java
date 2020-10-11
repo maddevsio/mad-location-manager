@@ -1,6 +1,6 @@
 package mad.location.manager.lib.Commons;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Created by lezh1k on 2/13/18.

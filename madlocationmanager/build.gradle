@@ -1,21 +1,26 @@
-apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+plugins {
+    id 'com.android.library'
+    id 'com.github.dcendents.android-maven'
+    id 'maven-publish'
+    id "com.jfrog.bintray" version "1.8.5"
+}
+
 group='com.github.maddevsio'
 
 ext {
-    supportLibraryVersion = "26.1.0"
+    // if CI does not set RELEASE_VERSION use hardcoded one
+    releaseVersion = System.getenv('RELEASE_VERSION') ?: '0.1.14'
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 30
     defaultConfig {
         minSdkVersion 18
-        targetSdkVersion 26
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
     }
 
@@ -31,12 +36,108 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    api "com.android.support:appcompat-v7:${supportLibraryVersion}"
-    api "com.android.support:support-v4:${supportLibraryVersion}"
-    api "com.android.support:design:${supportLibraryVersion}"
-    api "com.android.support:recyclerview-v7:${supportLibraryVersion}"
+    api 'androidx.appcompat:appcompat:1.2.0'
+    api 'androidx.legacy:legacy-support-v4:1.0.0'
+    api 'com.google.android.material:material:1.2.1'
+    api 'androidx.recyclerview:recyclerview:1.1.0'
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    testImplementation 'junit:junit:4.13'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
+
+task sourceJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+task androidJavadocs(type: Javadoc, dependsOn: build) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+task javadocJar(type: Jar, dependsOn: androidJavadocs) {
+    archiveClassifier.set('javadoc')
+    from androidJavadocs.destinationDir
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            mavenPublication(MavenPublication) {
+                groupId = 'com.maddevsio.mad-location-manager'
+                artifactId = 'mad-location-manager'
+                version = releaseVersion
+
+                from components.release
+                artifact sourceJar
+                artifact javadocJar
+
+                pom {
+                    packaging 'aar'
+                    name = 'Mad Location Manager'
+                    description = 'This is library for GPS and Accelerometer data "fusion" with Kalman filter'
+                    url = 'https://github.com/maddevsio/mad-location-manager'
+                    licenses {
+                        license {
+                            name = 'MIT'
+                            url = 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'Lezh1k'
+                            name = 'Oleg Katkov'
+                            email = 'lezh1k.vohrer@gmail.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/maddevsio/mad-location-manager.git'
+                        developerConnection = 'scm:git:ssh://github.com/maddevsio/mad-location-manager.git'
+                        url = 'https://github.com/maddevsio/mad-location-manager'
+                    }
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    dryRun = false
+    publish = true
+    override = true
+    user = System.getenv('BINTRAY_USER') ?: bintrayUser
+    key = System.getenv('BINTRAY_KEY') ?: bintrayKey
+    publications = ['mavenPublication']
+
+    pkg {
+        repo = 'maven'
+        name = 'mad-location-manager'
+        userOrg = 'Lezh1k'
+        description = 'This is library for GPS and Accelerometer data "fusion" with Kalman filter'
+        publications = ['mavenPublication']
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/maddevsio/mad-location-manager.git'
+        websiteUrl = 'https://github.com/maddevsio/mad-location-manager.git'
+        issueTrackerUrl = 'https://github.com/maddevsio/mad-location-manager/issues'
+        githubRepo = 'maddevsio/mad-location-manager'
+        githubReleaseNotesFile = 'README.md'
+        version {
+            name = releaseVersion
+            desc = 'Mad Location Manager v' + releaseVersion
+            released = new Date()
+            vcsTag = releaseVersion
+        }
+    }
+}
+
