@@ -71,7 +71,7 @@ task javadocJar(type: Jar, dependsOn: androidJavadocs) {
     from androidJavadocs.destinationDir
 }
 
-afterEvaluate {
+project.afterEvaluate {
     publishing {
         publications {
             mavenPublication(MavenPublication) {
