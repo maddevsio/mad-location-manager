@@ -116,8 +116,8 @@ bintray {
     dryRun = false
     publish = true
     override = true
-    user = System.getenv('BINTRAY_USER') ?: bintrayUser
-    key = System.getenv('BINTRAY_KEY') ?: bintrayKey
+    user = System.getenv('BINTRAY_USER') ?: (project.hasProperty('bintrayUser') ? project.property('bintrayUser') : '')
+    key = System.getenv('BINTRAY_KEY') ?: (project.hasProperty('bintrayKey') ? project.property('bintrayKey') : '')
     publications = ['mavenPublication']
 
     pkg {
