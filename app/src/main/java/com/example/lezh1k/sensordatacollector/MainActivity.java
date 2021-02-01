@@ -206,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 this,
                                 false,
                                 true,
+                                true,
                                 Utils.DEFAULT_VEL_FACTOR,
                                 Utils.DEFAULT_POS_FACTOR
                         );
