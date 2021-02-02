@@ -142,7 +142,11 @@ public class GPSAccKalmanFilter {
         m_predictCount = 0;
         m_timeStampMsUpdate = timeStamp;
         rebuildR(posDev, velErr);
-        m_kf.Zk.setData(x, y, xVel, yVel);
+        if (m_useGpsSpeed) {
+            m_kf.Zk.setData(x, y, xVel, yVel);
+        } else {
+            m_kf.Zk.setData(x, y);
+        }
         m_kf.update();
     }
 

@@ -55,6 +55,7 @@ public class KalmanLocationService extends Service
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
         private boolean onlyGpsSensor;
+        private boolean useGpsSpeed;
 
         private double mVelFactor;
         private double mPosFactor;
@@ -70,6 +71,7 @@ public class KalmanLocationService extends Service
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
                         boolean onlyGpsSensor,
+                        boolean useGpsSpeed,
                         double velFactor,
                         double posFactor) {
             this.accelerationDeviation = accelerationDeviation;
@@ -82,6 +84,7 @@ public class KalmanLocationService extends Service
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
             this.onlyGpsSensor = onlyGpsSensor;
+            this.useGpsSpeed = useGpsSpeed;
             this.mVelFactor = velFactor;
             this.mPosFactor = posFactor;
         }
@@ -211,6 +214,7 @@ public class KalmanLocationService extends Service
                     null,
                     true,
                     true,
+                    false,
                     Utils.DEFAULT_VEL_FACTOR,
                     Utils.DEFAULT_POS_FACTOR
             );
@@ -611,7 +615,7 @@ public class KalmanLocationService extends Service
                     Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
                     timeStamp, x, y, speed, course, m_settings.accelerationDeviation, posDev);
             m_kalmanFilter = new GPSAccKalmanFilter(
-                    false, //todo move to settings
+                    m_settings.useGpsSpeed,
                     Coordinates.longitudeToMeters(x),
                     Coordinates.latitudeToMeters(y),
                     xVel,
