@@ -10,18 +10,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Criteria;
-import android.location.GpsSatellite;
-import android.location.GpsStatus;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
@@ -63,7 +56,6 @@ public class KalmanLocationService extends Service
 
     public static class Settings {
         private double accelerationDeviation;
-        private int gpsMinDistance;
         private int gpsMinTime;
         private int positionMinTime;
         private int geoHashPrecision;
@@ -71,7 +63,6 @@ public class KalmanLocationService extends Service
         private double sensorFrequencyHz;
         private ILogger logger;
         private boolean filterMockGpsCoordinates;
-        private boolean onlyGpsSensor;
         private boolean useGpsSpeed;
 
         private double mVelFactor;
@@ -79,7 +70,6 @@ public class KalmanLocationService extends Service
 
 
         public Settings(double accelerationDeviation,
-                        int gpsMinDistance,
                         int gpsMinTime,
                         int positionMinTime,
                         int geoHashPrecision,
@@ -87,12 +77,10 @@ public class KalmanLocationService extends Service
                         double sensorFrequencyHz,
                         ILogger logger,
                         boolean filterMockGpsCoordinates,
-                        boolean onlyGpsSensor,
                         boolean useGpsSpeed,
                         double velFactor,
                         double posFactor) {
             this.accelerationDeviation = accelerationDeviation;
-            this.gpsMinDistance = gpsMinDistance;
             this.gpsMinTime = gpsMinTime;
             this.positionMinTime = positionMinTime;
             this.geoHashPrecision = geoHashPrecision;
@@ -100,7 +88,6 @@ public class KalmanLocationService extends Service
             this.sensorFrequencyHz = sensorFrequencyHz;
             this.logger = logger;
             this.filterMockGpsCoordinates = filterMockGpsCoordinates;
-            this.onlyGpsSensor = onlyGpsSensor;
             this.useGpsSpeed = useGpsSpeed;
             this.mVelFactor = velFactor;
             this.mPosFactor = posFactor;
@@ -316,7 +303,6 @@ public class KalmanLocationService extends Service
     public static Settings defaultSettings =
             new Settings(
                     Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                    Utils.GPS_MIN_DISTANCE,
                     Utils.GPS_MIN_TIME,
                     Utils.SENSOR_POSITION_MIN_TIME,
                     Utils.GEOHASH_DEFAULT_PREC,
@@ -324,14 +310,12 @@ public class KalmanLocationService extends Service
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
                     null,
                     true,
-                    true,
                     false,
                     Utils.DEFAULT_VEL_FACTOR,
                     Utils.DEFAULT_POS_FACTOR
             );
 
     private Settings m_settings;
-    //    private LocationManager m_locationManager;
     private LocationRequest m_locationRequest;
     private FusedLocationProviderClient m_fusedLocationProviderClient;
     LocationSettingsRequest.Builder builder;
@@ -345,7 +329,6 @@ public class KalmanLocationService extends Service
 
     private int m_activeSatellites = 0;
     private float m_lastLocationAccuracy = 0;
-//    private GpsStatus m_gpsStatus;
 
     /**/
     private GPSAccKalmanFilter m_kalmanFilter;
@@ -705,49 +688,4 @@ public class KalmanLocationService extends Service
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         /*do nothing*/
     }
-
-/*
-    @Override
-    public void onProviderEnabled(String provider) {
-        Log.d(TAG, "onProviderEnabled: " + provider);
-        if (provider.equals(LocationManager.GPS_PROVIDER)) {
-            m_gpsEnabled = true;
-            for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                ilss.GPSEnabledChanged(m_gpsEnabled);
-            }
-        }
-    }*/
-
-   /* @Override
-    public void onProviderDisabled(String provider) {
-        Log.d(TAG, "onProviderDisabled: " + provider);
-        if (provider.equals(LocationManager.GPS_PROVIDER)) {
-            m_gpsEnabled = false;
-            for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                ilss.GPSEnabledChanged(m_gpsEnabled);
-            }
-        }
-    }*/
-
-    /* *//*GpsStatus.Listener implementation. do we really need this? *//*
-    @Override
-    public void onGpsStatusChanged(int event) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            m_gpsStatus = m_locationManager.getGpsStatus(m_gpsStatus);
-        }
-
-        int activeSatellites = 0;
-        if (m_gpsStatus != null) {
-            for (GpsSatellite satellite : m_gpsStatus.getSatellites()) {
-                activeSatellites += satellite.usedInFix() ? 1 : 0;
-            }
-
-            if (activeSatellites != 0) {
-                this.m_activeSatellites = activeSatellites;
-                for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
-                    locationServiceStatusInterface.GPSStatusChanged(this.m_activeSatellites);
-                }
-            }
-        }
-    }*/
 }
