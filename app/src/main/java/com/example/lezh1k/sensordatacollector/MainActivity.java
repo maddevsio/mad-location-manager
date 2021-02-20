@@ -43,6 +43,8 @@ import mad.location.manager.lib.Loggers.GeohashRTFilter;
 import mad.location.manager.lib.SensorAux.SensorCalibrator;
 import mad.location.manager.lib.Services.KalmanLocationService;
 import mad.location.manager.lib.Services.ServicesHelper;
+import mad.location.manager.lib.Services.Settings;
+
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -194,8 +196,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 }
                 value.stop();
                 initXlogPrintersFileName();
-                KalmanLocationService.Settings settings =
-                        new KalmanLocationService.Settings(
+                Settings settings =
+                        new Settings(
                                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                                 Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
                                 Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
