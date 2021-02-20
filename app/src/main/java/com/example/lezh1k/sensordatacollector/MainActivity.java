@@ -181,6 +181,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
         TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
         Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        Button gpsProvider = (Button) findViewById(R.id.button_gps);
+        Button fusedProvider = (Button) findViewById(R.id.button_fused);
         String btnStartStopText;
         String btnTvStatusText;
 
@@ -190,6 +192,16 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             m_presenter.start();
             m_geoHashRTFilter.stop();
             m_geoHashRTFilter.reset(this);
+            Settings.LocationProvider provider = Settings.LocationProvider.GPS;
+            if (gpsProvider.isSelected())
+            {
+                provider =   Settings.LocationProvider.GPS;
+            }
+            else if (fusedProvider.isSelected())
+            {
+                provider =  Settings.LocationProvider.FUSED;
+            }
+            Settings.LocationProvider finalProvider = provider;
             ServicesHelper.getLocationService(this, value -> {
                 if (value.IsRunning()) {
                     return;
@@ -199,16 +211,19 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 Settings settings =
                         new Settings(
                                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                                Utils.GPS_MIN_DISTANCE,
                                 Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
                                 Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
                                 Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
                                 this,
+                                true,
                                 false,
                                 true,
                                 Utils.DEFAULT_VEL_FACTOR,
-                                Utils.DEFAULT_POS_FACTOR
+                                Utils.DEFAULT_POS_FACTOR,
+                                finalProvider
                         );
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
@@ -465,6 +480,23 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         } else {
             //todo set some status
         }
+        Button gpsProvider = (Button) findViewById(R.id.button_gps);
+        Button fusedProvider = (Button) findViewById(R.id.button_fused);
+        gpsProvider.setSelected(true);
+        gpsProvider.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fusedProvider.setSelected(false);
+                gpsProvider.setSelected(true);
+            }
+        });
+        fusedProvider.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                gpsProvider.setSelected(false);
+                fusedProvider.setSelected(true);
+            }
+        });
     }
 
     @Override

@@ -22,4 +22,7 @@
     <string name="pref_geohash_precision_summ">The length of geohash string (and precision)</string>
     <string name="pref_geohash_min_point">GeoHash min point</string>
     <string name="pref_geohash_min_point_summ">Count of points with same geohash. GPS point becomes valid only when count greater then this value.</string>
+    <string name="gps_provider">GPS </string>
+    <string name="fused_provider">Fused</string>
+    <string name="location_provider">Location provider</string>
 </resources>

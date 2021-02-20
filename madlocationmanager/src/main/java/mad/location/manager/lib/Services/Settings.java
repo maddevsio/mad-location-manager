@@ -17,6 +17,8 @@ public class Settings {
 
     public double mVelFactor;
     public double mPosFactor;
+    LocationProvider provider;
+    public enum LocationProvider { GPS, FUSED}
 
 
     public Settings(double accelerationDeviation,
@@ -31,7 +33,8 @@ public class Settings {
                     boolean onlyGpsSensor,
                     boolean useGpsSpeed,
                     double velFactor,
-                    double posFactor) {
+                    double posFactor,
+                    LocationProvider provider) {
         this.accelerationDeviation = accelerationDeviation;
         this.gpsMinDistance = gpsMinDistance;
         this.gpsMinTime = gpsMinTime;
@@ -45,5 +48,6 @@ public class Settings {
         this.useGpsSpeed = useGpsSpeed;
         this.mVelFactor = velFactor;
         this.mPosFactor = posFactor;
+        this.provider = provider;
     }
 }
