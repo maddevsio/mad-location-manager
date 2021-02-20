@@ -40,55 +40,11 @@ import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, LocationListener, GpsStatus.Listener {
 
-    public static class Settings {
-        private double accelerationDeviation;
-        private int gpsMinDistance;
-        private int gpsMinTime;
-        private int positionMinTime;
-        private int geoHashPrecision;
-        private int geoHashMinPointCount;
-        private double sensorFrequencyHz;
-        private ILogger logger;
-        private boolean filterMockGpsCoordinates;
-        private boolean onlyGpsSensor;
-        private boolean useGpsSpeed;
-
-        private double mVelFactor;
-        private double mPosFactor;
-
-
-        public Settings(double accelerationDeviation,
-                        int gpsMinDistance,
-                        int gpsMinTime,
-                        int positionMinTime,
-                        int geoHashPrecision,
-                        int geoHashMinPointCount,
-                        double sensorFrequencyHz,
-                        ILogger logger,
-                        boolean filterMockGpsCoordinates,
-                        boolean onlyGpsSensor,
-                        boolean useGpsSpeed,
-                        double velFactor,
-                        double posFactor) {
-            this.accelerationDeviation = accelerationDeviation;
-            this.gpsMinDistance = gpsMinDistance;
-            this.gpsMinTime = gpsMinTime;
-            this.positionMinTime = positionMinTime;
-            this.geoHashPrecision = geoHashPrecision;
-            this.geoHashMinPointCount = geoHashMinPointCount;
-            this.sensorFrequencyHz = sensorFrequencyHz;
-            this.logger = logger;
-            this.filterMockGpsCoordinates = filterMockGpsCoordinates;
-            this.onlyGpsSensor = onlyGpsSensor;
-            this.useGpsSpeed = useGpsSpeed;
-            this.mVelFactor = velFactor;
-            this.mPosFactor = posFactor;
-        }
-    }
 
     public static final String TAG = "mlm:Service";
 
@@ -220,7 +176,7 @@ public class KalmanLocationService extends Service
             );
 
     private Settings m_settings;
-    private LocationManager m_locationManager;
+    GPSLocationProvider gpsLocationProvider;
     private PowerManager m_powerManager;
     private PowerManager.WakeLock m_wakeLock;
 
@@ -378,7 +334,7 @@ public class KalmanLocationService extends Service
 
             if (ActivityCompat.checkSelfPermission(owner, Manifest.permission.ACCESS_FINE_LOCATION) ==
                     PackageManager.PERMISSION_GRANTED) {
-                m_gpsStatus = m_locationManager.getGpsStatus(m_gpsStatus);
+                m_gpsStatus = gpsLocationProvider.getGpsStatus(m_gpsStatus);
             }
 
             int activeSatellites = 0;
@@ -412,7 +368,8 @@ public class KalmanLocationService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        gpsLocationProvider = new GPSLocationProvider(this,this,this);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         m_wakeLock = m_powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
@@ -445,21 +402,7 @@ public class KalmanLocationService extends Service
             m_serviceStatus = ServiceStatus.PERMISSION_DENIED;
         } else {
             m_serviceStatus = ServiceStatus.SERVICE_STARTED;
-            m_locationManager.removeGpsStatusListener(this);
-            m_locationManager.addGpsStatusListener(this);
-            m_locationManager.removeUpdates(this);
-            if (m_settings.onlyGpsSensor) {
-                m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                        m_settings.gpsMinTime, m_settings.gpsMinDistance, this);
-            } else {
-                thread.start();
-                Criteria criteria = new Criteria();
-                criteria.setSpeedRequired(true);
-                criteria.setAccuracy(Criteria.ACCURACY_FINE);
-                criteria.setSpeedAccuracy(Criteria.ACCURACY_HIGH);
-                criteria.setPowerRequirement(Criteria.POWER_HIGH);
-                m_locationManager.requestLocationUpdates(m_settings.gpsMinTime, m_settings.gpsMinDistance, criteria, this, thread.getLooper());
-            }
+            gpsLocationProvider.startLocationUpdates(m_settings , thread);
         }
 
         m_sensorsEnabled = true;
@@ -468,7 +411,7 @@ public class KalmanLocationService extends Service
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
                     Utils.hertz2periodUs(m_settings.sensorFrequencyHz));
         }
-        m_gpsEnabled = m_locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        m_gpsEnabled = gpsLocationProvider.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
         for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
             ilss.serviceStatusChanged(m_serviceStatus);
@@ -488,8 +431,7 @@ public class KalmanLocationService extends Service
             m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
         } else {
             m_serviceStatus = ServiceStatus.SERVICE_PAUSED;
-            m_locationManager.removeGpsStatusListener(this);
-            m_locationManager.removeUpdates(this);
+            gpsLocationProvider.stop();
         }
 
         if (m_geoHashRTFilter != null) {
@@ -578,7 +520,10 @@ public class KalmanLocationService extends Service
     /*LocationListener methods implementation*/
     @Override
     public void onLocationChanged(Location loc) {
+        processLocation(loc);
+    }
 
+    private void processLocation(Location loc) {
         if (loc == null) return;
         if (m_settings.filterMockGpsCoordinates && loc.isFromMockProvider()) return;
 
@@ -672,7 +617,7 @@ public class KalmanLocationService extends Service
     @Override
     public void onGpsStatusChanged(int event) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            m_gpsStatus = m_locationManager.getGpsStatus(m_gpsStatus);
+            m_gpsStatus = gpsLocationProvider.getGpsStatus(m_gpsStatus);
         }
 
         int activeSatellites = 0;
