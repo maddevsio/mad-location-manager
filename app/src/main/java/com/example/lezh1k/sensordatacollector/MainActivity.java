@@ -211,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 Settings settings =
                         new Settings(
                                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                                Utils.GPS_MIN_DISTANCE,
+                                Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "10")),
                                 Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
                                 Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),

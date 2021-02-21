@@ -209,9 +209,6 @@ public class KalmanLocationService extends Service
 
     FusedLocationProvider fusedLocationProvider;
     GPSLocationProvider gpsLocationProvider;
-    /*LocationSettingsRequest.Builder builder;
-    SettingsClient client;*/
-    Task<LocationSettingsResponse> task;
     private PowerManager m_powerManager;
     private PowerManager.WakeLock m_wakeLock;
 
@@ -220,8 +217,6 @@ public class KalmanLocationService extends Service
 
     private int m_activeSatellites = 0;
     private float m_lastLocationAccuracy = 0;
-    private GpsStatus m_gpsStatus;
-
     /**/
     private GPSAccKalmanFilter m_kalmanFilter;
     private SensorDataEventLoopTask m_eventLoopTask;
@@ -356,7 +351,7 @@ public class KalmanLocationService extends Service
             onLocationChangedImp((Location) values[0]);
         }
 
-        void onLocationChangedImp(final Location location) {
+        void onLocationChangedImp(Location location) {
             if (location == null || location.getLatitude() == 0 ||
                     location.getLongitude() == 0 ||
                     !location.getProvider().equals(TAG)) {

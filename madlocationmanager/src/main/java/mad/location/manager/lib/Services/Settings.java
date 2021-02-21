@@ -14,7 +14,7 @@ public class Settings {
     public boolean filterMockGpsCoordinates;
     /**
      * If value of onlyGpsSensor is true, the location is determined using GNSS satellites.
-     * if the value is false, GPSLocationProvider intrinsically used fused location provider.
+     * if the value is false, LocationManager intrinsically uses fused location provider.
      * Fused location provider combines may combine inputs from several location sources to provide the
      * best possible location fix.
      */
