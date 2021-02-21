@@ -2,10 +2,13 @@ package mad.location.manager.lib.locationProviders;
 
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
 import android.os.HandlerThread;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
+import androidx.core.location.LocationManagerCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationAvailability;
@@ -30,8 +33,8 @@ public class FusedLocationProvider {
     LocationSettingsRequest.Builder builder;
     SettingsClient client;
     Task<LocationSettingsResponse> task;
+    Context context;
     LocationProviderCallback m_locationProvider;
-
     private LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
@@ -61,6 +64,7 @@ public class FusedLocationProvider {
 
     public FusedLocationProvider(Context context) {
         this.m_fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
+        this.context = context;
     }
 
     @RequiresPermission(
@@ -75,8 +79,18 @@ public class FusedLocationProvider {
                 thread.getLooper());
     }
 
+
+
     public void stop() {
         m_fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+    }
+
+    public boolean isProviderEnabled() {
+        return LocationManagerCompat.isLocationEnabled((LocationManager) context.getSystemService(Context.LOCATION_SERVICE));
+    }
+    public interface CheckLocationSettingCallback{
+        void onSuccess(LocationSettingsResponse locationSettingsResponse);
+        void onFailure(@NonNull Exception e);
     }
 }
 

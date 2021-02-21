@@ -64,40 +64,6 @@ import mad.location.manager.lib.locationProviders.LocationProviderCallback;
 public class KalmanLocationService extends Service
         implements SensorEventListener, GPSCallback, LocationProviderCallback {
 
-
-    private LocationCallback locationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            for (Location loc : locationResult.getLocations()) {
-                processLocation(loc);
-            }
-        }
-
-        @Override
-        public void onLocationAvailability(LocationAvailability locationAvailability) {
-            task = client.checkLocationSettings(builder.build());
-            task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
-                @Override
-                public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                    m_gpsEnabled = true;
-                    for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                        ilss.GPSEnabledChanged(m_gpsEnabled);
-                    }
-                }
-            });
-            task.addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    m_gpsEnabled = false;
-                    for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                        ilss.GPSEnabledChanged(m_gpsEnabled);
-                    }
-                }
-            });
-
-        }
-    };
-
     public static final String TAG = "mlm:Service";
 
     //region Location service implementation. Maybe we need to move it to some abstract class?*/
@@ -255,8 +221,8 @@ public class KalmanLocationService extends Service
 
     FusedLocationProvider fusedLocationProvider;
     GPSLocationProvider gpsLocationProvider;
-    LocationSettingsRequest.Builder builder;
-    SettingsClient client;
+    /*LocationSettingsRequest.Builder builder;
+    SettingsClient client;*/
     Task<LocationSettingsResponse> task;
     private PowerManager m_powerManager;
     private PowerManager.WakeLock m_wakeLock;
@@ -437,8 +403,6 @@ public class KalmanLocationService extends Service
     public void onCreate() {
         super.onCreate();
         fusedLocationProvider = new FusedLocationProvider(this);
-        builder = new LocationSettingsRequest.Builder();
-        client = LocationServices.getSettingsClient(this);
         gpsLocationProvider = new GPSLocationProvider(this, this, this);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -475,25 +439,11 @@ public class KalmanLocationService extends Service
             if (m_settings.provider == Settings.LocationProvider.GPS) {
                 gpsLocationProvider.startLocationUpdates(m_settings, thread);
                 m_gpsEnabled = gpsLocationProvider.isProviderEnabled(LocationManager.GPS_PROVIDER);
-                startEventLoop(m_gpsEnabled);
             } else {
                 fusedLocationProvider.startLocationUpdates(m_settings, thread);
-                task = client.checkLocationSettings(builder.build());
-                task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
-                    @Override
-                    public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                        m_gpsEnabled = true;
-                        startEventLoop(m_gpsEnabled);
-                    }
-                });
-                task.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        m_gpsEnabled = false;
-                        startEventLoop(m_gpsEnabled);
-                    }
-                });
+                m_gpsEnabled = fusedLocationProvider.isProviderEnabled();
             }
+            startEventLoop(m_gpsEnabled);
 
         }
         m_sensorsEnabled = true;
