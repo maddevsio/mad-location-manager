@@ -57,9 +57,10 @@ import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
 import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 import mad.location.manager.lib.locationProviders.FusedLocationProvider;
+import mad.location.manager.lib.locationProviders.LocationProviderCallback;
 
 public class KalmanLocationService extends Service
-        implements SensorEventListener, GpsStatus.Listener, LocationListener {
+        implements SensorEventListener, GpsStatus.Listener, LocationListener, LocationProviderCallback {
 
 
     private LocationCallback locationCallback = new LocationCallback() {
@@ -69,6 +70,7 @@ public class KalmanLocationService extends Service
                 processLocation(loc);
             }
         }
+
         @Override
         public void onLocationAvailability(LocationAvailability locationAvailability) {
             task = client.checkLocationSettings(builder.build());
@@ -103,6 +105,19 @@ public class KalmanLocationService extends Service
     protected Location m_lastLocation;
 
     protected ServiceStatus m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
+
+    @Override
+    public void locationAvailabilityChanged(boolean isLocationAvailable) {
+        m_gpsEnabled = isLocationAvailable;
+        for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
+            ilss.GPSEnabledChanged(m_gpsEnabled);
+        }
+    }
+
+    @Override
+    public void onLocationAvailable(Location location) {
+        processLocation(location);
+    }
 
     public enum ServiceStatus {
         PERMISSION_DENIED(0),
@@ -444,10 +459,10 @@ public class KalmanLocationService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        fusedLocationProvider = new FusedLocationProvider(this,locationCallback);
+        fusedLocationProvider = new FusedLocationProvider(this);
         builder = new LocationSettingsRequest.Builder();
         client = LocationServices.getSettingsClient(this);
-        gpsLocationProvider = new GPSLocationProvider(this,this,this);
+        gpsLocationProvider = new GPSLocationProvider(this, this, this);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         m_wakeLock = m_powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
@@ -480,11 +495,10 @@ public class KalmanLocationService extends Service
             m_serviceStatus = ServiceStatus.PERMISSION_DENIED;
         } else {
             m_serviceStatus = ServiceStatus.SERVICE_STARTED;
-            if (m_settings.provider == Settings.LocationProvider.GPS)
-            {
-                gpsLocationProvider.startLocationUpdates(m_settings , thread);
+            if (m_settings.provider == Settings.LocationProvider.GPS) {
+                gpsLocationProvider.startLocationUpdates(m_settings, thread);
                 m_gpsEnabled = gpsLocationProvider.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            }else {
+            } else {
                 fusedLocationProvider.startLocationUpdates(m_settings, thread);
                 task = client.checkLocationSettings(builder.build());
                 task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
@@ -512,7 +526,6 @@ public class KalmanLocationService extends Service
         }
 
 
-
     }
 
     private void startEventLoop(boolean m_gpsEnabled) {
@@ -534,11 +547,9 @@ public class KalmanLocationService extends Service
             m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
         } else {
             m_serviceStatus = ServiceStatus.SERVICE_PAUSED;
-            if (m_settings.provider == Settings.LocationProvider.GPS)
-            {
+            if (m_settings.provider == Settings.LocationProvider.GPS) {
                 gpsLocationProvider.stop();
-            }
-            else{
+            } else {
                 fusedLocationProvider.stop();
             }
         }
