@@ -12,6 +12,12 @@ public class Settings {
     public double sensorFrequencyHz;
     public ILogger logger;
     public boolean filterMockGpsCoordinates;
+    /**
+     * If value of onlyGpsSensor is true, the location is determined using GNSS satellites.
+     * if the value is false, GPSLocationProvider intrinsically used fused location provider.
+     * Fused location provider combines may combine inputs from several location sources to provide the
+     * best possible location fix.
+     */
     public boolean onlyGpsSensor;
     public boolean useGpsSpeed;
 

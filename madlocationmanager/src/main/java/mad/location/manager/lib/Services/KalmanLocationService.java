@@ -43,6 +43,7 @@ import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -55,12 +56,13 @@ import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.locationProviders.GPSCallback;
 import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 import mad.location.manager.lib.locationProviders.FusedLocationProvider;
 import mad.location.manager.lib.locationProviders.LocationProviderCallback;
 
 public class KalmanLocationService extends Service
-        implements SensorEventListener, GpsStatus.Listener, LocationListener, LocationProviderCallback {
+        implements SensorEventListener, GPSCallback, LocationProviderCallback {
 
 
     private LocationCallback locationCallback = new LocationCallback() {
@@ -117,6 +119,16 @@ public class KalmanLocationService extends Service
     @Override
     public void onLocationAvailable(Location location) {
         processLocation(location);
+    }
+
+    @Override
+    public void gpsSatelliteCountChanged(int noOfSatellites) {
+        if (noOfSatellites != 0) {
+            this.m_activeSatellites = noOfSatellites;
+            for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
+                locationServiceStatusInterface.GPSStatusChanged(this.m_activeSatellites);
+            }
+        }
     }
 
     public enum ServiceStatus {
@@ -396,55 +408,20 @@ public class KalmanLocationService extends Service
                     !location.getProvider().equals(TAG)) {
                 return;
             }
-
             m_serviceStatus = ServiceStatus.HAS_LOCATION;
             m_lastLocation = location;
             m_lastLocationAccuracy = location.getAccuracy();
-
-            if (ActivityCompat.checkSelfPermission(owner, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED) {
-                m_gpsStatus = gpsLocationProvider.getGpsStatus(m_gpsStatus);
-            }
-
-            int activeSatellites = 0;
-            if (m_gpsStatus != null) {
-                for (GpsSatellite satellite : m_gpsStatus.getSatellites()) {
-                    activeSatellites += satellite.usedInFix() ? 1 : 0;
-                }
-                m_activeSatellites = activeSatellites;
-            }
-
             for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
                 locationServiceInterface.locationChanged(location);
             }
             for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
                 locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
                 locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
-                locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
-                task = client.checkLocationSettings(builder.build());
-                task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
-                    @Override
-                    public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                        m_gpsEnabled = true;
-                        for (LocationServiceInterface locationServiceInterface : m_locationServiceInterfaces) {
-                            locationServiceInterface.locationChanged(location);
-                        }
-                        for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
-                            locationServiceStatusInterface.serviceStatusChanged(m_serviceStatus);
-                            locationServiceStatusInterface.lastLocationAccuracyChanged(m_lastLocationAccuracy);
-                            locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
-                        }
-                    }
-                });
-                task.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        m_gpsEnabled = false;
-                        startEventLoop(m_gpsEnabled);
-                    }
-                });
+                if (m_settings.provider == Settings.LocationProvider.GPS) {
+                    m_activeSatellites = gpsLocationProvider.getGPSSatteliteCount();
+                    locationServiceStatusInterface.GPSStatusChanged(m_activeSatellites);
+                }
             }
-
         }
     }
 
@@ -498,6 +475,7 @@ public class KalmanLocationService extends Service
             if (m_settings.provider == Settings.LocationProvider.GPS) {
                 gpsLocationProvider.startLocationUpdates(m_settings, thread);
                 m_gpsEnabled = gpsLocationProvider.isProviderEnabled(LocationManager.GPS_PROVIDER);
+                startEventLoop(m_gpsEnabled);
             } else {
                 fusedLocationProvider.startLocationUpdates(m_settings, thread);
                 task = client.checkLocationSettings(builder.build());
@@ -637,12 +615,6 @@ public class KalmanLocationService extends Service
         /*do nothing*/
     }
 
-    /*LocationListener methods implementation*/
-    @Override
-    public void onLocationChanged(Location loc) {
-        processLocation(loc);
-    }
-
     private void processLocation(Location loc) {
         if (loc == null) return;
         if (m_settings.filterMockGpsCoordinates && loc.isFromMockProvider()) return;
@@ -661,7 +633,7 @@ public class KalmanLocationService extends Service
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;
 
-        String logStr = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+        String logStr = String.format(Locale.ENGLISH, "%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Utils.LogMessageType.GPS_DATA.ordinal(),
                 timeStamp, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
@@ -704,54 +676,5 @@ public class KalmanLocationService extends Service
                 velErr,
                 m_magneticDeclination);
         m_sensorDataQueue.add(sdi);
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-        /*do nothing*/
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-        Log.d(TAG, "onProviderEnabled: " + provider);
-        if (provider.equals(LocationManager.GPS_PROVIDER)) {
-            m_gpsEnabled = true;
-            for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                ilss.GPSEnabledChanged(m_gpsEnabled);
-            }
-        }
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-        Log.d(TAG, "onProviderDisabled: " + provider);
-        if (provider.equals(LocationManager.GPS_PROVIDER)) {
-            m_gpsEnabled = false;
-            for (LocationServiceStatusInterface ilss : m_locationServiceStatusInterfaces) {
-                ilss.GPSEnabledChanged(m_gpsEnabled);
-            }
-        }
-    }
-
-    /*GpsStatus.Listener implementation. do we really need this? */
-    @Override
-    public void onGpsStatusChanged(int event) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            m_gpsStatus = gpsLocationProvider.getGpsStatus(m_gpsStatus);
-        }
-
-        int activeSatellites = 0;
-        if (m_gpsStatus != null) {
-            for (GpsSatellite satellite : m_gpsStatus.getSatellites()) {
-                activeSatellites += satellite.usedInFix() ? 1 : 0;
-            }
-
-            if (activeSatellites != 0) {
-                this.m_activeSatellites = activeSatellites;
-                for (LocationServiceStatusInterface locationServiceStatusInterface : m_locationServiceStatusInterfaces) {
-                    locationServiceStatusInterface.GPSStatusChanged(this.m_activeSatellites);
-                }
-            }
-        }
     }
 }

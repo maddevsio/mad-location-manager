@@ -7,3 +7,4 @@ public interface LocationProviderCallback {
 
     void onLocationAvailable(Location location);
 }
+
