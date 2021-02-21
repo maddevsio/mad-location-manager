@@ -22,23 +22,12 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.PowerManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 
 import android.util.Log;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationAvailability;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
@@ -52,7 +41,6 @@ import mad.location.manager.lib.Commons.GeoPoint;
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
 import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Filters.GPSAccKalmanFilter;
-import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
@@ -530,7 +518,7 @@ public class KalmanLocationService extends Service
                 android.opengl.Matrix.multiplyMV(absAcceleration, 0, rotationMatrixInv,
                         0, linearAcceleration, 0);
 
-                String logStr = String.format("%d%d abs acc: %f %f %f",
+                String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
                 log2File(logStr);
