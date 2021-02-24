@@ -45,6 +45,9 @@ public class FusedLocationProvider {
 
         @Override
         public void onLocationAvailability(LocationAvailability locationAvailability) {
+            builder =new LocationSettingsRequest.Builder()
+                    .addLocationRequest(m_locationRequest);
+            client = LocationServices.getSettingsClient(context);
             task = client.checkLocationSettings(builder.build());
             task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
                 @Override
@@ -62,9 +65,10 @@ public class FusedLocationProvider {
         }
     };
 
-    public FusedLocationProvider(Context context) {
+    public FusedLocationProvider(Context context,LocationProviderCallback m_locationProvider ) {
         this.m_fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
         this.context = context;
+        this.m_locationProvider = m_locationProvider;
     }
 
     @RequiresPermission(
@@ -87,10 +91,6 @@ public class FusedLocationProvider {
 
     public boolean isProviderEnabled() {
         return LocationManagerCompat.isLocationEnabled((LocationManager) context.getSystemService(Context.LOCATION_SERVICE));
-    }
-    public interface CheckLocationSettingCallback{
-        void onSuccess(LocationSettingsResponse locationSettingsResponse);
-        void onFailure(@NonNull Exception e);
     }
 }
 
