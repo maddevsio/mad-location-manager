@@ -385,7 +385,7 @@ public class KalmanLocationService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        fusedLocationProvider = new FusedLocationProvider(this);
+        fusedLocationProvider = new FusedLocationProvider(this,this);
         gpsLocationProvider = new GPSLocationProvider(this, this, this);
         m_sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         m_powerManager = (PowerManager) getSystemService(POWER_SERVICE);
