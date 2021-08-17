@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct matrix matrix_t;
 
 typedef struct kalman_filter {
@@ -54,7 +50,4 @@ kalman_filter_error_t kf_update(kalman_filter_t *k);
 
 const char *kf_error_str(kalman_filter_error_t err);
 
-#ifdef __cplusplus
-}
-#endif // extern "C"
 #endif // KALMAN_H

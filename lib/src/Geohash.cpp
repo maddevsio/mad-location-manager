@@ -1,5 +1,5 @@
-#include "Geohash.h"
-#include "Commons.h"
+#include "Geohash.hpp"
+#include "Commons.hpp"
 #include <stdint.h>
 #include <assert.h>
 

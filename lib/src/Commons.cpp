@@ -1,3 +1,5 @@
+#include "Commons.hpp"
+
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -24,11 +26,5 @@ int
 random_between_2_vals(int low, int hi) {
   assert(low <= hi);
   return (rand() % (hi - low)) + low;
-}
-///////////////////////////////////////////////////////
-
-double
-low_pass_filter(double prev, double measured, double alpha) {
-  return prev + alpha * (measured - prev);
 }
 ///////////////////////////////////////////////////////

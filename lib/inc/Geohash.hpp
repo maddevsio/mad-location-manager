@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define GEOHASH_MAX_PRECISION 12
 
 uint64_t geohash_encode(double lat,
@@ -22,8 +18,4 @@ int geohash_cmp(double lon1,
 int geohash_to_str(uint16_t hash,
                    char **dst);
 
-
-#ifdef __cplusplus
-}
-#endif // extern "C"
 #endif // GEOHASH_H

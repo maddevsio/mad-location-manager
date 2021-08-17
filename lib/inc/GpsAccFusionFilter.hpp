@@ -4,10 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef double timestamp_t;
 
 typedef struct kalman_filter kalman_filter_t;
@@ -52,7 +48,4 @@ void gps_accelerometer_fusion_filter_update(gps_accelerometer_fusion_filter_t *f
 
 gaff_state_t gps_accelerometer_fusion_filter_current_state(const gps_accelerometer_fusion_filter_t *filter);
 
-#ifdef __cplusplus
-}
-#endif // extern "C"
 #endif // GPSACCKALMAN_H

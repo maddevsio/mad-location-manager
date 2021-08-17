@@ -1,5 +1,5 @@
 #include <math.h>
-#include "Vector3d.h"
+#include "Vector3d.hpp"
 
 vector3d_t vector_new(float x, float y, float z) {
   vector3d_t r = {.x = x, .y = y, .z = z};

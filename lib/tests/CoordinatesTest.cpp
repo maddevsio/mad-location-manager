@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <math.h>
-#include "Coordinates.h"
+#include "Coordinates.hpp"
 
 //http://www.onlineconversion.com/map_greatcircle_distance.htm
 TEST (coordinates, longitudeToMetersTest) {

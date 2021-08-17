@@ -1,5 +1,5 @@
 TEMPLATE = app
-CONFIG += c++11
+CONFIG += c++2a
 CONFIG -= app_bundle
 CONFIG -= qt
 
@@ -8,29 +8,28 @@ INCLUDEPATH += inc/
 LIBS += -lgtest
 
 SOURCES += \
-    src/Commons.c \
-    src/Coordinates.c \
-    src/Geohash.c \
-    src/GpsAccFusionFilter.c \
-    src/Kalman.c \
-    src/MadgwickAHRS.c \
-    src/Matrix.c \
-    src/Mlm.c \
-    src/Quaternion.c \
-    src/Vector3d.c \
+    src/Commons.cpp \
+    src/Coordinates.cpp \
+    src/Geohash.cpp \
+    src/GpsAccFusionFilter.cpp \
+    src/Kalman.cpp \
+    src/MadgwickAHRS.cpp \
+    src/Mlm.cpp \
+    src/Quaternion.cpp \
+    src/Vector3d.cpp \
     tests/CoordinatesTest.cpp \
     tests/GeohashTest.cpp \
     tests/MatrixTest.cpp \
     tests/main.cpp
 
 HEADERS += \
-    inc/Commons.h \
-    inc/Coordinates.h \
-    inc/Geohash.h \
-    inc/GpsAccFusionFilter.h \
-    inc/Kalman.h \
-    inc/MadgwickAHRS.h \
-    inc/Matrix.h \
-    inc/Mlm.h \
-    inc/Quaternion.h \
-    inc/Vector3d.h
+    inc/Commons.hpp \
+    inc/Coordinates.hpp \
+    inc/Geohash.hpp \
+    inc/GpsAccFusionFilter.hpp \
+    inc/Kalman.hpp \
+    inc/MadgwickAHRS.hpp \
+    inc/Matrix.hpp \
+    inc/Mlm.hpp \
+    inc/Quaternion.hpp \
+    inc/Vector3d.hpp

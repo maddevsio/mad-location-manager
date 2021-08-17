@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct geopoint {
   double Latitude, Longitude;
 } geopoint_t;
@@ -41,7 +37,4 @@ geopoint_t coord_meters_to_geopoint(double lon_meters,
 geopoint_t coord_meters_to_geopoint_hq(double lon_meters,
                                        double lat_meters);
 
-#ifdef __cplusplus
-}
-#endif // extern "C"
 #endif // COORDINATES_H

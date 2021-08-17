@@ -1,9 +1,9 @@
 #include <math.h>
 #include <assert.h>
 
-#include "Coordinates.h"
-#include "Geohash.h"
-#include "Commons.h"
+#include "Coordinates.hpp"
+#include "Geohash.hpp"
+#include "Commons.hpp"
 
 #define EARTH_RADIUS (6371.0 * 1000.0) // meters
 #define ACTUAL_GRAVITY 9.80665
