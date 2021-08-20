@@ -1,40 +1,38 @@
-////=====================================================================================================
-//// MadgwickAHRS.h
-////=====================================================================================================
-////
-//// Implementation of Madgwick's IMU and AHRS algorithms.
-//// See: http://www.x-io.co.uk/node/8#open_source_ahrs_and_imu_algorithms
-////
-//// Date			Author          Notes
-//// 29/09/2011	SOH Madgwick    Initial release
-//// 02/10/2011	SOH Madgwick	Optimised for reduced CPU load
-////
-////=====================================================================================================
-//#ifndef MadgwickAHRS_h
-//#define MadgwickAHRS_h
+//=====================================================================================================
+// MadgwickAHRS.h
+//=====================================================================================================
+//
+// Implementation of Madgwick's IMU and AHRS algorithms.
+// See: http://www.x-io.co.uk/node/8#open_source_ahrs_and_imu_algorithms
+//
+// Date			Author          Notes
+// 29/09/2011	SOH Madgwick    Initial release
+// 02/10/2011	SOH Madgwick	Optimised for reduced CPU load
+//
+// Date         Author          Notes
+// 19/08/2021   Lezh1k          Reimplemented using double precision numbers + C++
+//=====================================================================================================
+#ifndef MadgwickAHRS_h
+#define MadgwickAHRS_h
 
-//#include "Quaternion.hpp"
+#include "Quaternion.hpp"
 
-//typedef struct madgwick_filter {
-//  float beta;             //algorithm gain
-//  float sample_freq;
-//  quaternion_t q;
-//} madgwick_filter_t;
+class MadgwickFilter {
+private:
+  double m_beta;
+  double m_sample_freq;
+  Quaternion q;
 
-////---------------------------------------------------------------------------------------------------
-//// Function declarations
+public:
+  MadgwickFilter() = delete;
+  MadgwickFilter(double beta, double sample_freq_HZ);
+  ~MadgwickFilter() = default;
 
-//madgwick_filter_t* madgwick_filter_alloc(float beta,
-//                                         float sampleFreqHZ);
-//void madgwick_filter_free(madgwick_filter_t *f);
+  void AHRS_update(double gx, double gy, double gz,
+                   double ax, double ay, double az,
+                   double mx, double my, double mz);
+  void AHRS_update_IMU(double gx, double gy, double gz,
+                       double ax, double ay, double az);
+};
 
-//void madgwick_filter_AHRS_update(madgwick_filter_t *f,
-//                                 float gx, float gy, float gz,
-//                                 float ax, float ay, float az,
-//                                 float mx, float my, float mz);
-
-//void madgwick_filter_AHRS_update_IMU( madgwick_filter_t *f,
-//                                      float gx, float gy, float gz,
-//                                      float ax, float ay, float az);
-
-//#endif // MadgwickAHRS_h
+#endif // MadgwickAHRS_h

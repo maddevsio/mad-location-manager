@@ -1,31 +1,46 @@
 #include <math.h>
 #include "Vector3d.hpp"
 
-vector3d_t vector_new(float x, float y, float z) {
-  vector3d_t r = {.x = x, .y = y, .z = z};
-  r.len = sqrtf(x*x + y*y + z*z);
-  return r;
+Vector3D::Vector3D() :
+  x_(0.0),
+  y_(0.0),
+  z_(0.0),
+  len_(0.0) {
 }
-///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 
-void vector3d_normalize(vector3d_t *v3d) {
-  v3d->x /= v3d->len;
-  v3d->y /= v3d->len;
-  v3d->z /= v3d->len;
-  v3d->len = 1.0f; //normalized
+Vector3D::Vector3D(double x,
+                   double y,
+                   double z) :
+  x_(x),
+  y_(y),
+  z_(z),
+  len_(sqrt(x*x + y*y + z*z)) {
 }
-///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 
-float vector3d_rotation_sign(const vector3d_t *a,
-                             const vector3d_t *b) {
-  float sign = a->x * b->y - a->y * b->x;
-  return sign >= 0.0f ? 1.0f : -1.0f;
+void
+Vector3D::normalize() {
+  x_ /= len_;
+  y_ /= len_;
+  z_ /= len_;
+  len_ = 1.0; //normalized
 }
-///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 
-float vector3d_flat_cos(const vector3d_t *a,
-                        const vector3d_t *b) {
-  float num = a->x * b->x + a->y * b->y;
-  float denom = sqrtf(a->x*a->x + a->y*a->y) * sqrtf(b->x*b->x + b->y*b->y);
+double
+Vector3D::rotation_sign(const Vector3D &a,
+                        const Vector3D &b) {
+  double sign = a.x_ * b.y_ - a.y_ * b.x_;
+  return sign >= 0.0 ? 1.0 : -1.0;
+}
+//////////////////////////////////////////////////////////////
+
+double
+Vector3D::flat_cos(const Vector3D &a,
+                   const Vector3D &b) {
+  double num = a.x_ * b.x_ + a.y_ * b.y_;
+  double denom = sqrt(a.x_*a.x_ + a.y_*a.y_) * sqrt(b.x_*b.x_ + b.y_*b.y_);
   return num / denom;
 }
+//////////////////////////////////////////////////////////////

@@ -5,14 +5,16 @@ CONFIG -= qt
 
 DEFINES += _USE_MATH_DEFINES
 INCLUDEPATH += inc/
-LIBS += -lgtest
+LIBS += -lgtest -lgcov
+
+#QMAKE_CXXFLAGS += --coverage
+#QMAKE_LFLAGS += --coverage
 
 SOURCES += \
     src/Commons.cpp \
     src/Coordinates.cpp \
     src/Geohash.cpp \
     src/GpsAccFusionFilter.cpp \
-    src/Kalman.cpp \
     src/MadgwickAHRS.cpp \
     src/Mlm.cpp \
     src/Quaternion.cpp \

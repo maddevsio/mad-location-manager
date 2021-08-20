@@ -48,7 +48,7 @@ public:
 
   static Matrix Identity(); //todo init identity matrix in compile time
   Matrix<T,cols,rows> transpose() const;
-  Matrix<T,rows,cols> inverse() const;
+  Matrix<T,rows,cols> invert() const;
 
   const T& operator()(size_t row, size_t col) const;
   T& operator()(size_t row, size_t col);
@@ -115,7 +115,7 @@ Matrix<T,cols,rows> Matrix<T,rows,cols>::transpose() const {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols> requires arithmetic<T>
-Matrix<T,rows,cols> Matrix<T,rows,cols>::inverse() const {
+Matrix<T,rows,cols> Matrix<T,rows,cols>::invert() const {
   static_assert (rows==cols, "matrix invert is possible only for square matrices");
   Matrix<T,rows,rows> mtxin(*this); //copy! because this algorithm is distructive
   Matrix<T,rows,cols> mtxout = Matrix<T,rows,cols>::Identity();

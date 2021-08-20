@@ -82,9 +82,11 @@ TEST(matrix, matrix_identity) {
 //////////////////////////////////////////////////////////////
 
 TEST(matrix, matrix_invert) {
-  Matrix<double,2,2> mtx({1.,2.,3.,4.});
-  Matrix<double,2,2> exp({-2., 1., 1.5, -0.5});
-  Matrix<double,2,2> res = mtx.inverse();
+  Matrix<double,2,2> mtx({1.,2.,
+                          3.,4.});
+  Matrix<double,2,2> exp({-2., 1.,
+                          1.5, -0.5});
+  Matrix<double,2,2> res = mtx.invert();
 
   ASSERT_EQ(exp, res);
 }
