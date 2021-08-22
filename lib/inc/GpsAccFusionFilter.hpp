@@ -17,26 +17,44 @@ struct FusionFilterState {
 };
 //////////////////////////////////////////////////////////////
 
-class IGPSAccFusionFilter {
-protected:
+// state dim = 4
+// measure dim = 4
+// control dim = 2
+// todo make some interface with predict/update methods
+class GPSAccFusionFilter : public KalmanFilter<4,4,2> {
+private:
+  static const size_t state_dim = 4;
+  static const size_t measure_dim = 4;
+  static const size_t control_dim = 2;
+
+  double m_last_predict_ms;
+  double m_acc_deviation; // accelerometer sigma
   FusionFilterState m_current_state;
-public:
-  virtual void predict(double xAcc, double yAcc) = 0;
-  virtual void update(const FusionFilterState &state,
-                      double pos_deviation) = 0;
-  const FusionFilterState& current_state() const {return m_current_state;}
-};
-//////////////////////////////////////////////////////////////
+  uint32_t m_predicts_count;
 
-class GPSAccFusionFilterGPSSpeed : public KalmanFilter<4,2,4>, IGPSAccFusionFilter {
-private:
-public:
+  void rebuild_F(double dt_ms);
+  void rebuild_U(double xAcc,
+                 double yAcc);
+  void rebuild_B(double dt_ms);
+  void rebuild_Q(double acc_deviation);
+  void rebuild_R(double pos_sigma);
 
-};
-
-class GPSAccFusionFilterNoGPSSpeed : public KalmanFilter<4,2,2>, IGPSAccFusionFilter {
-private:
 public:
+  GPSAccFusionFilter() = delete;
+  GPSAccFusionFilter(const FusionFilterState &init_state,
+                     double acc_deviation,
+                     double pos_deviation,
+                     double last_predict_ms);
+
+  void predict(double xAcc,
+               double yAcc,
+               double time_ms);
+  void update(const FusionFilterState &state,
+              double pos_deviation);
+
+  const FusionFilterState& current_state() const {
+    return m_current_state;
+  }
 };
 //////////////////////////////////////////////////////////////
 

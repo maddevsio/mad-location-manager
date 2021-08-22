@@ -44,11 +44,16 @@ public:
 
   Matrix(const Matrix&) = default;
   Matrix(Matrix &&) = default;
+  Matrix& operator=(const Matrix& mtx) = default;
+
   ~Matrix() = default;
 
   static Matrix Identity(); //todo init identity matrix in compile time
+
   Matrix<T,cols,rows> transpose() const;
   Matrix<T,rows,cols> invert() const;
+
+  void set(std::array<T, rows*cols> &&arr) { m_data = arr;}
 
   const T& operator()(size_t row, size_t col) const;
   T& operator()(size_t row, size_t col);
