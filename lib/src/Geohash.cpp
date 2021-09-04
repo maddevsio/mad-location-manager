@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+
 static uint64_t interleave_bits(uint64_t x, uint64_t y);
 
 uint64_t geohash_encode(double lat,

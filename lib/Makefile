@@ -1,64 +1,48 @@
-# desktop definitions
-desktop: CC=gcc
-desktop: LINK=$(CC)
+CC=gcc
+CXX=g++
+LINK=$(CXX)
 
-iOS: PLATFORMPATH=/Applications/Xcode.app/Contents/Developer/Platforms
-iOS: TOOLSPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
-iOS: IPHONEOS_DEPLOYMENT_TARGET=8.0
-iOS: SDKVERSION=8.0
-
-iOS: CC=$(shell xcrun -sdk iphoneos -find clang)
-iOS: LINK=$(CC)
-iOS: CFLAGS += -arch ${TARGET_ARCH} -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk -miphoneos-version-min=$(IPHONEOS_DEPLOYMENT_TARGET)
-iOS: LDFLAGS += -arch $(TARGET_ARCH) -isysroot $(PLATFORMPATH)/$(TARGET_PLATFORM).platform/Developer/SDKs/$(TARGET_PLATFORM).sdk
-# android definitions
-
-###################################
-# PLATFORM SPECIFIC DEFINITIONS END
-###################################
+SRC_DIR = src
+TST_DIR = tests
 
 BUILD_DIR=build
 OBJ_DIR=$(BUILD_DIR)/obj
-
-BIN_DIR=bin
-ifneq '$(BIN_DIR_ENV)' ''
-BIN_DIR = $(BIN_DIR_ENV)
-endif
+BIN_DIR=$(BUILD_DIR)/bin
 
 LIBS := 
 DEFS := -D_USE_MATH_DEFINES 
-WARN_LEVEL = -Wall -pedantic
 
-PRG = mlm
+TARGET = mlm
 INCLUDES := -Iinc
-CFLAGS := $(INCLUDES) $(DEFS) $(WARN_LEVEL) -fPIC 
+
+WARN_LEVEL = -Wall -Wextra -Wnon-virtual-dtor -pedantic
+CXXFLAGS := -std=c++20 $(INCLUDES) $(DEFS) $(WARN_LEVEL) -fPIC 
+
 LIBS :=
 TARGET_LIB := lib$(PRG).so.1.0.0
 LDFLAGS := $(LIBS) -shared 
 
-debug: CFLAGS += -O0 -g3
+debug: CXXFLAGS += -O0 -g3
 debug: all
-release: CFLAGS += -O2
+release: CXXFLAGS += -O2
 release: all
 
-SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
-OBJECTS := $(SRC:%.c=$(OBJ_DIR)/%.o)
+SRC := $(wildcard $(SRC_DIR)/*.cpp)
+debug: SRC += $(wildcard $(TST_DIR)/*.cpp)
+
+OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
 all: directories $(TARGET_LIB)
-desktop: directories $(TARGET_LIB)
-iOS: directories $(TARGET_LIB)
 
-printbindir:
-	@echo $(BIN_DIR)
 $(TARGET_LIB): $(BIN_DIR)/$(TARGET_LIB)
 
 $(BIN_DIR)/$(TARGET_LIB): $(OBJECTS)
 	@mkdir -p $(@D)
 	$(LINK) -o $(BIN_DIR)/$(TARGET_LIB) $^ $(LDFLAGS) $(LIBS)
 
-$(OBJ_DIR)/%.o: %.c
+$(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 .PHONY: directories
 directories:

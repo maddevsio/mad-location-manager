@@ -37,7 +37,8 @@ private:
                  double yAcc);
   void rebuild_B(double dt_ms);
   void rebuild_Q(double acc_deviation);
-  void rebuild_R(double pos_sigma);
+  void rebuild_R(double pos_sigma,
+                 double vel_sigma);
 
 public:
   GPSAccFusionFilter() = delete;

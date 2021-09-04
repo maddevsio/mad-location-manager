@@ -1,16 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include <cstdlib>
 #include <QFile>
 
 #include "SensorController.h"
-#include "GPSAccKalman.h"
-#include "Coordinates.h"
-#include "MeanFilter.h"
 #include <QDebug>
 
 static void patchSdWithNoise(SensorData *sd) __attribute_used__ ;
-
 static bool parseAbsAccData(const char *str, SensorData_t *sd);
 static bool parseGpsData(const char *str, SensorData_t *sd);
 static bool parseKalmanAllocData(const char *str, SensorData_t *sd);

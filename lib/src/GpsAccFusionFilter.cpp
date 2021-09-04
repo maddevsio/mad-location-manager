@@ -2,8 +2,6 @@
 #include <stdlib.h>
 
 #include "GpsAccFusionFilter.hpp"
-#include "Matrix.hpp"
-#include "Kalman.hpp"
 
 GPSAccFusionFilter::GPSAccFusionFilter(const FusionFilterState &init_state,
                                        double acc_deviation,
@@ -35,6 +33,7 @@ GPSAccFusionFilter::predict(double xAcc,
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
+
   ++m_predicts_count; // todo check for overflow
   rebuild_Q(m_acc_deviation);
   m_last_predict_ms = time_ms;
@@ -47,7 +46,7 @@ void
 GPSAccFusionFilter::update(const FusionFilterState &state,
                            double pos_deviation) {
   m_predicts_count = 0;
-  rebuild_R(pos_deviation);
+  rebuild_R(pos_deviation, 0.0);
   Zk.set({
            state.x,
            state.y,
@@ -71,7 +70,8 @@ GPSAccFusionFilter::rebuild_F(double dt_ms) {
 void
 GPSAccFusionFilter::rebuild_U(double xAcc,
                               double yAcc) {
-  Uk.set({xAcc, yAcc});
+  Uk.set({xAcc,
+          yAcc});
 }
 //////////////////////////////////////////////////////////////
 
@@ -93,7 +93,7 @@ GPSAccFusionFilter::rebuild_Q(double acc_deviation) {
 
   double vel_dev = acc_deviation * m_predicts_count;
   double pos_dev = vel_dev * m_predicts_count;
-  double cov_dev = vel_dev *pos_dev;
+  double cov_dev = vel_dev * pos_dev;
 
   double pos_dev_2 = pos_dev * pos_dev;
   double vel_dev_2 = vel_dev * vel_dev;
@@ -108,12 +108,13 @@ GPSAccFusionFilter::rebuild_Q(double acc_deviation) {
 //////////////////////////////////////////////////////////////
 
 void
-GPSAccFusionFilter::rebuild_R(double pos_sigma) {
+GPSAccFusionFilter::rebuild_R(double pos_sigma,
+                              double vel_sigma) {
   //TODO FIND HOW MANY TIMES GPS VELOCITY
   //ACCURACY BETTER THEN GPS COORDINATES ACCURACY
   //NOW it's assumed that velocity sigma 10 times worse
   //than position sigma
-  double vel_sigma = pos_sigma * 1.0e-01;
+  vel_sigma = pos_sigma * 1.0e-01;
   R.set({
           pos_sigma, 0.0, 0.0, 0.0,
           0.0, pos_sigma, 0.0, 0.0,

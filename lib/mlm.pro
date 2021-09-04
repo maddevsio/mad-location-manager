@@ -1,14 +1,14 @@
-TEMPLATE = app
+release:TEMPLATE = lib
+debug:TEMPLATE = app
+
 CONFIG += c++2a
 CONFIG -= app_bundle
 CONFIG -= qt
 
 DEFINES += _USE_MATH_DEFINES
 INCLUDEPATH += inc/
-LIBS += -lgtest -lgcov
 
-#QMAKE_CXXFLAGS += --coverage
-#QMAKE_LFLAGS += --coverage
+debug: LIBS += -lgtest
 
 SOURCES += \
     src/Commons.cpp \
@@ -16,13 +16,14 @@ SOURCES += \
     src/Geohash.cpp \
     src/GpsAccFusionFilter.cpp \
     src/MadgwickAHRS.cpp \
-    src/Mlm.cpp \
     src/Quaternion.cpp \
     src/Vector3d.cpp \
-    tests/CoordinatesTest.cpp \
-    tests/GeohashTest.cpp \
+
+debug:SOURCES += \
+    tests/main.cpp \
     tests/MatrixTest.cpp \
-    tests/main.cpp
+    tests/GeohashTest.cpp \
+    tests/CoordinatesTest.cpp
 
 HEADERS += \
     inc/Commons.hpp \
@@ -32,6 +33,5 @@ HEADERS += \
     inc/Kalman.hpp \
     inc/MadgwickAHRS.hpp \
     inc/Matrix.hpp \
-    inc/Mlm.hpp \
     inc/Quaternion.hpp \
     inc/Vector3d.hpp

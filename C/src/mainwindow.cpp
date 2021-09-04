@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include <QMessageBox>
 #include <QWebEngineProfile>
-#include "Coordinates.h"
-#include "Geohash.h"
 #include "SensorController.h"
 #include <QFile>
 

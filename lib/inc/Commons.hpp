@@ -1,7 +1,7 @@
 #ifndef COMMONS_H
 #define COMMONS_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #define UNUSED_ARG(x) ((void)x)
 
