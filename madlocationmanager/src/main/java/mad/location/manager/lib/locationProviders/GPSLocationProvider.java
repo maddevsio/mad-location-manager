@@ -100,7 +100,7 @@ public class GPSLocationProvider implements LocationListener {
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public void startLocationUpdates(Settings m_settings, HandlerThread thread) {
         m_locationManager.removeGpsStatusListener(gpsListener);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             m_locationManager.registerGnssStatusCallback(executorService, gnssStatus);
         } else {
             m_locationManager.addGpsStatusListener(gpsListener);
