@@ -99,10 +99,11 @@ public class GPSLocationProvider implements LocationListener {
 
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public void startLocationUpdates(Settings m_settings, HandlerThread thread) {
-        m_locationManager.removeGpsStatusListener(gpsListener);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            m_locationManager.unregisterGnssStatusCallback(gnssStatus);
             m_locationManager.registerGnssStatusCallback(executorService, gnssStatus);
         } else {
+            m_locationManager.removeGpsStatusListener(gpsListener);
             m_locationManager.addGpsStatusListener(gpsListener);
         }
         m_locationManager.removeUpdates(this);
@@ -121,7 +122,11 @@ public class GPSLocationProvider implements LocationListener {
     }
 
     public void stop() {
-        m_locationManager.removeGpsStatusListener(gpsListener);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            m_locationManager.unregisterGnssStatusCallback(gnssStatus);
+        } else {
+            m_locationManager.removeGpsStatusListener(gpsListener);
+        }
         m_locationManager.removeUpdates(this);
     }
 
