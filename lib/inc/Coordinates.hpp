@@ -3,31 +3,32 @@
 
 #include <cstdint>
 
+class Geopoint;
+class IDistanceCalcPolicy {
+private:
+public:
+  virtual double distance_between_points_meters(double lat1, double lon1,
+                                                double lat2, double lon2) = 0;
+};
+
 class Geopoint {
 private:
-  double m_lat;
-  double m_lon;
+  IDistanceCalcPolicy *m_distance_policy;
 
 public:
-  Geopoint() : m_lat(0.0), m_lon(0.0) {}
-  Geopoint(double lat, double lon) : m_lat(lat), m_lon(lon) {}
-  virtual ~Geopoint() = default;
-
-  double latitude(void) const { return m_lat; }
-  double longitude(void) const { return m_lon; }
-
-  virtual double distance(const Geopoint &p) const;
-  virtual double longitude_to_meters(void) const;
-  virtual double latitude_to_meters(void) const;
+  double Lat() const;
+  double Lon() const;
 };
-//////////////////////////////////////////////////////////////
+
 
 typedef struct geopoint {
   double Latitude, Longitude;
 } geopoint_t;
 
 typedef struct coordinates_vptr {
-  double (*distance_between_points)(double lat1, double lon1, double lat2,
+  double (*distance_between_points)(double lat1,
+                                    double lon1,
+                                    double lat2,
                                     double lon2);
   double (*longitude_to_meters)(double lon);
   double (*latitude_to_meters)(double lat);

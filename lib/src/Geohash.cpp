@@ -1,8 +1,7 @@
 #include "Geohash.hpp"
 #include "Commons.hpp"
-#include <stdint.h>
+#include <cstdint>
 #include <assert.h>
-
 
 static uint64_t interleave_bits(uint64_t x, uint64_t y);
 
@@ -12,8 +11,8 @@ uint64_t geohash_encode(double lat,
   uint64_t ilat, ilon;
   lat = lat/180.0 + 1.5;
   lon = lon/360.0 + 1.5;
-  ilat = *(uint64_t*)(&lat);
-  ilon = *(uint64_t*)(&lon);
+  ilat = *reinterpret_cast<uint64_t*>(&lat);
+  ilon = *reinterpret_cast<uint64_t*>(&lon);
   ilat >>= 20;
   ilon >>= 20;
   ilat &= 0x00000000ffffffff;
@@ -52,10 +51,3 @@ uint64_t interleave_bits(uint64_t x, uint64_t y) {
 }
 ///////////////////////////////////////////////////////
 
-int
-geohash_to_str(uint16_t hash,
-               char **dst) {
-  UNUSED_ARG(hash);
-  UNUSED_ARG(dst);
-  return -1; //not implemented yet
-}

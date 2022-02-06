@@ -20,21 +20,10 @@ void
 MadgwickFilter::AHRS_update(double gx, double gy, double gz,
                             double ax, double ay, double az,
                             double mx, double my, double mz) {
-  double recipNorm;
-  double s0, s1, s2, s3;
   double qDot1, qDot2, qDot3, qDot4;
-  double hx, hy;
-  double _2q0mx, _2q0my, _2q0mz, _2q1mx,
-      _2bx, _2bz, _4bx, _4bz,
-      _8bx, _8bz, _2q0, _2q1,
-      _2q2, _2q3, q0q0, q0q1,
-      q0q2, q0q3, q1q1, q1q2,
-      q1q3, q2q2, q2q3, q3q3;
-
   // Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
   if((mx == 0.0) && (my == 0.0) && (mz == 0.0)) {
     return AHRS_update_IMU(gx, gy, gz, ax, ay, az);
-    return;
   }
 
   // Rate of change of quaternion from gyroscope
@@ -46,8 +35,16 @@ MadgwickFilter::AHRS_update(double gx, double gy, double gz,
   // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
   if(!((ax == 0.0) && (ay == 0.0) && (az == 0.0))) {
 
+    double s0, s1, s2, s3;
+    double hx, hy;
+    double _2q0mx, _2q0my, _2q0mz, _2q1mx,
+        _2bx, _2bz, _4bx, _4bz,
+        _8bx, _8bz, _2q0, _2q1,
+        _2q2, _2q3, q0q0, q0q1,
+        q0q2, q0q3, q1q1, q1q2,
+        q1q3, q2q2, q2q3, q3q3;
     // Normalise accelerometer measurement
-    recipNorm = inv_sqrt(ax * ax + ay * ay + az * az);
+    double recipNorm = inv_sqrt(ax * ax + ay * ay + az * az);
     ax *= recipNorm;
     ay *= recipNorm;
     az *= recipNorm;
@@ -147,14 +144,7 @@ MadgwickFilter::AHRS_update(double gx, double gy, double gz,
 void
 MadgwickFilter::AHRS_update_IMU(double gx, double gy, double gz,
                                 double ax, double ay, double az) {
-  double recipNorm;
-  double s0, s1, s2, s3;
   double qDot1, qDot2, qDot3, qDot4;
-  double _2q0, _2q1, _2q2, _2q3,
-      _4q0, _4q1, _4q2 ,
-      _8q1, _8q2,
-      q0q0, q1q1, q2q2, q3q3;
-
   // Rate of change of quaternion from gyroscope
   qDot1 = 0.5 * (-q.x() * gx - q.y() * gy - q.z() * gz);
   qDot2 = 0.5 * (q.w() * gx + q.y() * gz - q.z() * gy);
@@ -163,6 +153,12 @@ MadgwickFilter::AHRS_update_IMU(double gx, double gy, double gz,
 
   // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
   if(!((ax == 0.0) && (ay == 0.0) && (az == 0.0))) {
+    double recipNorm;
+    double s0, s1, s2, s3;
+    double _2q0, _2q1, _2q2, _2q3,
+        _4q0, _4q1, _4q2 ,
+        _8q1, _8q2,
+        q0q0, q1q1, q2q2, q3q3;
 
     // Normalise accelerometer measurement
     recipNorm = inv_sqrt(ax * ax + ay * ay + az * az);

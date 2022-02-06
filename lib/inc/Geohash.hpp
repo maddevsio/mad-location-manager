@@ -1,7 +1,7 @@
 #ifndef GEOHASH_H
 #define GEOHASH_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #define GEOHASH_MAX_PRECISION 12
 
@@ -14,8 +14,5 @@ int geohash_cmp(double lon1,
                 double lon2,
                 double lat2,
                 int precision);
-
-int geohash_to_str(uint16_t hash,
-                   char **dst);
 
 #endif // GEOHASH_H

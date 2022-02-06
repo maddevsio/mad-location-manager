@@ -34,7 +34,7 @@ GPSAccFusionFilter::predict(double xAcc,
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
 
-  ++m_predicts_count; // todo check for overflow
+  ++m_predicts_count;
   rebuild_Q(m_acc_deviation);
   m_last_predict_ms = time_ms;
   estimate();

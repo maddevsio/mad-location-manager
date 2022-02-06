@@ -23,6 +23,7 @@ static geopoint_t getPointAhead(geopoint_t point,
 static geopoint_t getPointAheadHQ(geopoint_t point,
                                   double distance,
                                   double azimuthDegrees);
+
 static geopoint_t pointPlusDistanceEast(geopoint_t point, double distance);
 static geopoint_t pointPlusDistanceNorth(geopoint_t point, double distance);
 static geopoint_t pointPlusDistanceEastHQ(geopoint_t point, double distance);
@@ -55,12 +56,13 @@ geoDistanceMetersHQ(double lon1, double lat1,
   double cosU2 = 1 / sqrt((1.0 + tanU2*tanU2));
   double sinU2 = tanU2 * cosU2;
 
-  double sinl, cosl;
-  double sinSqs, sins=0.0, coss=0.0, sig=0.0, sina, cosSqa=0.0, cos2sigM=0.0, C;
   double l = L, ll;
-  int iterations = 1000;
+  double cosSqa=0.0, cos2sigM=0.0, sins=0.0, coss=0.0, sig=0.0;
 
+  int iterations = 1000;
   do {
+    double sinl, cosl, C;
+    double sinSqs, sina;
     sinl = sin(l);
     cosl = cos(l);
     sinSqs = (cosU2*sinl) * (cosU2*sinl) + (cosU1*sinU2-sinU1*cosU2*cosl) * (cosU1*sinU2-sinU1*cosU2*cosl);
@@ -164,17 +166,16 @@ getPointAheadHQ(geopoint_t point,
   double uSq = cosSqa * (majAxis*majAxis - minAxis*minAxis) / (minAxis*minAxis);
   double A = 1 + uSq/16384*(4096+uSq*(-768+uSq*(320-175*uSq)));
   double B = uSq/1024 * (256+uSq*(-128+uSq*(74-47*uSq)));
-  double cos2sigM, sinSig, cosSig, dsig;
+  double cos2sigM, sinSig, cosSig;
   double sig = distance / (minAxis*A);
   double ddsig;
 
   int iterations = 100;
-
   do {
     cos2sigM = cos(2*sig1 + sig);
     sinSig = sin(sig);
     cosSig = cos(sig);
-    dsig = B*sinSig*(cos2sigM+B/4*(cosSig*(-1+2*cos2sigM*cos2sigM)-
+    double dsig = B*sinSig*(cos2sigM+B/4*(cosSig*(-1+2*cos2sigM*cos2sigM)-
                                    B/6*cos2sigM*(-3+4*sinSig*sinSig)*(-3+4*cos2sigM*cos2sigM)));
     ddsig = sig;
     sig = distance / (minAxis*A) + dsig;

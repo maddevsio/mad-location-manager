@@ -30,7 +30,7 @@ private:
   double m_last_predict_ms;
   double m_acc_deviation; // accelerometer sigma
   FusionFilterState m_current_state;
-  uint32_t m_predicts_count;
+  uint32_t m_predicts_count; // should be replaced with delta time
 
   void rebuild_F(double dt_ms);
   void rebuild_U(double xAcc,
