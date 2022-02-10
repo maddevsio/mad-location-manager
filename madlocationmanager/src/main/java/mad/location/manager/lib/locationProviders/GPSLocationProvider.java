@@ -111,7 +111,8 @@ public class GPSLocationProvider implements LocationListener {
             m_locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                     m_settings.gpsMinTime, m_settings.gpsMinDistance, this);
         } else {
-            thread.start();
+            if(thread.getState() == Thread.State.NEW)
+                thread.start();
             Criteria criteria = new Criteria();
             criteria.setSpeedRequired(true);
             criteria.setAccuracy(Criteria.ACCURACY_FINE);
