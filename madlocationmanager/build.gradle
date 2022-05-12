@@ -13,24 +13,20 @@ ext {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 32
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdkVersion 23
+        targetSdkVersion 32
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-
     }
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
 }
 
 dependencies {
