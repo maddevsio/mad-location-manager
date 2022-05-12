@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.library'
-    id 'com.github.dcendents.android-maven'
     id 'maven-publish'
 }
 
@@ -16,8 +15,6 @@ android {
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 32
-        versionCode 1
-        versionName "1.0"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
@@ -26,6 +23,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+    namespace 'mad.location.manager'
 }
 
 dependencies {
@@ -34,7 +36,6 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.4.1'
     api 'androidx.legacy:legacy-support-v4:1.0.0'
     api 'com.google.android.material:material:1.6.0'
-    api 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'com.google.android.gms:play-services-location:19.0.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
