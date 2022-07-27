@@ -1,0 +1,61 @@
+package mad.location.manager;
+
+import static com.elvishew.xlog.LogLevel.ALL;
+
+import android.content.ContentProvider;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.elvishew.xlog.LogConfiguration;
+import com.elvishew.xlog.Logger;
+import com.elvishew.xlog.XLog;
+
+public class MadLocationInitProvider  extends ContentProvider {
+
+    @Override
+    public boolean onCreate() {
+        Context context = getContext();
+
+        XLog.init(
+                new LogConfiguration.Builder()
+                    .tag("RAW-SENSOR-LOGS")
+                    .logLevel(ALL)
+                    .build()
+        );
+
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getType(@NonNull Uri uri) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+        return null;
+    }
+
+    @Override
+    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+        return 0;
+    }
+
+    @Override
+    public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
+        return 0;
+    }
+}

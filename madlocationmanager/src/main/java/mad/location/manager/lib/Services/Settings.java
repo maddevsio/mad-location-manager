@@ -1,6 +1,5 @@
 package mad.location.manager.lib.Services;
 
-import mad.location.manager.lib.Interfaces.ILogger;
 
 public class Settings {
     public double accelerationDeviation;
@@ -10,7 +9,7 @@ public class Settings {
     public int geoHashPrecision;
     public int geoHashMinPointCount;
     public double sensorFrequencyHz;
-    public ILogger logger;
+///TODO    public ILogger logger;
     public boolean filterMockGpsCoordinates;
     /**
      * If value of onlyGpsSensor is true, the location is determined using GNSS satellites.
@@ -34,7 +33,7 @@ public class Settings {
                     int geoHashPrecision,
                     int geoHashMinPointCount,
                     double sensorFrequencyHz,
-                    ILogger logger,
+///TODO                    ILogger logger,
                     boolean filterMockGpsCoordinates,
                     boolean onlyGpsSensor,
                     boolean useGpsSpeed,
@@ -48,7 +47,7 @@ public class Settings {
         this.geoHashPrecision = geoHashPrecision;
         this.geoHashMinPointCount = geoHashMinPointCount;
         this.sensorFrequencyHz = sensorFrequencyHz;
-        this.logger = logger;
+///TODO        this.logger = logger;
         this.filterMockGpsCoordinates = filterMockGpsCoordinates;
         this.onlyGpsSensor = onlyGpsSensor;
         this.useGpsSpeed = useGpsSpeed;

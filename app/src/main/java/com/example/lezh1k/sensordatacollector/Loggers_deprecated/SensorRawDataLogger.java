@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.Loggers;
+package com.example.lezh1k.sensordatacollector.Loggers_deprecated;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

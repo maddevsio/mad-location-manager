@@ -24,6 +24,7 @@ import android.os.PowerManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.util.Log;
 
@@ -48,6 +49,7 @@ import mad.location.manager.lib.locationProviders.GPSCallback;
 import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 import mad.location.manager.lib.locationProviders.FusedLocationProvider;
 import mad.location.manager.lib.locationProviders.LocationProviderCallback;
+import mad.location.manager.lib.logger.RawDataLogger;
 
 public class KalmanLocationService extends Service
         implements SensorEventListener, GPSCallback, LocationProviderCallback {
@@ -196,7 +198,7 @@ public class KalmanLocationService extends Service
                     Utils.GEOHASH_DEFAULT_PREC,
                     Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
                     Utils.SENSOR_DEFAULT_FREQ_HZ,
-                    null,
+//                    null,
                     true,
                     true,
                     false,
@@ -223,6 +225,7 @@ public class KalmanLocationService extends Service
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
     private double m_magneticDeclination = 0.0;
+    private RawDataLogger rawDataLogger;
 
     /*accelerometer + rotation vector*/
     private static int[] sensorTypes = {
@@ -241,43 +244,47 @@ public class KalmanLocationService extends Service
 
     private final HandlerThread thread = new HandlerThread("kalmanThread");
 
-    private void log2File(String format, Object... args) {
-        if (m_settings.logger != null)
-            m_settings.logger.log2file(format, args);
-    }
+//    private void log2File(String format, Object... args) {
+//        if (m_settings.logger != null)
+//            m_settings.logger.log2file(format, args);
+//    }
 
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaTMs;
         KalmanLocationService owner;
+        private RawDataLogger rawDataLogger;
 
-        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner) {
+        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner, RawDataLogger rawDataLogger) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
+            this.rawDataLogger = rawDataLogger;
         }
 
         private void handlePredict(SensorGpsDataItem sdi) {
-            log2File("%d%d KalmanPredict : accX=%f, accY=%f",
-                    Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
-                    (long) sdi.getTimestamp(),
-                    sdi.getAbsEastAcc(),
-                    sdi.getAbsNorthAcc());
+            this.rawDataLogger.logKalmanPredict(sdi);
+//            log2File("%d%d KalmanPredict : accX=%f, accY=%f",
+//                    Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
+//                    (long) sdi.getTimestamp(),
+//                    sdi.getAbsEastAcc(),
+//                    sdi.getAbsNorthAcc());
             m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
         }
 
         private void handleUpdate(SensorGpsDataItem sdi) {
             double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
             double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
-            log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
-                    Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
-                    (long) sdi.getTimestamp(),
-                    sdi.getGpsLon(),
-                    sdi.getGpsLat(),
-                    xVel,
-                    yVel,
-                    sdi.getPosErr(),
-                    sdi.getVelErr()
-            );
+            this.rawDataLogger.logKalmanPredict(sdi);
+//            log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
+//                    Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
+//                    (long) sdi.getTimestamp(),
+//                    sdi.getGpsLon(),
+//                    sdi.getGpsLat(),
+//                    xVel,
+//                    yVel,
+//                    sdi.getPosErr(),
+//                    sdi.getVelErr()
+//            );
 
             m_kalmanFilter.update(
                     sdi.getTimestamp(),
@@ -379,6 +386,7 @@ public class KalmanLocationService extends Service
         m_locationServiceStatusInterfaces = new ArrayList<>();
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
+        //this.rawDataLogger = rawDataLogger;
         reset(defaultSettings);
     }
 
@@ -435,8 +443,6 @@ public class KalmanLocationService extends Service
             m_sensorsEnabled &= !m_sensorManager.registerListener(this, sensor,
                     Utils.hertz2periodUs(m_settings.sensorFrequencyHz));
         }
-
-
     }
 
     private void startEventLoop(boolean m_gpsEnabled) {
@@ -445,14 +451,18 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        m_eventLoopTask = new SensorDataEventLoopTask(m_settings.positionMinTime, KalmanLocationService.this);
+        ///TODO
+        m_eventLoopTask = new SensorDataEventLoopTask(m_settings.positionMinTime,
+                KalmanLocationService.this, this.rawDataLogger);
+
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void stop() {
-        if (m_wakeLock.isHeld())
+        if (m_wakeLock.isHeld()) {
             m_wakeLock.release();
+        }
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             m_serviceStatus = ServiceStatus.SERVICE_STOPPED;
@@ -487,14 +497,13 @@ public class KalmanLocationService extends Service
     }
 
     public void reset(Settings settings) {
-
         m_settings = settings;
         m_kalmanFilter = null;
 
         if (m_settings.geoHashPrecision != 0 &&
                 m_settings.geoHashMinPointCount != 0) {
             m_geoHashRTFilter = new GeohashRTFilter(m_settings.geoHashPrecision,
-                    m_settings.geoHashMinPointCount);
+                    m_settings.geoHashMinPointCount, this.rawDataLogger);
         }
     }
 
@@ -516,7 +525,8 @@ public class KalmanLocationService extends Service
                 String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
-                log2File(logStr);
+                ///TODO
+                //log2File(logStr);
 
                 if (m_kalmanFilter == null) {
                     break;
@@ -549,8 +559,13 @@ public class KalmanLocationService extends Service
     }
 
     private void processLocation(Location loc) {
-        if (loc == null) return;
-        if (m_settings.filterMockGpsCoordinates && loc.isFromMockProvider()) return;
+        if (loc == null) {
+            return;
+        }
+
+        if (m_settings.filterMockGpsCoordinates && loc.isFromMockProvider()) {
+            return;
+        }
 
         double x, y, xVel, yVel, posDev, course, speed;
         long timeStamp;
@@ -571,7 +586,8 @@ public class KalmanLocationService extends Service
                 timeStamp, loc.getLatitude(),
                 loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), velErr);
-        log2File(logStr);
+        ///TODO log2File(logStr);
+        //            sendDataToBus()
 
         GeomagneticField f = new GeomagneticField(
                 (float) loc.getLatitude(),
@@ -581,9 +597,11 @@ public class KalmanLocationService extends Service
         m_magneticDeclination = f.getDeclination();
 
         if (m_kalmanFilter == null) {
-            log2File("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
-                    Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
-                    timeStamp, x, y, speed, course, m_settings.accelerationDeviation, posDev);
+            ///TODO
+//            log2File("%d%d KalmanAlloc : lon=%f, lat=%f, speed=%f, course=%f, m_accDev=%f, posDev=%f",
+//                    Utils.LogMessageType.KALMAN_ALLOC.ordinal(),
+//                    timeStamp, x, y, speed, course, m_settings.accelerationDeviation, posDev);
+//            sendDataToBus()
             m_kalmanFilter = new GPSAccKalmanFilter(
                     m_settings.useGpsSpeed,
                     Coordinates.longitudeToMeters(x),
@@ -609,5 +627,14 @@ public class KalmanLocationService extends Service
                 velErr,
                 m_magneticDeclination);
         m_sensorDataQueue.add(sdi);
+    }
+
+    private static void sendDataToBus(Location l, SensorGpsDataItem sensorGpsDataItem) {
+        Intent intent = new Intent("Logger");
+        intent.putExtra("RawData", sensorGpsDataItem);
+        Bundle b = new Bundle();
+//        b.putParcelable("Location", l);
+//        intent.putExtra("Location", b);
+//        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 }

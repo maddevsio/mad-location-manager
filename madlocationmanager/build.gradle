@@ -44,6 +44,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    api group: 'com.elvishew', name: 'xlog', version:'1.4.0'
 }
 
 task sourceJar(type: Jar) {

@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.Loggers;
+package com.example.lezh1k.sensordatacollector.Loggers_deprecated;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -75,7 +75,7 @@ public class AccelerationLogger implements SensorEventListener {
                         0, linAcc, 0);
 //                long now = System.currentTimeMillis();
                 long now = SystemClock.elapsedRealtime();
-                lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
+                lastAbsAccelerationString = String.format("%d%d === abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
                         now, accAxis[0], accAxis[1], accAxis[2]);
                 XLog.i(lastAbsAccelerationString);

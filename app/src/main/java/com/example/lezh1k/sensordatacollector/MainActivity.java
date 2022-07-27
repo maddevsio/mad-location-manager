@@ -37,13 +37,14 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
 import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Interfaces.ILogger;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
 import mad.location.manager.lib.SensorAux.SensorCalibrator;
 import mad.location.manager.lib.Services.KalmanLocationService;
 import mad.location.manager.lib.Services.ServicesHelper;
 import mad.location.manager.lib.Services.Settings;
+import mad.location.manager.lib.logger.Impl.RawDataLoggerDefault;
+import mad.location.manager.lib.logger.RawDataLogger;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
@@ -63,13 +64,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.logging.Logger;
 
-public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
+public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface {
 
     private SharedPreferences mSharedPref;
 
     private String xLogFolderPath;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    private final RawDataLogger rawDataLogger = new RawDataLoggerDefault();
+
+
     class ChangableFileNameGenerator implements FileNameGenerator {
         private String fileName;
         public void setFileName(String fileName) {
@@ -101,12 +106,6 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         }
         xLogFileNameGenerator.setFileName(fileName);
     }
-
-    @Override
-    public void log2file(String format, Object... args) {
-        XLog.i(format, args);
-    }
-
 
     class RefreshTask extends AsyncTask {
         boolean needTerminate = false;
@@ -191,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             m_presenter.stop();
             m_presenter.start();
             m_geoHashRTFilter.stop();
-            m_geoHashRTFilter.reset(this);
+            //m_geoHashRTFilter.reset(rawDataLogger);
             Settings.LocationProvider provider = Settings.LocationProvider.GPS;
             if (gpsProvider.isSelected())
             {
@@ -202,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 provider =  Settings.LocationProvider.FUSED;
             }
             Settings.LocationProvider finalProvider = provider;
+
             ServicesHelper.getLocationService(this, value -> {
                 if (value.IsRunning()) {
                     return;
@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
                                 Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
                                 Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
-                                this,
+//                                this,
                                 true,
                                 false,
                                 true,
@@ -451,7 +451,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
         Mapbox.getInstance(this, BuildConfig.access_token);
         setContentView(R.layout.activity_main);
-        m_geoHashRTFilter = new GeohashRTFilter(Utils.GEOHASH_DEFAULT_PREC, Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT);
+        m_geoHashRTFilter = new GeohashRTFilter(Utils.GEOHASH_DEFAULT_PREC,
+                Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, this.rawDataLogger);
         setupMap(savedInstanceState);
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;

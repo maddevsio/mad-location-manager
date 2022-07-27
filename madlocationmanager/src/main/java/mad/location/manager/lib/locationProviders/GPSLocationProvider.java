@@ -73,6 +73,7 @@ public class GPSLocationProvider implements LocationListener {
             }
         }
     };
+
     @RequiresApi(Build.VERSION_CODES.N)
     private final GnssStatus.Callback gnssStatus = new GnssStatus.Callback() {
         /**

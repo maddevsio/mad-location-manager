@@ -1,4 +1,4 @@
-package com.example.lezh1k.sensordatacollector.Loggers;
+package com.example.lezh1k.sensordatacollector.Loggers_deprecated;
 
 import android.Manifest;
 import android.content.Context;
@@ -61,7 +61,6 @@ public class GPSDataLogger implements LocationListener {
             speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
         }
 
-//        long now = System.currentTimeMillis();
         long now = loc.getElapsedRealtimeNanos() / 1000000;
         m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
                 Utils.LogMessageType.GPS_DATA.ordinal(),

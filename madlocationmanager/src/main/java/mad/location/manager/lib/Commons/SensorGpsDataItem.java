@@ -2,11 +2,13 @@ package mad.location.manager.lib.Commons;
 
 import androidx.annotation.NonNull;
 
+import java.io.Serializable;
+
 /**
  * Created by lezh1k on 2/13/18.
  */
 
-public class SensorGpsDataItem implements Comparable<SensorGpsDataItem> {
+public class SensorGpsDataItem implements Comparable<SensorGpsDataItem>, Serializable {
     double timestamp;
     double gpsLat;
     double gpsLon;

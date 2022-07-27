@@ -39,9 +39,10 @@ public class ServicesHelper {
 
     public static void removeLocationServiceInterface(LocationServiceInterface locationServiceInterface) {
         instance.locationServiceInterfaces.remove(locationServiceInterface);
-        if (instance.kalmanLocationService != null) {
-            instance.kalmanLocationService.removeInterface(locationServiceInterface);
+        if (instance.kalmanLocationService == null) {
+            return;
         }
+        instance.kalmanLocationService.removeInterface(locationServiceInterface);
     }
 
     public static void addLocationServiceStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
@@ -55,9 +56,11 @@ public class ServicesHelper {
 
     public static void removeLocationServiceStatusInterface(LocationServiceStatusInterface locationServiceStatusInterface) {
         instance.locationServiceStatusInterfaces.remove(locationServiceStatusInterface);
-        if (instance.kalmanLocationService != null) {
-            instance.kalmanLocationService.removeStatusInterface(locationServiceStatusInterface);
+        if (instance.kalmanLocationService == null) {
+            return;
         }
+
+        instance.kalmanLocationService.removeStatusInterface(locationServiceStatusInterface);
     }
 
     private ServiceConnection locationServiceConnection = new ServiceConnection() {
@@ -90,20 +93,25 @@ public class ServicesHelper {
     };
 
     public static void getLocationService(Context context, SimpleTempCallback<KalmanLocationService> callback) {
-        if (instance.kalmanLocationService != null) {
-            if (callback != null) {
-                callback.onCall(instance.kalmanLocationService);
-            }
-        } else {
-            if (callback != null) {
-                instance.locationServiceRequests.add(callback);
-            }
-            if (!instance.connectingLocationService) {
-                instance.connectingLocationService = true;
-                Intent serviceIntent = new Intent(context.getApplicationContext(),
-                        KalmanLocationService.class);
-                context.getApplicationContext().bindService(serviceIntent, instance.locationServiceConnection, Context.BIND_AUTO_CREATE);
-            }
+        if (instance.kalmanLocationService == null) {
+            getKalmanLocationService(context, callback);
+            return;
+        }
+
+        if (callback != null) {
+            callback.onCall(instance.kalmanLocationService);
+        }
+    }
+
+    private static void getKalmanLocationService(Context context, SimpleTempCallback<KalmanLocationService> callback) {
+        if (callback != null) {
+            instance.locationServiceRequests.add(callback);
+        }
+        if (!instance.connectingLocationService) {
+            instance.connectingLocationService = true;
+            Intent serviceIntent = new Intent(context.getApplicationContext(),
+                    KalmanLocationService.class);
+            context.getApplicationContext().bindService(serviceIntent, instance.locationServiceConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
