@@ -6,6 +6,7 @@ import mad.location.manager.lib.Commons.Coordinates;
 import mad.location.manager.lib.Commons.GeoPoint;
 import mad.location.manager.lib.Commons.Utils;
 import mad.location.manager.lib.Filters.GeoHash;
+import mad.location.manager.lib.logger.Impl.RawDataLoggerService;
 import mad.location.manager.lib.logger.RawDataLogger;
 
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class GeohashRTFilter {
     private GeoPoint currentGeoPoint;
     private GeoPoint lastApprovedGeoPoint;
     private GeoPoint lastGeoPointAsIs;
-    private final RawDataLogger rawDataLogger;
+    private RawDataLogger rawDataLogger = RawDataLoggerService.getInstance();
 
     private List<Location> m_geoFilteredTrack;
     public List<Location> getGeoFilteredTrack() {
@@ -47,11 +48,13 @@ public class GeohashRTFilter {
     private int m_geohashPrecision;
     private int m_geohashMinPointCount;
 
-    public GeohashRTFilter(int geohashPrecision, int geohashMinPointCount,
-                           RawDataLogger rawDataLogger) {
+    public GeohashRTFilter(int geohashPrecision, int geohashMinPointCount
+//            ,
+//                           RawDataLogger rawDataLogger
+) {
         m_geohashPrecision = geohashPrecision;
         m_geohashMinPointCount = geohashMinPointCount;
-        this.rawDataLogger = rawDataLogger;
+//        this.rawDataLogger = rawDataLogger;
 
         m_geoFilteredTrack = new ArrayList<>();
         reset();
@@ -69,8 +72,6 @@ public class GeohashRTFilter {
     public double getDistanceAsIsHP() {
         return m_distanceAsIsHP;
     }
-
-    private RawDataLogger m_logger;
 
     public void reset() {
         //m_logger = logger;
@@ -98,7 +99,7 @@ public class GeohashRTFilter {
 //            m_logger.log2file(toLog);
 //            m_logger.logGpsData(loc);
 //        }
-        m_logger.logGpsData(loc);
+        rawDataLogger.logGpsData(loc);
 
         GeoPoint pi = new GeoPoint(loc.getLatitude(), loc.getLongitude());
         if (isFirstCoordinate) {

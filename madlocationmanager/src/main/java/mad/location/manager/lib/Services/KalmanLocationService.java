@@ -49,6 +49,7 @@ import mad.location.manager.lib.locationProviders.GPSCallback;
 import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 import mad.location.manager.lib.locationProviders.FusedLocationProvider;
 import mad.location.manager.lib.locationProviders.LocationProviderCallback;
+import mad.location.manager.lib.logger.Impl.RawDataLoggerService;
 import mad.location.manager.lib.logger.RawDataLogger;
 
 public class KalmanLocationService extends Service
@@ -225,7 +226,7 @@ public class KalmanLocationService extends Service
     private List<Sensor> m_lstSensors;
     private SensorManager m_sensorManager;
     private double m_magneticDeclination = 0.0;
-    private RawDataLogger rawDataLogger;
+    private final RawDataLogger rawDataLogger = RawDataLoggerService.getInstance();
 
     /*accelerometer + rotation vector*/
     private static int[] sensorTypes = {
@@ -244,26 +245,20 @@ public class KalmanLocationService extends Service
 
     private final HandlerThread thread = new HandlerThread("kalmanThread");
 
-//    private void log2File(String format, Object... args) {
-//        if (m_settings.logger != null)
-//            m_settings.logger.log2file(format, args);
-//    }
-
     class SensorDataEventLoopTask extends AsyncTask {
         boolean needTerminate = false;
         long deltaTMs;
         KalmanLocationService owner;
-        private RawDataLogger rawDataLogger;
+        private RawDataLogger rawDataLogger = RawDataLoggerService.getInstance();
 
         SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner, RawDataLogger rawDataLogger) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
-            this.rawDataLogger = rawDataLogger;
         }
 
         private void handlePredict(SensorGpsDataItem sdi) {
             this.rawDataLogger.logKalmanPredict(sdi);
-//            log2File("%d%d KalmanPredict : accX=%f, accY=%f",
+//            rawDataLogger.log2file("%d%d KalmanPredict : accX=%f, accY=%f",
 //                    Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
 //                    (long) sdi.getTimestamp(),
 //                    sdi.getAbsEastAcc(),
@@ -386,7 +381,6 @@ public class KalmanLocationService extends Service
         m_locationServiceStatusInterfaces = new ArrayList<>();
         m_lstSensors = new ArrayList<Sensor>();
         m_eventLoopTask = null;
-        //this.rawDataLogger = rawDataLogger;
         reset(defaultSettings);
     }
 
@@ -503,7 +497,7 @@ public class KalmanLocationService extends Service
         if (m_settings.geoHashPrecision != 0 &&
                 m_settings.geoHashMinPointCount != 0) {
             m_geoHashRTFilter = new GeohashRTFilter(m_settings.geoHashPrecision,
-                    m_settings.geoHashMinPointCount, this.rawDataLogger);
+                    m_settings.geoHashMinPointCount);
         }
     }
 

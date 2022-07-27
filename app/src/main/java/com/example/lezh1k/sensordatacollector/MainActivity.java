@@ -43,7 +43,6 @@ import mad.location.manager.lib.SensorAux.SensorCalibrator;
 import mad.location.manager.lib.Services.KalmanLocationService;
 import mad.location.manager.lib.Services.ServicesHelper;
 import mad.location.manager.lib.Services.Settings;
-import mad.location.manager.lib.logger.Impl.RawDataLoggerDefault;
 import mad.location.manager.lib.logger.RawDataLogger;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
@@ -72,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     private String xLogFolderPath;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    private final RawDataLogger rawDataLogger = new RawDataLoggerDefault();
+    //private final RawDataLogger rawDataLogger = new RawDataLoggerDefault();
 
 
     class ChangableFileNameGenerator implements FileNameGenerator {
@@ -452,7 +451,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         Mapbox.getInstance(this, BuildConfig.access_token);
         setContentView(R.layout.activity_main);
         m_geoHashRTFilter = new GeohashRTFilter(Utils.GEOHASH_DEFAULT_PREC,
-                Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT, this.rawDataLogger);
+                Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT
+                        //                , this.rawDataLogger
+        );
         setupMap(savedInstanceState);
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
