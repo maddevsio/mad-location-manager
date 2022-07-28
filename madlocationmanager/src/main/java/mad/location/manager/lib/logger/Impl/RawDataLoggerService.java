@@ -1,26 +1,35 @@
 package mad.location.manager.lib.logger.Impl;
 
-import android.app.IntentService;
-import android.app.Service;
-import android.content.Intent;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 import android.location.Location;
-import android.os.Binder;
-import android.os.IBinder;
+import android.os.Environment;
 
-import androidx.annotation.Nullable;
-
+import com.elvishew.xlog.Logger;
 import com.elvishew.xlog.XLog;
+import com.elvishew.xlog.printer.Printer;
+import com.elvishew.xlog.printer.file.FilePrinter;
+import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
+import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 
-import java.util.Timer;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
 import mad.location.manager.lib.logger.RawDataLogger;
+import mad.location.manager.lib.logger.RawLogFileNameGenerator;
+import mad.location.manager.lib.logger.RawLogSenderTask;
 
 public class RawDataLoggerService implements RawDataLogger {
+    private final Integer CHANK_SIZE = 1024; ///TODO move to settings
     private final String LOG_TAG = "dataLogs";
+    private Logger logger;
 
+    private List chank;
+    private final RawLogSenderTask rawLogSenderTask = new RawLogSenderTask();
     private static RawDataLoggerService instance = null;
+    private Boolean started = FALSE;
 
     public static RawDataLoggerService getInstance(){
         if (instance==null){
@@ -31,25 +40,67 @@ public class RawDataLoggerService implements RawDataLogger {
     }
 
     private RawDataLoggerService() {
+        Printer filePrinter = new FilePrinter
+                .Builder(String.format("%s/%s/", Environment.getExternalStorageDirectory().getAbsolutePath(),
+                    "SensorDataCollector")
+                )
+                .fileNameGenerator(new RawLogFileNameGenerator())
+                .backupStrategy(new NeverBackupStrategy())
+//                .cleanStrategy(new FileLastModifiedCleanStrategy(MAX_TIME))
+//                .flattener(new MyFlattener())
+//                .writer(new MyWriter())
+                .build();
+
+         logger = XLog.tag(LOG_TAG)
+                 //.addObjectFormatter(SensorGpsDataItem.class)
+                 .printers(filePrinter)
+                 .build();
+
+        chank = new ArrayList<>();
+    }
+
+    @Override
+    public void reset(){
+        chank.clear();
+        started = FALSE;
+    }
+
+    @Override
+    public void start(){
+        chank.clear();
+        started = TRUE;
+    }
+
+    @Override
+    public void stop(){
+        sendDataToServer();
+        started = FALSE;
     }
 
     @Override
     public void addObjectToLog(Object obj) {
-        XLog.v(obj);
+        logger.v(obj);
     }
 
     @Override
     public void log2file(String format, Object... args) {
-        XLog.v(String.format(format, args));
+        logger.v(String.format(format, args));
     }
 
     @Override
     public void logGpsData(Location loc) {
-        XLog.v(loc);
+        logger.v(loc);
     }
 
     @Override
     public void logKalmanPredict(SensorGpsDataItem sdi) {
-        XLog.v(sdi);
+        logger.v(sdi);
+    }
+
+    private void sendDataToServer(){
+        if (chank.size() == CHANK_SIZE) {
+            String payload = chank.toString();
+            rawLogSenderTask.execute(payload);
+        }
     }
 }
