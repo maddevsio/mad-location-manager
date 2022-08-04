@@ -11,22 +11,26 @@ import com.elvishew.xlog.XLog;
 import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
-import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
+import com.maddevs.logtransferobject.types.KalmanPredict;
+import com.maddevs.logtransferobject.types.LocationRecord;
+import com.maddevs.logtransferobject.types.Record;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
+import mad.location.manager.lib.enums.Direction;
 import mad.location.manager.lib.logger.RawDataLogger;
 import mad.location.manager.lib.logger.RawLogFileNameGenerator;
 import mad.location.manager.lib.logger.RawLogSenderTask;
 
 public class RawDataLoggerService implements RawDataLogger {
-    private final Integer CHANK_SIZE = 1024; ///TODO move to settings
+    private final Integer CHANK_SIZE = 10; ///TODO move to settings
     private final String LOG_TAG = "dataLogs";
     private Logger logger;
 
-    private List chank;
+    private List<Record> datas;
     private final RawLogSenderTask rawLogSenderTask = new RawLogSenderTask();
     private static RawDataLoggerService instance = null;
     private Boolean started = FALSE;
@@ -56,24 +60,24 @@ public class RawDataLoggerService implements RawDataLogger {
                  .printers(filePrinter)
                  .build();
 
-        chank = new ArrayList<>();
+        datas = new ArrayList<>();
     }
 
     @Override
     public void reset(){
-        chank.clear();
+        datas.clear();
         started = FALSE;
     }
 
     @Override
     public void start(){
-        chank.clear();
+        datas.clear();
         started = TRUE;
     }
 
     @Override
     public void stop(){
-        sendDataToServer();
+        sendDataToServer(datas);
         started = FALSE;
     }
 
@@ -89,18 +93,44 @@ public class RawDataLoggerService implements RawDataLogger {
 
     @Override
     public void logGpsData(Location loc) {
-        logger.v(loc);
+        String payload = String.format("%f,%f,%f",loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
+        LocationRecord record = new LocationRecord(payload);
+        writeRecord(record);
     }
 
     @Override
     public void logKalmanPredict(SensorGpsDataItem sdi) {
-        logger.v(sdi);
+//        Record record = new Record();
+//        record.setType(RecordType.KALMAN_FILTER);
+//        String payload = String.format("%f,%f", sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
+//        record.setValue(payload);
+//        writeRecord(record);
+//        logger.v(payload);
     }
 
-    private void sendDataToServer(){
-        if (chank.size() == CHANK_SIZE) {
-            String payload = chank.toString();
-            rawLogSenderTask.execute(payload);
+    @Override
+    public void logLinearAcceleration(float[] absAcceleration) {
+//                String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
+//                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
+//                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
+
+        String payload = String.format(Locale.ENGLISH, "%f,%f,%f",
+                absAcceleration[Direction.EAST.getCode()],
+                absAcceleration[Direction.NORTH.getCode()],
+                absAcceleration[Direction.UP.getCode()]);
+        KalmanPredict record = new KalmanPredict(payload);
+        writeRecord(record);
+    }
+
+    private void writeRecord(Record record) {
+        datas.add(record);
+        if (datas.size() == CHANK_SIZE) {
+            sendDataToServer(datas);
+            datas.clear();
         }
+    }
+
+    private void sendDataToServer(List<Record> records) {
+        new RawLogSenderTask().execute(records);
     }
 }

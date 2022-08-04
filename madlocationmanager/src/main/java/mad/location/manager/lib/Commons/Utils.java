@@ -26,12 +26,5 @@ public class Utils {
     public static final double DEFAULT_POS_FACTOR = 1.0;
     //!!
 
-    public enum LogMessageType {
-        KALMAN_ALLOC,
-        KALMAN_PREDICT,
-        KALMAN_UPDATE,
-        GPS_DATA,
-        ABS_ACC_DATA,
-        FILTERED_GPS_DATA
-    }
+
 }

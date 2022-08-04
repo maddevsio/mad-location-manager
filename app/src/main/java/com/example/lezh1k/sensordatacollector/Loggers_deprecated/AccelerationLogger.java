@@ -68,23 +68,23 @@ public class AccelerationLogger implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        switch (event.sensor.getType()) {
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
-                android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
-                        0, linAcc, 0);
-//                long now = System.currentTimeMillis();
-                long now = SystemClock.elapsedRealtime();
-                lastAbsAccelerationString = String.format("%d%d === abs acc: %f %f %f",
-                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
-                        now, accAxis[0], accAxis[1], accAxis[2]);
-                XLog.i(lastAbsAccelerationString);
-                break;
-            case Sensor.TYPE_ROTATION_VECTOR:
-                SensorManager.getRotationMatrixFromVector(R, event.values);
-                android.opengl.Matrix.invertM(RI, 0, R, 0);
-                break;
-        }
+//        switch (event.sensor.getType()) {
+//            case Sensor.TYPE_LINEAR_ACCELERATION:
+//                System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
+//                android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
+//                        0, linAcc, 0);
+////                long now = System.currentTimeMillis();
+//                long now = SystemClock.elapsedRealtime();
+//                lastAbsAccelerationString = String.format("%d%d === abs acc: %f %f %f",
+//                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
+//                        now, accAxis[0], accAxis[1], accAxis[2]);
+//                XLog.i(lastAbsAccelerationString);
+//                break;
+//            case Sensor.TYPE_ROTATION_VECTOR:
+//                SensorManager.getRotationMatrixFromVector(R, event.values);
+//                android.opengl.Matrix.invertM(RI, 0, R, 0);
+//                break;
+//        }
     }
 
     @Override

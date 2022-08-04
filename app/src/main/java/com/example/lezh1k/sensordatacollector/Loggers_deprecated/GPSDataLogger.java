@@ -56,18 +56,18 @@ public class GPSDataLogger implements LocationListener {
 
     @Override
     public void onLocationChanged(Location loc) {
-        double speedAccuracyMpS = 0.1 * loc.getAccuracy();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasAccuracy()) {
-            speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
-        }
-
-        long now = loc.getElapsedRealtimeNanos() / 1000000;
-        m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
-                Utils.LogMessageType.GPS_DATA.ordinal(),
-                now, loc.getLatitude(),
-                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
-                loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);
-        XLog.i(m_lastLoggedGPSMessage);
+//        double speedAccuracyMpS = 0.1 * loc.getAccuracy();
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasAccuracy()) {
+//            speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
+//        }
+//
+//        long now = loc.getElapsedRealtimeNanos() / 1000000;
+//        m_lastLoggedGPSMessage = String.format("%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+//                Utils.LogMessageType.GPS_DATA.ordinal(),
+//                now, loc.getLatitude(),
+//                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
+//                loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);
+//        XLog.i(m_lastLoggedGPSMessage);
     }
 
     @Override

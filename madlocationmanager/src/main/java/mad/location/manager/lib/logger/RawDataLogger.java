@@ -18,4 +18,6 @@ public interface RawDataLogger {
     void logGpsData(Location loc);
 
     void logKalmanPredict(SensorGpsDataItem sdi);
+
+    void logLinearAcceleration(float[] absAcceleration);
 }

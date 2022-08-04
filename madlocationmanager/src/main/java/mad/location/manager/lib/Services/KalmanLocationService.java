@@ -45,6 +45,7 @@ import mad.location.manager.lib.Filters.GPSAccKalmanFilter;
 import mad.location.manager.lib.Interfaces.LocationServiceInterface;
 import mad.location.manager.lib.Interfaces.LocationServiceStatusInterface;
 import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.enums.Direction;
 import mad.location.manager.lib.locationProviders.GPSCallback;
 import mad.location.manager.lib.locationProviders.GPSLocationProvider;
 import mad.location.manager.lib.locationProviders.FusedLocationProvider;
@@ -504,10 +505,6 @@ public class KalmanLocationService extends Service
     /*SensorEventListener methods implementation*/
     @Override
     public void onSensorChanged(SensorEvent event) {
-        final int east = 0;
-        final int north = 1;
-        final int up = 2;
-
         long now = android.os.SystemClock.elapsedRealtimeNanos();
         long nowMs = Utils.nano2milli(now);
         switch (event.sensor.getType()) {
@@ -516,11 +513,12 @@ public class KalmanLocationService extends Service
                 android.opengl.Matrix.multiplyMV(absAcceleration, 0, rotationMatrixInv,
                         0, linearAcceleration, 0);
 
-                String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
-                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
-                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
+//                String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
+//                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
+//                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
                 ///TODO
                 //log2File(logStr);
+                rawDataLogger.logLinearAcceleration(absAcceleration);
 
                 if (m_kalmanFilter == null) {
                     break;
@@ -530,9 +528,9 @@ public class KalmanLocationService extends Service
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
-                        absAcceleration[north],
-                        absAcceleration[east],
-                        absAcceleration[up],
+                        absAcceleration[Direction.NORTH.getCode()],
+                        absAcceleration[Direction.EAST.getCode()],
+                        absAcceleration[Direction.UP.getCode()],
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
                         SensorGpsDataItem.NOT_INITIALIZED,
@@ -575,11 +573,11 @@ public class KalmanLocationService extends Service
         // and loc.getSpeedAccuracyMetersPerSecond() requares API 26
         double velErr = loc.getAccuracy() * 0.1;
 
-        String logStr = String.format(Locale.ENGLISH, "%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
-                Utils.LogMessageType.GPS_DATA.ordinal(),
-                timeStamp, loc.getLatitude(),
-                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
-                loc.getSpeed(), loc.getBearing(), velErr);
+//        String logStr = String.format(Locale.ENGLISH, "%d%d GPS : pos lat=%f, lon=%f, alt=%f, hdop=%f, speed=%f, bearing=%f, sa=%f",
+//                Utils.LogMessageType.GPS_DATA.ordinal(),
+//                timeStamp, loc.getLatitude(),
+//                loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
+//                loc.getSpeed(), loc.getBearing(), velErr);
         ///TODO log2File(logStr);
         //            sendDataToBus()
 
@@ -621,14 +619,5 @@ public class KalmanLocationService extends Service
                 velErr,
                 m_magneticDeclination);
         m_sensorDataQueue.add(sdi);
-    }
-
-    private static void sendDataToBus(Location l, SensorGpsDataItem sensorGpsDataItem) {
-        Intent intent = new Intent("Logger");
-        intent.putExtra("RawData", sensorGpsDataItem);
-        Bundle b = new Bundle();
-//        b.putParcelable("Location", l);
-//        intent.putExtra("Location", b);
-//        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 }

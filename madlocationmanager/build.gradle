@@ -7,6 +7,11 @@ plugins {
 
 group='com.github.maddevsio'
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 ext {
     // if CI does not set RELEASE_VERSION use hardcoded one
     releaseVersion = System.getenv('RELEASE_VERSION') ?: '0.1.14'
@@ -19,9 +24,7 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-
     }
 
     buildTypes {
@@ -31,6 +34,7 @@ android {
         }
     }
 
+    useLibrary 'org.apache.http.legacy'
 }
 
 dependencies {
@@ -45,6 +49,8 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     api group: 'com.elvishew', name: 'xlog', version:'1.4.0'
+    implementation 'com.maddevs:log-transfer-object:0.0.1-SNAPSHOT'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
 }
 
 task sourceJar(type: Jar) {
