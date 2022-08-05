@@ -207,23 +207,22 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 }
                 value.stop();
                 initXlogPrintersFileName();
-                Settings settings =
-                        new Settings(
-                                Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                                Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "10")),
-                                Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
-                                Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
-                                Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
-                                Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
-                                Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
-//                                this,
-                                true,
-                                false,
-                                true,
-                                Utils.DEFAULT_VEL_FACTOR,
-                                Utils.DEFAULT_POS_FACTOR,
-                                finalProvider
-                        );
+                Settings settings = Settings.getInstance();
+                settings.load(Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                              Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "10")),
+                              Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
+                              Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
+                              Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
+                              Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
+                              Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
+                             true,
+                             false,
+                             true,
+                              Utils.DEFAULT_VEL_FACTOR,
+                              Utils.DEFAULT_POS_FACTOR,
+                              finalProvider,
+                              mSharedPref.getString("pref_server", "localhost:8080")
+                );
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
             });

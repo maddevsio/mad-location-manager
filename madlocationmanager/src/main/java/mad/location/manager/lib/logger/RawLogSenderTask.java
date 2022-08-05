@@ -18,6 +18,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import java.net.HttpURLConnection;
 import java.util.List;
 
+import mad.location.manager.lib.Services.Settings;
 import mad.location.manager.lib.Utils.UniquePsuedoID;
 
 public class RawLogSenderTask extends AsyncTask<List<Record>, Integer, Integer> {
@@ -28,10 +29,11 @@ public class RawLogSenderTask extends AsyncTask<List<Record>, Integer, Integer> 
     private final String uniquePhoneID = UniquePsuedoID.getUniquePsuedoID();
     private HttpClient httpclient = new DefaultHttpClient();
     private ObjectMapper objectMapper = new ObjectMapper();
+    private final Settings settings = Settings.getInstance();
 
     public RawLogSenderTask() {
         super();
-        CONNECTION_STRING = String.format("http://192.168.1.33:8085/api/collector/%s", uniquePhoneID);
+        CONNECTION_STRING = String.format("http://%s/api/collector/%s", settings.server, uniquePhoneID);
     }
 
     @Override

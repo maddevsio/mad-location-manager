@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <EditTextPreference
         android:key="pref_gps_min_time"
         android:title="@string/pref_gps_min_time"
@@ -36,4 +37,12 @@
         android:summary="@string/pref_geohash_min_point_summ"
         android:numeric="integer"
         android:defaultValue="2" />
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:key="edit_text_preference_1"
+        android:summary="@string/pref_server_summ"
+        android:title="@string/pref_server"
+        app:key="pref_server" />
 </PreferenceScreen>

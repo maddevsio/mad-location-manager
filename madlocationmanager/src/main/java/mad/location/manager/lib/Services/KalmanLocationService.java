@@ -191,23 +191,7 @@ public class KalmanLocationService extends Service
         return m_geoHashRTFilter;
     }
 
-    public static Settings defaultSettings =
-            new Settings(
-                    Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                    Utils.GPS_MIN_DISTANCE,
-                    Utils.GPS_MIN_TIME,
-                    Utils.SENSOR_POSITION_MIN_TIME,
-                    Utils.GEOHASH_DEFAULT_PREC,
-                    Utils.GEOHASH_DEFAULT_MIN_POINT_COUNT,
-                    Utils.SENSOR_DEFAULT_FREQ_HZ,
-//                    null,
-                    true,
-                    true,
-                    false,
-                    Utils.DEFAULT_VEL_FACTOR,
-                    Utils.DEFAULT_POS_FACTOR,
-                    Settings.LocationProvider.GPS
-            );
+    public static Settings defaultSettings = Settings.getDefaultSettings();
 
     private Settings m_settings;
 
