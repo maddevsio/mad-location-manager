@@ -41,8 +41,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:defaultValue="true"
-        android:key="edit_text_preference_1"
+        android:key="pref_server"
         android:summary="@string/pref_server_summ"
         android:title="@string/pref_server"
         app:key="pref_server" />
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="1000"
+        android:key="edit_text_preference_2"
+        android:summary="@string/pref_chunk_summ"
+        android:title="@string/pref_chunk"
+        app:defaultValue="true"
+        app:key="pref_chunk" />
 </PreferenceScreen>

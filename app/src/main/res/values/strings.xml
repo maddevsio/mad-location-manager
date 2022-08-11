@@ -23,10 +23,13 @@
     <string name="pref_geohash_min_point">GeoHash min point</string>
     <string name="pref_geohash_min_point_summ">Count of points with same geohash. GPS point becomes valid only when count greater then this value.</string>
 
-    <string name="pref_server">Log storage server</string>
-    <string name="pref_server_summ">IP:port or name:port for log storage server. Will be send data from sensor in realtime. I hope</string>
+    <string name="pref_server" translatable="false">Log storage server</string>
+    <string name="pref_server_summ" translatable="false">IP:port or name:port for log storage server. Will be send data from sensor in realtime. I hope :)</string>
 
-    <string name="gps_provider">GPS </string>
-    <string name="fused_provider">Fused</string>
-    <string name="location_provider">Location provider</string>
+    <string name="pref_chunk" translatable="false">Size of max chank send data</string>
+    <string name="pref_chunk_summ" translatable="false">Max size of log records when will be send to server. Need to decrease load to server and application</string>
+
+    <string name="gps_provider" translatable="false">GPS </string>
+    <string name="fused_provider" translatable="false">Fused</string>
+    <string name="location_provider" translatable="false">Location provider</string>
 </resources>

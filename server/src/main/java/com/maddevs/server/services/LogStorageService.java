@@ -1,12 +1,16 @@
 package com.maddevs.server.services;
 
-import com.maddevs.logtransferobject.types.Record;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.maddevs.logtransferobject.Log;
+import com.maddevs.logtransferobject.Zipper;
 import com.maddevs.server.entities.LogRecordEntity;
 import com.maddevs.server.mappers.LogRecordMapper;
 import com.maddevs.server.repositories.LogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,9 +20,10 @@ import java.util.stream.Collectors;
 public class LogStorageService {
     private final LogRepository logRepository;
     private final LogRecordMapper logRecordMapper;
+    private final ObjectMapper objectMapper;
 
-    public void save(String deviceId, List<Record> records) {
-        final Collection<LogRecordEntity> logRecordEntities = records.stream()
+    public void save(String deviceId, List<Log> logs) throws IOException {
+        final Collection<LogRecordEntity> logRecordEntities = logs.stream()
                 .map(r->{
                     final LogRecordEntity logRecordEntity = logRecordMapper.sourceToDestination(r);
                     logRecordEntity.setDeviceId(deviceId);

@@ -1,12 +1,10 @@
 package com.maddevs.logtransferobject;
 
-import com.maddevs.logtransferobject.types.Record;
-import lombok.Data;
+import com.maddevs.logtransferobject.LogMessageType;
+import lombok.*;
 
 import java.io.Serializable;
-import java.util.List;
 
-@Data
-public class Log implements Serializable {
-    List<Record> records;
+public interface Log extends Serializable {
+    LogMessageType getLogMessageType();
 }

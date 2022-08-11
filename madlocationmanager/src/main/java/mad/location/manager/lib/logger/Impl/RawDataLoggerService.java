@@ -11,29 +11,34 @@ import com.elvishew.xlog.XLog;
 import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
+import com.maddevs.logtransferobject.Log;
 import com.maddevs.logtransferobject.types.KalmanPredict;
-import com.maddevs.logtransferobject.types.LocationRecord;
-import com.maddevs.logtransferobject.types.Record;
+import com.maddevs.logtransferobject.types.LocationLog;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
+import mad.location.manager.lib.Services.Settings;
 import mad.location.manager.lib.enums.Direction;
 import mad.location.manager.lib.logger.RawDataLogger;
 import mad.location.manager.lib.logger.RawLogFileNameGenerator;
 import mad.location.manager.lib.logger.RawLogSenderTask;
 
 public class RawDataLoggerService implements RawDataLogger {
-    private final Integer CHANK_SIZE = 10; ///TODO move to settings
     private final String LOG_TAG = "dataLogs";
     private Logger logger;
 
-    private List<Record> datas;
-    private final RawLogSenderTask rawLogSenderTask = new RawLogSenderTask();
+    private List<Log> logs;
     private static RawDataLoggerService instance = null;
     private Boolean started = FALSE;
+    private Integer debugCount = 0;
+    private Settings settings;
 
     public static RawDataLoggerService getInstance(){
         if (instance==null){
@@ -44,6 +49,7 @@ public class RawDataLoggerService implements RawDataLogger {
     }
 
     private RawDataLoggerService() {
+        settings = Settings.getInstance();
         Printer filePrinter = new FilePrinter
                 .Builder(String.format("%s/%s/", Environment.getExternalStorageDirectory().getAbsolutePath(),
                     "SensorDataCollector")
@@ -60,25 +66,26 @@ public class RawDataLoggerService implements RawDataLogger {
                  .printers(filePrinter)
                  .build();
 
-        datas = new ArrayList<>();
+        logs = new ArrayList<>();
     }
 
     @Override
     public void reset(){
-        datas.clear();
+        logs.clear();
         started = FALSE;
     }
 
     @Override
     public void start(){
-        datas.clear();
+        logs.clear();
         started = TRUE;
     }
 
     @Override
     public void stop(){
-        sendDataToServer(datas);
+        sendDataToServer(logs);
         started = FALSE;
+        XLog.i("=== FULL COUNT LOGS %s ===", debugCount);
     }
 
     @Override
@@ -94,7 +101,7 @@ public class RawDataLoggerService implements RawDataLogger {
     @Override
     public void logGpsData(Location loc) {
         String payload = String.format("%f,%f,%f",loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-        LocationRecord record = new LocationRecord(payload);
+        LocationLog record = new LocationLog();
         writeRecord(record);
     }
 
@@ -114,23 +121,32 @@ public class RawDataLoggerService implements RawDataLogger {
 //                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
 //                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
 
-        String payload = String.format(Locale.ENGLISH, "%f,%f,%f",
-                absAcceleration[Direction.EAST.getCode()],
-                absAcceleration[Direction.NORTH.getCode()],
-                absAcceleration[Direction.UP.getCode()]);
-        KalmanPredict record = new KalmanPredict(payload);
+//        String payload = String.format(Locale.ENGLISH, "%f,%f,%f",
+//                absAcceleration[Direction.EAST.getCode()],
+//                absAcceleration[Direction.NORTH.getCode()],
+//                absAcceleration[Direction.UP.getCode()]);
+        KalmanPredict record = KalmanPredict.builder()
+                .absEastAcceleration(BigDecimal.valueOf(absAcceleration[Direction.EAST.getCode()]))
+                .absNorthAcceleration(BigDecimal.valueOf(absAcceleration[Direction.NORTH.getCode()]))
+                .absUpAcceleration(BigDecimal.valueOf(absAcceleration[Direction.UP.getCode()]))
+                .build();
+
         writeRecord(record);
     }
 
-    private void writeRecord(Record record) {
-        datas.add(record);
-        if (datas.size() == CHANK_SIZE) {
-            sendDataToServer(datas);
-            datas.clear();
+    private void writeRecord(Log log) {
+        logs.add(log);
+        debugCount = debugCount+1;
+        if (logs.size() < settings.chankSize) {
+            return;
         }
+        sendDataToServer(logs);
+        logs.clear();
     }
 
-    private void sendDataToServer(List<Record> records) {
-        new RawLogSenderTask().execute(records);
+    private void sendDataToServer(List<Log> logsToWrite) {
+//        List<Log> toWrite = new ArrayList<>();
+//        toWrite.addAll(logs);
+        new RawLogSenderTask().execute(logsToWrite);
     }
 }

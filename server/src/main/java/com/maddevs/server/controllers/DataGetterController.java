@@ -1,6 +1,5 @@
 package com.maddevs.server.controllers;
 
-import com.maddevs.logtransferobject.types.Record;
 import com.maddevs.server.services.LogStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

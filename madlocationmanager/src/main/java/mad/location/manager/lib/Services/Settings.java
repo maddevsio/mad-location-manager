@@ -45,13 +45,15 @@ public class Settings {
                 Utils.DEFAULT_VEL_FACTOR,
                 Utils.DEFAULT_POS_FACTOR,
                 Settings.LocationProvider.GPS,
-                "localhost:8080"
+                "localhost:8080",
+                1000
         );
         return defaultSettings;
     }
 
     public enum LocationProvider { GPS, FUSED}
     public String server;
+    public Integer chankSize;
 
     private static Settings instance = null;
 
@@ -67,7 +69,7 @@ public class Settings {
                      int positionMinTime, int geoHashPrecision, int geoHashMinPointCount,
                      double sensorFrequencyHz, boolean filterMockGpsCoordinates,
                      boolean onlyGpsSensor, boolean useGpsSpeed, double velFactor, double posFactor,
-                     LocationProvider provider, String server) {
+                     LocationProvider provider, String server, Integer chankSize) {
         this.accelerationDeviation = accelerationDeviation;
         this.gpsMinDistance = gpsMinDistance;
         this.gpsMinTime = gpsMinTime;
@@ -82,5 +84,6 @@ public class Settings {
         this.mPosFactor = posFactor;
         this.provider = provider;
         this.server = server;
+        this.chankSize = chankSize;
     }
 }

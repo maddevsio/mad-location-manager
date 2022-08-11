@@ -43,6 +43,7 @@ import mad.location.manager.lib.SensorAux.SensorCalibrator;
 import mad.location.manager.lib.Services.KalmanLocationService;
 import mad.location.manager.lib.Services.ServicesHelper;
 import mad.location.manager.lib.Services.Settings;
+import mad.location.manager.lib.logger.Impl.RawDataLoggerService;
 import mad.location.manager.lib.logger.RawDataLogger;
 
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
@@ -71,8 +72,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     private String xLogFolderPath;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    //private final RawDataLogger rawDataLogger = new RawDataLoggerDefault();
-
+    private final RawDataLogger rawDataLogger = RawDataLoggerService.getInstance();
 
     class ChangableFileNameGenerator implements FileNameGenerator {
         private String fileName;
@@ -221,7 +221,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                               Utils.DEFAULT_VEL_FACTOR,
                               Utils.DEFAULT_POS_FACTOR,
                               finalProvider,
-                              mSharedPref.getString("pref_server", "localhost:8080")
+                              mSharedPref.getString("pref_server", "localhost:8080"),
+                              Integer.parseInt(mSharedPref.getString("pref_chunk", "1000"))
                 );
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
@@ -229,11 +230,12 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
             btnStartStopText = "Stop tracking";
             btnTvStatusText = "Tracking is in progress";
-
+            rawDataLogger.start();
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";
             m_presenter.stop();
+            rawDataLogger.stop();
             ServicesHelper.getLocationService(this, value -> {
                 value.stop();
             });
