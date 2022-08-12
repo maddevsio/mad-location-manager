@@ -30,14 +30,11 @@ class ZipperTest {
 
     private String zip(String payload) {
         final byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
-        final byte[] compressed = Zipper.compress(bytes);
-        return Base64.getEncoder().encodeToString(bytes);
+        return Base64.getEncoder().encodeToString(Zipper.compress(bytes));
     }
 
     private String unzip(String payload) {
-        byte[] bytes = Base64.getDecoder().decode(payload);
-        final byte[] decompressed = Zipper.decompress(bytes);
-        String restored = new String(decompressed, StandardCharsets.UTF_8);
-        return restored;
+        final byte[] bytes = Base64.getDecoder().decode(payload);
+        return Zipper.decompress(bytes);
     }
 }

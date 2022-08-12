@@ -1,17 +1,22 @@
 package com.maddevs.logtransferobject.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.maddevs.logtransferobject.Log;
 import com.maddevs.logtransferobject.LogMessageType;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 
 import java.math.BigDecimal;
 
+@Jacksonized
+@SuperBuilder
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeName("kalman_predict")
 @Data
-@Builder
-public class KalmanPredict implements Log {
+public class KalmanPredict extends Log {
     private static final long serialVersionUID = 2L;
 
     private BigDecimal absEastAcceleration;
@@ -19,8 +24,4 @@ public class KalmanPredict implements Log {
     private BigDecimal absUpAcceleration;
 
 
-    @Override
-    public LogMessageType getLogMessageType() {
-        return LogMessageType.KALMAN_PREDICT;
-    }
 }

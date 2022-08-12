@@ -3,6 +3,8 @@ package com.maddevs.logtransferobject;
 import lombok.SneakyThrows;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -30,7 +32,7 @@ public final class Zipper {
     }
 
     @SneakyThrows
-    public static byte[] decompress(byte[] bytes){
+    public static String decompress(byte[] bytes){
         ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length);
         Inflater decompressor = new Inflater();
         try {
@@ -44,6 +46,6 @@ public final class Zipper {
             decompressor.end();
         }
 
-        return bos.toByteArray();
+        return new String(bos.toByteArray(), StandardCharsets.UTF_8);
     }
 }
