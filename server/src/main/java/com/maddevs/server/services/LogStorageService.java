@@ -1,9 +1,7 @@
 package com.maddevs.server.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.maddevs.logtransferobject.Log;
-import com.maddevs.logtransferobject.Zipper;
 import com.maddevs.server.entities.LogRecordEntity;
 import com.maddevs.server.mappers.LogRecordMapper;
 import com.maddevs.server.repositories.LogRepository;
@@ -22,7 +20,7 @@ public class LogStorageService {
     private final LogRecordMapper logRecordMapper;
     private final ObjectMapper objectMapper;
 
-    public void save(String deviceId, List<Log> logs) throws IOException {
+    public List<LogRecordEntity> save(String deviceId, List<Log> logs) throws IOException {
         final Collection<LogRecordEntity> logRecordEntities = logs.stream()
                 .map(r->{
                     final LogRecordEntity logRecordEntity = logRecordMapper.sourceToDestination(r);
@@ -31,7 +29,7 @@ public class LogStorageService {
                 })
                 .collect(Collectors.toList());
 
-        this.logRepository.saveAll(logRecordEntities);
+        return this.logRepository.saveAll(logRecordEntities);
     }
 
     public LogRecordEntity getListLogsByDeviceId(String deviceId) {

@@ -46,4 +46,7 @@ dependencies {
     }
     api group: 'com.elvishew', name: 'xlog', version:'1.4.0'
     api project(path: ':madlocationmanager')
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+    implementation 'com.maddevs:log-transfer-object:0.0.1-SNAPSHOT'
 }

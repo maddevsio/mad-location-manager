@@ -1,0 +1,20 @@
+package com.maddevs.server.controllers;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Base64;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class DataCollectorControllerTest {
+
+    @Test
+    public void test(){
+        String s = "eJytV8tqVEEU/JdZBznvR3ZBsxAfiMSViMQwRCGYYLIR8d+tFndqt9Au5jKLvrer65xTVf322+Hyw/355f3D2dXV8eb45fLh0+3nwyk9IqLGTzKtvU2JT8bSl7dfHj7+aW2lWHpodeFpPxe/uft9papLiroTOZtTnhxubq9fHO/vL6+PF1/vjofTw7Oz5y/OXr5/9fr8ydPHF4fvJ3OUWqJJ2q3MXHOYLcTN7Uwd5DWDqVJeilVe6fsoM4RKxA3HXnDZZmkEcvA/acolc4B6PMF57aMEgdKcUs2aZQuYjS3ZxKWJacolJ6OVQDpJ9D5KC83QDuysmTOUTASAjd3Jwqpz2piSJFJZJR6xD7MAVPBB6eJawURXcrlQSBvFlMwKEjbCwJVsoxRuiwAClNB7DhIDmx3RjmFnnQ6PSuD4Ys1jynYxjqmBELV6gtIFSOBzLCQzrJcZSkJrdIzubdtvS2lUhFFwkGS5oFIE7SFGZThYTLnEyBTkQI1b97tSJZ2KcXBWFl2gLDzdGLNbC7nEgSISdoHeHOfZhemRVpmlqfj+HKaiHeEDSanl8+HBibxToF46lHUXZdVwFBd3yHAsUDpWepjBpbLmIx4YIDK2xHjuW6QJhhsCmBB3XsGE+mB5lqdy5Lwz0cGWAUoVSrwP0xXW3NgeASEXNYc9QmbAEAThVzj5a97gGKaaELj9ksPzkDPMh8p0LKbc0GrRUTFeqTmXGEy4fQ772acSRqLD7kJjWNAcpZspdAhygC6JqWIiGbhmU4T97I1dmCNclkKGEwQsyATlCWNx+Aq0aJE3YOWDgAjet0gvi4LE8Eg7K8mMkTQUcRj5cR6DJYavIcDAsrYxBma1R2EUbs4LJmMwmaAGDTpXdUQSU3iGVzTvgzTMgSCQRYtOkzoECFEokELhAwyi5mHD0O+YHOzxH3JbjF4sHWxqTjMwUJqgfTEKyXCsKUocvGCniZrbvqRDKeC0ODOitdIKJVKe93gLGHyKkgoWCoUL5Ob9SJSKq5aifNq4/CwqXrhlKiPmwH5ofp8Q1XEJGFdOzX+p+LsfuKJa6A==";
+
+        final byte[] decode = Base64.getDecoder().decode(s);
+
+        int b = 0;
+
+    }
+}

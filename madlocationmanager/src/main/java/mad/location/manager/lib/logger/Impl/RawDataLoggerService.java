@@ -100,8 +100,7 @@ public class RawDataLoggerService implements RawDataLogger {
 
     @Override
     public void logGpsData(Location loc) {
-        String payload = String.format("%f,%f,%f",loc.getLatitude(), loc.getLongitude(), loc.getAltitude());
-        LocationLog record = new LocationLog();
+        LocationLog record = LocationLog.builder().build();
         writeRecord(record);
     }
 
@@ -145,8 +144,6 @@ public class RawDataLoggerService implements RawDataLogger {
     }
 
     private void sendDataToServer(List<Log> logsToWrite) {
-//        List<Log> toWrite = new ArrayList<>();
-//        toWrite.addAll(logs);
         new RawLogSenderTask().execute(logsToWrite);
     }
 }
