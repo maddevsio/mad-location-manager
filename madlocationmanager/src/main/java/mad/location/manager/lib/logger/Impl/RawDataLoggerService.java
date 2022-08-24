@@ -4,45 +4,50 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 import android.location.Location;
-import android.os.Environment;
+import android.os.Build;
+import android.text.format.Time;
 
-import com.elvishew.xlog.Logger;
+import androidx.annotation.RequiresApi;
+
 import com.elvishew.xlog.XLog;
-import com.elvishew.xlog.printer.Printer;
-import com.elvishew.xlog.printer.file.FilePrinter;
-import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
 import com.maddevs.logtransferobject.Log;
+import com.maddevs.logtransferobject.types.ABSAcceleration;
+import com.maddevs.logtransferobject.types.GpsData;
 import com.maddevs.logtransferobject.types.KalmanPredict;
-import com.maddevs.logtransferobject.types.LocationLog;
+import com.maddevs.logtransferobject.types.KalmanUpdatePredict;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
 
 import mad.location.manager.lib.Commons.SensorGpsDataItem;
 import mad.location.manager.lib.Services.Settings;
+import mad.location.manager.lib.Utils.UniquePsuedoID;
 import mad.location.manager.lib.enums.Direction;
 import mad.location.manager.lib.logger.RawDataLogger;
-import mad.location.manager.lib.logger.RawLogFileNameGenerator;
 import mad.location.manager.lib.logger.RawLogSenderTask;
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class RawDataLoggerService implements RawDataLogger {
     private final String LOG_TAG = "dataLogs";
-    private Logger logger;
+    //private final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd-MM-yyyy(HH::mm:ss)");
 
     private List<Log> logs;
     private static RawDataLoggerService instance = null;
     private Boolean started = FALSE;
     private Integer debugCount = 0;
     private Settings settings;
+    private final String uniquePhoneID = UniquePsuedoID.getUniquePsuedoID();
+    private String uniqueTripID;
 
     public static RawDataLoggerService getInstance(){
         if (instance==null){
             instance = new RawDataLoggerService();
+
         }
 
         return instance;
@@ -50,35 +55,25 @@ public class RawDataLoggerService implements RawDataLogger {
 
     private RawDataLoggerService() {
         settings = Settings.getInstance();
-        Printer filePrinter = new FilePrinter
-                .Builder(String.format("%s/%s/", Environment.getExternalStorageDirectory().getAbsolutePath(),
-                    "SensorDataCollector")
-                )
-                .fileNameGenerator(new RawLogFileNameGenerator())
-                .backupStrategy(new NeverBackupStrategy())
-//                .cleanStrategy(new FileLastModifiedCleanStrategy(MAX_TIME))
-//                .flattener(new MyFlattener())
-//                .writer(new MyWriter())
-                .build();
-
-         logger = XLog.tag(LOG_TAG)
-                 //.addObjectFormatter(SensorGpsDataItem.class)
-                 .printers(filePrinter)
-                 .build();
-
         logs = new ArrayList<>();
     }
 
     @Override
     public void reset(){
         logs.clear();
+        uniqueTripID = null;
         started = FALSE;
     }
 
     @Override
-    public void start(){
+    public String start(){
         logs.clear();
+        Calendar now = Calendar.getInstance();
+        uniqueTripID = String.format("%02d-%02d-%d(%02d:%02d:%02d)",
+                now.get(Calendar.DATE), now.get(Calendar.MONTH), now.get(Calendar.YEAR),
+                now.get(Calendar.HOUR), now.get(Calendar.MINUTE), now.get(Calendar.SECOND));
         started = TRUE;
+        return uniqueTripID;
     }
 
     @Override
@@ -88,62 +83,90 @@ public class RawDataLoggerService implements RawDataLogger {
         XLog.i("=== FULL COUNT LOGS %s ===", debugCount);
     }
 
-    @Override
-    public void addObjectToLog(Object obj) {
-        logger.v(obj);
-    }
-
-    @Override
-    public void log2file(String format, Object... args) {
-        logger.v(String.format(format, args));
-    }
-
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void logGpsData(Location loc) {
-        LocationLog record = LocationLog.builder().build();
+        GpsData record = GpsData.builder()
+                .timestamp(BigDecimal.valueOf(loc.getTime()))
+                .lat(BigDecimal.valueOf(loc.getLatitude()))
+                .lon(BigDecimal.valueOf(loc.getLongitude()))
+                .alt(BigDecimal.valueOf(loc.getAltitude()))
+                .build();
         writeRecord(record);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void logKalmanPredict(SensorGpsDataItem sdi) {
-//        Record record = new Record();
-//        record.setType(RecordType.KALMAN_FILTER);
-//        String payload = String.format("%f,%f", sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
-//        record.setValue(payload);
-//        writeRecord(record);
-//        logger.v(payload);
+//        log2File("%d%d KalmanPredict : accX=%f, accY=%f",
+//                    Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
+//                    (long) sdi.getTimestamp(),
+//                    sdi.getAbsEastAcc(),
+//                    sdi.getAbsNorthAcc());
+        KalmanPredict kalmanPredict = KalmanPredict.builder()
+                .timestamp(BigDecimal.valueOf(sdi.getTimestamp()))
+                .absEastAcceleration(BigDecimal.valueOf(sdi.getAbsEastAcc()))
+                .absNorthAcceleration(BigDecimal.valueOf(sdi.getAbsNorthAcc()))
+                .absUpAcceleration(BigDecimal.valueOf(sdi.getAbsUpAcc()))
+                .build();
+        writeRecord(kalmanPredict);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    public void logLinearAcceleration(float[] absAcceleration) {
-//                String logStr = String.format(Locale.ENGLISH, "%d%d abs acc: %f %f %f",
-//                        Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
-//                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
-
-//        String payload = String.format(Locale.ENGLISH, "%f,%f,%f",
-//                absAcceleration[Direction.EAST.getCode()],
-//                absAcceleration[Direction.NORTH.getCode()],
-//                absAcceleration[Direction.UP.getCode()]);
-        KalmanPredict record = KalmanPredict.builder()
-                .absEastAcceleration(BigDecimal.valueOf(absAcceleration[Direction.EAST.getCode()]))
-                .absNorthAcceleration(BigDecimal.valueOf(absAcceleration[Direction.NORTH.getCode()]))
-                .absUpAcceleration(BigDecimal.valueOf(absAcceleration[Direction.UP.getCode()]))
+    public void logLinearAcceleration(long nowMs, float[] absAcceleration) {
+        ABSAcceleration record = ABSAcceleration.builder()
+                .timestamp(BigDecimal.valueOf(nowMs))
+                .eastAcceleration(BigDecimal.valueOf(absAcceleration[Direction.EAST.getCode()]))
+                .northAcceleration(BigDecimal.valueOf(absAcceleration[Direction.NORTH.getCode()]))
+                .upAcceleration(BigDecimal.valueOf(absAcceleration[Direction.UP.getCode()]))
                 .build();
 
         writeRecord(record);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public void logKalmanUpdate(SensorGpsDataItem sdi, double xVel, double yVel) {
+        //            log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
+//                    Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
+//                    (long) sdi.getTimestamp(),
+//                    sdi.getGpsLon(),
+//                    sdi.getGpsLat(),
+//                    xVel,
+//                    yVel,
+//                    sdi.getPosErr(),
+//                    sdi.getVelErr()
+//            );
+       KalmanUpdatePredict kalmanUpdatePredict = KalmanUpdatePredict.builder()
+               .timestamp(BigDecimal.valueOf(sdi.getTimestamp()))
+               .gpsLon(BigDecimal.valueOf(sdi.getGpsLon()))
+               .gpsLat(BigDecimal.valueOf(sdi.getGpsLat()))
+               .xVel(BigDecimal.valueOf(xVel))
+               .yVel(BigDecimal.valueOf(yVel))
+               .posError(BigDecimal.valueOf(sdi.getPosErr()))
+               .velError(BigDecimal.valueOf(sdi.getVelErr()))
+       .build();
+
+        writeRecord(kalmanUpdatePredict);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void writeRecord(Log log) {
+        log.setTripUuid(uniqueTripID);
         logs.add(log);
-        debugCount = debugCount+1;
         if (logs.size() < settings.chankSize) {
             return;
         }
-        sendDataToServer(logs);
-        logs.clear();
+        List<Log> records = new ArrayList<>();
+        synchronized (this) {
+            records.addAll(logs);
+            logs.clear();
+        }
+        sendDataToServer(records);
     }
 
     private void sendDataToServer(List<Log> logsToWrite) {
-        new RawLogSenderTask().execute(logsToWrite);
+        new RawLogSenderTask(uniquePhoneID).execute(logsToWrite);
     }
 }

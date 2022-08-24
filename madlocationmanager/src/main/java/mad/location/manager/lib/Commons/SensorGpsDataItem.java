@@ -4,10 +4,12 @@ import androidx.annotation.NonNull;
 
 import java.io.Serializable;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Created by lezh1k on 2/13/18.
  */
-
 public class SensorGpsDataItem implements Comparable<SensorGpsDataItem>, Serializable {
     double timestamp;
     double gpsLat;
@@ -20,6 +22,7 @@ public class SensorGpsDataItem implements Comparable<SensorGpsDataItem>, Seriali
     double course;
     double posErr;
     double velErr;
+
 
     public static final double NOT_INITIALIZED = 361.0;
 

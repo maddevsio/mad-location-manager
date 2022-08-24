@@ -7,17 +7,15 @@ import mad.location.manager.lib.Commons.SensorGpsDataItem;
 public interface RawDataLogger {
     void reset();
 
-    void start();
+    String start();
 
     void stop();
-
-    void addObjectToLog(Object obj);
-
-    void log2file(String format, Object... args);
 
     void logGpsData(Location loc);
 
     void logKalmanPredict(SensorGpsDataItem sdi);
 
-    void logLinearAcceleration(float[] absAcceleration);
+    void logLinearAcceleration(long nowMs, float[] absAcceleration);
+
+    void logKalmanUpdate(SensorGpsDataItem sdi, double xVel, double yVel);
 }

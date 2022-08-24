@@ -1,8 +1,9 @@
 package com.maddevs.logtransferobject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.maddevs.logtransferobject.types.*;
+import com.maddevs.logtransferobject.types.GpsData;
+import com.maddevs.logtransferobject.types.KalmanPredict;
+import com.maddevs.logtransferobject.types.LocationLog;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 

@@ -1,6 +1,7 @@
 package com.maddevs.logtransferobject.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.maddevs.logtransferobject.Log;
 import com.maddevs.logtransferobject.LogMessageType;
@@ -13,23 +14,22 @@ import java.math.BigDecimal;
 @Jacksonized
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeName("kalman_predict")
+@JsonTypeName("abs_acceleration")
 @Data
-public class KalmanPredict extends Log {
-    private static final long serialVersionUID = 2L;
+public class ABSAcceleration extends Log {
+    //LogMessageType.ABS_ACC_DATA
+    private BigDecimal eastAcceleration;
+    private BigDecimal northAcceleration;
+    private BigDecimal upAcceleration;
 
-    //LogMessageType.KALMAN_PREDICT
-    private BigDecimal absEastAcceleration;
-    private BigDecimal absNorthAcceleration;
-    private BigDecimal absUpAcceleration;
 
     @Override
     public String toRawString() {
-        return String.format("%d KALMAN_PREDICT: x=%s y=%s z=%s",
-            getTimestamp(),
-            absEastAcceleration,
-            absNorthAcceleration,
-            absUpAcceleration
+        return String.format("%d ACC : x=%s y=%s z=%s",
+                getTimestamp(),
+                eastAcceleration,
+                northAcceleration,
+                upAcceleration
         );
     }
 }

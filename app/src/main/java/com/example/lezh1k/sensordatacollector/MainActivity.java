@@ -68,6 +68,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface {
 
     private SharedPreferences mSharedPref;
@@ -230,9 +231,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 value.start();
             });
 
-            btnStartStopText = "Stop tracking";
+            String tripId = rawDataLogger.start();
+            btnStartStopText = String.format("Stop tracking-%s",tripId);
             btnTvStatusText = "Tracking is in progress";
-            rawDataLogger.start();
+
         } else {
             btnStartStopText = "Start tracking";
             btnTvStatusText = "Paused";

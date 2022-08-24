@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -52,12 +53,11 @@ public class RawLogSenderTask extends AsyncTask<List<Log>, Integer, Integer> {
     private static final String FINISHED = "Raw log was sended";
 
     private String CONNECTION_STRING;
-    private final String uniquePhoneID = UniquePsuedoID.getUniquePsuedoID();
     private HttpClient httpclient = new DefaultHttpClient();
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Settings settings = Settings.getInstance();
-    List<Log> data;
-    public RawLogSenderTask() {
+
+    public RawLogSenderTask(String uniquePhoneID) {
         super();
         CONNECTION_STRING = String.format("http://%s/api/collector/%s", settings.server, uniquePhoneID);
     }
@@ -65,11 +65,9 @@ public class RawLogSenderTask extends AsyncTask<List<Log>, Integer, Integer> {
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected Integer doInBackground(List<Log>... records) {
-        synchronized (this) {
-            this.data = new ArrayList<>(records[0]);
-        }
-        XLog.i("=== SEND %s RECORDS ==", records[0].size());
-        String result = sendDataToServer(this.data);
+        List<Log> payload = records[0];
+        XLog.i("=== SEND %s RECORDS ==", payload.size());
+        String result = sendDataToServer(payload);
         if (result.length()==0) {
             return 0;
         }

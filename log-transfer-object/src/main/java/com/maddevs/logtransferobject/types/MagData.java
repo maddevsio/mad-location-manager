@@ -12,28 +12,20 @@ import java.math.BigDecimal;
 @Jacksonized
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeName("gps")
+@JsonTypeName("mag")
 @Data
-public class GpsData extends Log {
+public class MagData extends Log {
     private static final long serialVersionUID = 1L;
-    // LogMessageType.GPS_DATA
+    // LogMessageType.MAGNITUDE_DATA
+    private BigDecimal x;
+    private BigDecimal y;
+    private BigDecimal z;
 
-    private BigDecimal lat;
-    private BigDecimal lon;
-    private BigDecimal alt;
-    private BigDecimal hdop;
-    private BigDecimal speed;
-    private BigDecimal bearing;
 
     @Override
     public String toRawString() {
-        return String.format("%s GPS : pos lat=%s lon=%s alt=%s hdop=%s speed=%s bearing=%s",
+        return String.format("% MAG : x=%s y=%s z=%s",
                 getTimestamp(),
-                lat,
-                lon,
-                alt,
-                hdop,
-                speed,
-                bearing);
+                x, y, z);
     }
 }

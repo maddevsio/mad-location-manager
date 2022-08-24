@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 

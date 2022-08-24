@@ -236,25 +236,26 @@ public class KalmanLocationService extends Service
         KalmanLocationService owner;
         private RawDataLogger rawDataLogger = RawDataLoggerService.getInstance();
 
-        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner, RawDataLogger rawDataLogger) {
+        SensorDataEventLoopTask(long deltaTMs, KalmanLocationService owner) {
             this.deltaTMs = deltaTMs;
             this.owner = owner;
         }
 
         private void handlePredict(SensorGpsDataItem sdi) {
-            this.rawDataLogger.logKalmanPredict(sdi);
-//            rawDataLogger.log2file("%d%d KalmanPredict : accX=%f, accY=%f",
+//            log2File("%d%d KalmanPredict : accX=%f, accY=%f",
 //                    Utils.LogMessageType.KALMAN_PREDICT.ordinal(),
 //                    (long) sdi.getTimestamp(),
 //                    sdi.getAbsEastAcc(),
 //                    sdi.getAbsNorthAcc());
+            this.rawDataLogger.logKalmanPredict(sdi);
+
             m_kalmanFilter.predict(sdi.getTimestamp(), sdi.getAbsEastAcc(), sdi.getAbsNorthAcc());
         }
 
         private void handleUpdate(SensorGpsDataItem sdi) {
             double xVel = sdi.getSpeed() * Math.cos(sdi.getCourse());
             double yVel = sdi.getSpeed() * Math.sin(sdi.getCourse());
-            this.rawDataLogger.logKalmanPredict(sdi);
+            this.rawDataLogger.logKalmanUpdate(sdi, xVel, yVel);
 //            log2File("%d%d KalmanUpdate : pos lon=%f, lat=%f, xVel=%f, yVel=%f, posErr=%f, velErr=%f",
 //                    Utils.LogMessageType.KALMAN_UPDATE.ordinal(),
 //                    (long) sdi.getTimestamp(),
@@ -430,9 +431,8 @@ public class KalmanLocationService extends Service
             ilss.GPSEnabledChanged(m_gpsEnabled);
         }
 
-        ///TODO
         m_eventLoopTask = new SensorDataEventLoopTask(m_settings.positionMinTime,
-                KalmanLocationService.this, this.rawDataLogger);
+                KalmanLocationService.this);
 
         m_eventLoopTask.needTerminate = false;
         m_eventLoopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -502,7 +502,7 @@ public class KalmanLocationService extends Service
 //                        nowMs, absAcceleration[east], absAcceleration[north], absAcceleration[up]);
                 ///TODO
                 //log2File(logStr);
-                rawDataLogger.logLinearAcceleration(absAcceleration);
+                rawDataLogger.logLinearAcceleration(nowMs, absAcceleration);
 
                 if (m_kalmanFilter == null) {
                     break;
