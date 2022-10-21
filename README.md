@@ -8,9 +8,9 @@ Project consists of 2 parts: <br>
 Visualiser – https://github.com/maddevsio/mad-location-manager/tree/master/C<br>
 Lib Demo – https://github.com/maddevsio/mad-location-manager/tree/master/app 
 
-[Blog (english version)](https://blog.maddevs.io/reduce-gps-data-error-on-android-with-kalman-filter-and-accelerometer-43594faed19c)
+[Blog (english version)](https://maddevs.io/blog/reduce-gps-data-error-on-android-with-kalman-filter-and-accelerometer/)
 
-[Blog (russian version)](https://blog.maddevs.io/ru-reduce-gps-data-error-on-android-with-kalman-filter-and-accelerometer-b81f1026e06c)
+[Blog (russian version)](https://medium.com/maddevs-io/ru-reduce-gps-data-error-on-android-with-kalman-filter-and-accelerometer-b81f1026e06c)
 
 [Our site](https://gps.maddevs.io/en/)
 
