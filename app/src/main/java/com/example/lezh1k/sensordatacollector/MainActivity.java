@@ -13,11 +13,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
@@ -29,6 +24,12 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
 import com.elvishew.xlog.printer.AndroidPrinter;
@@ -36,15 +37,6 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
-import mad.location.manager.lib.Commons.Utils;
-import mad.location.manager.lib.Interfaces.ILogger;
-import mad.location.manager.lib.Interfaces.LocationServiceInterface;
-import mad.location.manager.lib.Loggers.GeohashRTFilter;
-import mad.location.manager.lib.SensorAux.SensorCalibrator;
-import mad.location.manager.lib.Services.KalmanLocationService;
-import mad.location.manager.lib.Services.ServicesHelper;
-import mad.location.manager.lib.Services.Settings;
-
 import com.example.lezh1k.sensordatacollector.Interfaces.MapInterface;
 import com.example.lezh1k.sensordatacollector.Presenters.MapPresenter;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -64,13 +56,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import mad.location.manager.lib.Commons.Utils;
+import mad.location.manager.lib.Interfaces.ILogger;
+import mad.location.manager.lib.Interfaces.LocationServiceInterface;
+import mad.location.manager.lib.Loggers.GeohashRTFilter;
+import mad.location.manager.lib.SensorAux.SensorCalibrator;
+import mad.location.manager.lib.Services.ServicesHelper;
+import mad.location.manager.lib.Services.Settings;
+
 public class MainActivity extends AppCompatActivity implements LocationServiceInterface, MapInterface, ILogger {
 
     private SharedPreferences mSharedPref;
 
     private String xLogFolderPath;
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    class ChangableFileNameGenerator implements FileNameGenerator {
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    static class ChangableFileNameGenerator implements FileNameGenerator {
         private String fileName;
         public void setFileName(String fileName) {
             this.fileName = fileName;
@@ -132,8 +132,8 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
         @Override
         protected void onProgressUpdate(Object... values) {
-            TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-            TextView tvDistance = (TextView) findViewById(R.id.tvDistance);
+            TextView tvStatus = findViewById(R.id.tvStatus);
+            TextView tvDistance = findViewById(R.id.tvDistance);
             if (m_isLogging) {
                 if (m_geoHashRTFilter == null)
                     return;
@@ -178,11 +178,11 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     private void set_isLogging(boolean isLogging) {
-        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
-        Button gpsProvider = (Button) findViewById(R.id.button_gps);
-        Button fusedProvider = (Button) findViewById(R.id.button_fused);
+        Button btnStartStop = findViewById(R.id.btnStartStop);
+        TextView tvStatus = findViewById(R.id.tvStatus);
+        Button btnCalibrate = findViewById(R.id.btnCalibrate);
+        Button gpsProvider = findViewById(R.id.button_gps);
+        Button fusedProvider = findViewById(R.id.button_fused);
         String btnStartStopText;
         String btnTvStatusText;
 
@@ -208,23 +208,22 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
                 }
                 value.stop();
                 initXlogPrintersFileName();
-                Settings settings =
-                        new Settings(
-                                Utils.ACCELEROMETER_DEFAULT_DEVIATION,
-                                Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "10")),
-                                Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
-                                Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
-                                Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
-                                Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
-                                Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
-                                this,
-                                true,
-                                false,
-                                true,
-                                Utils.DEFAULT_VEL_FACTOR,
-                                Utils.DEFAULT_POS_FACTOR,
-                                finalProvider
-                        );
+                Settings settings = new Settings(
+                    Utils.ACCELEROMETER_DEFAULT_DEVIATION,
+                    Integer.parseInt(mSharedPref.getString("pref_gps_min_distance", "10")),
+                    Integer.parseInt(mSharedPref.getString("pref_gps_min_time", "2000")),
+                    Integer.parseInt(mSharedPref.getString("pref_position_min_time", "500")),
+                    Integer.parseInt(mSharedPref.getString("pref_geohash_precision", "6")),
+                    Integer.parseInt(mSharedPref.getString("pref_geohash_min_point", "2")),
+                    Double.parseDouble(mSharedPref.getString("pref_sensor_frequency", "10")),
+                    this,
+                    true,
+                    false,
+                    true,
+                    Utils.DEFAULT_VEL_FACTOR,
+                    Utils.DEFAULT_POS_FACTOR,
+                    finalProvider
+                );
                 value.reset(settings); //warning!! here you can adjust your filter behavior
                 value.start();
             });
@@ -251,9 +250,9 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     private void set_isCalibrating(boolean isCalibrating, boolean byUser) {
-        Button btnStartStop = (Button) findViewById(R.id.btnStartStop);
-        TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-        Button btnCalibrate = (Button) findViewById(R.id.btnCalibrate);
+        Button btnStartStop = findViewById(R.id.btnStartStop);
+        TextView tvStatus = findViewById(R.id.tvStatus);
+        Button btnCalibrate = findViewById(R.id.btnCalibrate);
         String btnCalibrateText;
         String tvStatusText;
 
@@ -326,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     //uncaught exceptions
     private Thread.UncaughtExceptionHandler defaultUEH;
     // handler listener
-    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+    private final Thread.UncaughtExceptionHandler _unCaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
         @Override
         public void uncaughtException(Thread thread, Throwable ex) {
             try {
@@ -354,18 +353,18 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     public static final int FILTER_KALMAN_ONLY = 0;
     public static final int FILTER_KALMAN_WITH_GEO = 1;
     public static final int GPS_ONLY = 2;
-    private int routeColors[] = {R.color.mapbox_blue, R.color.colorAccent, R.color.green};
-    private int routeWidths[] = {1, 3, 1};
-    private Polyline lines[] = new Polyline[3];
+    private final int[] routeColors = {R.color.mapbox_blue, R.color.colorAccent, R.color.green};
+    private final int[] routeWidths = {1, 3, 1};
+    private final Polyline[] lines = new Polyline[3];
 
     @Override
     public void showRoute(List<LatLng> route, int interestedRoute) {
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
-        cbGps = (CheckBox) findViewById(R.id.cbGPS);
-        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
-        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
-        boolean enabled[] = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked()};
+        cbGps = findViewById(R.id.cbGPS);
+        cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
+        boolean[] enabled = {cbFilteredKalman.isChecked(), cbFilteredKalmanGeo.isChecked(), cbGps.isChecked()};
         if (m_map != null) {
             runOnUiThread(() ->
                     m_mapView.post(() -> {
@@ -409,7 +408,7 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
     }
 
     public void setupMap(@Nullable Bundle savedInstanceState) {
-        m_mapView = (MapView) findViewById(R.id.mapView);
+        m_mapView = findViewById(R.id.mapView);
         m_mapView.onCreate(savedInstanceState);
 
         m_presenter = new MapPresenter(this, this, m_geoHashRTFilter);
@@ -423,23 +422,23 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
             progress.show();
 
             m_map.setStyleUrl(BuildConfig.lightMapStyle);
-            m_map.setStyleUrl(Style.SATELLITE_STREETS, new MapboxMap.OnStyleLoadedListener() {
-                @Override
-                public void onStyleLoaded(String style) {
-                    m_map.getUiSettings().setLogoEnabled(false);
-                    m_map.getUiSettings().setAttributionEnabled(false);
-                    m_map.getUiSettings().setTiltGesturesEnabled(false);
-
-                    int leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-                    int topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56, getResources().getDisplayMetrics());
-                    int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-                    int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-                    m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
-                    ServicesHelper.addLocationServiceInterface(this_);
-                    m_presenter.getRoute();
-                    progress.dismiss();
+            m_map.setStyleUrl(
+                Style.SATELLITE_STREETS,
+                style -> {
+                      m_map.getUiSettings().setLogoEnabled(false);
+                      m_map.getUiSettings().setAttributionEnabled(false);
+                      m_map.getUiSettings().setTiltGesturesEnabled(false);
+  
+                      int leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                      int topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56, getResources().getDisplayMetrics());
+                      int rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                      int bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+                      m_map.getUiSettings().setCompassMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+                      ServicesHelper.addLocationServiceInterface(this_);
+                      m_presenter.getRoute();
+                      progress.dismiss();
                 }
-            });
+            );
         });
     }
 
@@ -455,10 +454,10 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         setupMap(savedInstanceState);
 
         CheckBox cbGps, cbFilteredKalman, cbFilteredKalmanGeo;
-        cbGps = (CheckBox) findViewById(R.id.cbGPS);
-        cbFilteredKalman = (CheckBox) findViewById(R.id.cbFilteredKalman);
-        cbFilteredKalmanGeo = (CheckBox) findViewById(R.id.cbFilteredKalmanGeo);
-        CheckBox cb[] = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps};
+        cbGps = findViewById(R.id.cbGPS);
+        cbFilteredKalman = findViewById(R.id.cbFilteredKalman);
+        cbFilteredKalmanGeo = findViewById(R.id.cbFilteredKalmanGeo);
+        CheckBox[] cb = {cbFilteredKalman, cbFilteredKalmanGeo, cbGps};
         for (int i = 0; i < 3; ++i) {
             if (cb[i] == null)
                 continue;
@@ -480,22 +479,16 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
         } else {
             //todo set some status
         }
-        Button gpsProvider = (Button) findViewById(R.id.button_gps);
-        Button fusedProvider = (Button) findViewById(R.id.button_fused);
+        Button gpsProvider = findViewById(R.id.button_gps);
+        Button fusedProvider = findViewById(R.id.button_fused);
         gpsProvider.setSelected(true);
-        gpsProvider.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fusedProvider.setSelected(false);
-                gpsProvider.setSelected(true);
-            }
+        gpsProvider.setOnClickListener(view -> {
+            fusedProvider.setSelected(false);
+            gpsProvider.setSelected(true);
         });
-        fusedProvider.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                gpsProvider.setSelected(false);
-                fusedProvider.setSelected(true);
-            }
+        fusedProvider.setOnClickListener(view -> {
+            gpsProvider.setSelected(false);
+            fusedProvider.setSelected(true);
         });
     }
 
@@ -579,14 +572,14 @@ public class MainActivity extends AppCompatActivity implements LocationServiceIn
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_settings:
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
-                return true;
+        if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(
+                this,
+                SettingsActivity.class
+            );
+            startActivity(intent);
+            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
-
 }
