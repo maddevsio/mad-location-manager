@@ -3,24 +3,6 @@
 
 #include <cstdint>
 
-class Geopoint;
-class IDistanceCalcPolicy {
-private:
-public:
-  virtual double distance_between_points_meters(double lat1, double lon1,
-                                                double lat2, double lon2) = 0;
-};
-
-class Geopoint {
-private:
-  IDistanceCalcPolicy *m_distance_policy;
-
-public:
-  double Lat() const;
-  double Lon() const;
-};
-
-
 typedef struct geopoint {
   double Latitude, Longitude;
 } geopoint_t;

@@ -8,3 +8,5 @@
 /captures
 .externalNativeBuild
 .idea/*
+build/*
+data_generator/build/*

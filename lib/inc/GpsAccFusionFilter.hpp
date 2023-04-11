@@ -51,7 +51,8 @@ public:
                double yAcc,
                double time_ms);
   void update(const FusionFilterState &state,
-              double pos_deviation);
+              double pos_deviation,
+              double vel_deviation = 0.0);
 
   const FusionFilterState& current_state() const {
     return m_current_state;

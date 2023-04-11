@@ -10,6 +10,7 @@ protected:
   Matrix<double, state_dim, state_dim> F;     // state transition model
   Matrix<double, measure_dim, state_dim> H;   // observation model
   Matrix<double, state_dim, control_dim> B;   // control matrix
+
   Matrix<double, state_dim, state_dim> Q;     // process noise covariance
   Matrix<double, measure_dim, measure_dim> R; // observation noise covariance
 

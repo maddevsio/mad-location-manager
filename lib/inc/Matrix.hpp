@@ -17,7 +17,7 @@ requires arithmetic<T>
 class Matrix {
 private:
   static const size_t N = rows * cols;
-  std::array<T, rows * cols> m_data;
+  std::array<T, N> m_data;
 
   void swap_rows(size_t r1, size_t r2) {
     T(*mtx)[cols] = reinterpret_cast<T(*)[cols]>(m_data.data());

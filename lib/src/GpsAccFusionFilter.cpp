@@ -44,9 +44,10 @@ GPSAccFusionFilter::predict(double xAcc,
 
 void
 GPSAccFusionFilter::update(const FusionFilterState &state,
-                           double pos_deviation) {
+                           double pos_deviation,
+                           double vel_deviation) {
   m_predicts_count = 0;
-  rebuild_R(pos_deviation, 0.0);
+  rebuild_R(pos_deviation, vel_deviation);
   Zk.set({
            state.x,
            state.y,

@@ -1,7 +1,5 @@
 #include "Commons.hpp"
-
 #include <math.h>
-#include <assert.h>
 
 double
 degree_to_rad(double degree) {
@@ -23,7 +21,7 @@ miles_per_hour_to_meters_per_second(double mph) {
 
 int
 random_between_2_vals(int low, int hi) {
-  assert(low <= hi);
+  if (low > hi) std::swap<int>(low, hi);
   return (rand() % (hi - low)) + low;
 }
 ///////////////////////////////////////////////////////

@@ -4,20 +4,21 @@
 #include <assert.h>
 
 static uint64_t interleave_bits(uint64_t x, uint64_t y);
-
 uint64_t geohash_encode(double lat,
                         double lon,
                         int prec) {
-  uint64_t ilat, ilon;
-  lat = lat/180.0 + 1.5;
-  lon = lon/360.0 + 1.5;
-  ilat = *reinterpret_cast<uint64_t*>(&lat);
-  ilon = *reinterpret_cast<uint64_t*>(&lon);
-  ilat >>= 20;
-  ilon >>= 20;
-  ilat &= 0x00000000ffffffff;
-  ilon &= 0x00000000ffffffff;
-  return interleave_bits(ilat, ilon) >> ((GEOHASH_MAX_PRECISION-prec)*5);
+  union duint64{
+    double dv;
+    uint64_t ui;
+  };
+  duint64 ilat, ilon;
+  ilat.dv = lat/180.0 + 1.5;
+  ilon.dv = lon/360.0 + 1.5;
+  ilat.ui >>= 20;
+  ilon.ui >>= 20;
+  ilat.ui &= 0x00000000ffffffff;
+  ilon.ui &= 0x00000000ffffffff;
+  return interleave_bits(ilat.ui, ilon.ui) >> ((GEOHASH_MAX_PRECISION-prec)*5);
 }
 ///////////////////////////////////////////////////////
 
@@ -43,9 +44,7 @@ uint64_t interleave_bits(uint64_t x, uint64_t y) {
   y = (y | (y << 4)) & 0x0f0f0f0f0f0f0f0f;
   y = (y | (y << 2)) & 0x3333333333333333;
   y = (y | (y << 1)) & 0x5555555555555555;
-
   return x | (y << 1);
-
   //  use pdep instructions if available !!!
   //  return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y, 0xaaaaaaaaaaaaaaaa);
 }

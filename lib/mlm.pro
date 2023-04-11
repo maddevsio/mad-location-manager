@@ -13,6 +13,7 @@ debug: LIBS += -lgtest
 SOURCES += \
     src/Commons.cpp \
     src/Coordinates.cpp \
+    src/DataGenerator.cpp \
     src/Geohash.cpp \
     src/GpsAccFusionFilter.cpp \
     src/MadgwickAHRS.cpp \
@@ -28,6 +29,7 @@ debug:SOURCES += \
 HEADERS += \
     inc/Commons.hpp \
     inc/Coordinates.hpp \
+    inc/DataGenerator.hpp \
     inc/Geohash.hpp \
     inc/GpsAccFusionFilter.hpp \
     inc/Kalman.hpp \
