@@ -37,20 +37,20 @@ struct gps_location_t {
   double latitude;
   double longitude;
 
-  gps_location_t(): latitude(0.0), longitude(0.0) {}
-  gps_location_t(double latitude, double longitude) :
-    latitude(latitude), longitude(longitude) {}
+  gps_location_t() : latitude(0.0), longitude(0.0) {}
+  gps_location_t(double latitude, double longitude)
+      : latitude(latitude), longitude(longitude) {}
 };
 //////////////////////////////////////////////////////////////
 
 struct gps_speed_t {
-  double value;
   double azimuth;
+  double value;
   double accuracy;
 
-  gps_speed_t(): value(0.0), azimuth(0.0), accuracy(0.0) {}
-  gps_speed_t(double value, double azimuth, double accuracy) :
-    value(value), azimuth(azimuth), accuracy(accuracy) {}
+  gps_speed_t() : azimuth(0.0), value(0.0), accuracy(0.0) {}
+  gps_speed_t(double azimuth, double value, double accuracy)
+      : azimuth(azimuth), value(value), accuracy(accuracy) {}
 };
 //////////////////////////////////////////////////////////////
 
