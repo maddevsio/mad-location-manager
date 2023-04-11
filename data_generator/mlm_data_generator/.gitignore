@@ -71,3 +71,6 @@ Thumbs.db
 *.exe
 
 .cache
+bin/*
+build/*
+compile_commands.json
