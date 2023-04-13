@@ -1,10 +1,9 @@
 #include "commons.h"
 #include "sd_generator.h"
 #include "sensor_data.h"
+#include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
-#include <gtest/gtest.h>
-
 
 int main_generator(int argc, char *argv[]) {
   UNUSED(argc);
