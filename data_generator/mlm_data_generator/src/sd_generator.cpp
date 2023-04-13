@@ -3,8 +3,9 @@
 #include "sensor_data.h"
 #include <assert.h>
 
-gps_coordinate_t gps_coordinate(const gps_coordinate_t &start,
-                                const movement_interval_t &interval, double t) {
+gps_coordinate_t sd_gps_coordinate(const gps_coordinate_t &start,
+                                   const movement_interval_t &interval,
+                                   double t) {
   // todo move this vptr somewhere %)
   static coordinates_vptr vptr = coord_vptr_hq();
   assert(t <= interval.duration);

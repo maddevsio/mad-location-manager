@@ -1,5 +1,5 @@
 local function save_and_run()
-  vim.cmd([[w]])
+  vim.cmd([[wa]])
   vim.cmd([[belowright split]])
   vim.cmd([[resize -4]])
   vim.cmd([[terminal make run]])
