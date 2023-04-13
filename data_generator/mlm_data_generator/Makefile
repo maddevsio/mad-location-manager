@@ -12,17 +12,25 @@ TST_DIR = tests
 GTEST_LIBS = $(shell pkg-config --libs gtest)
 GTEST_FLAGS = $(shell pkg-config --cflags gtest)
 
+PRG = mlm_data_generator
+PRG_UT = mlm_data_generator_unit_tests
+
 LIBS := -lm -lpthread
+LIBS_UT := $(LIBS) $(GTEST_LIBS)
+
 DEFS := -D_USE_MATH_DEFINES
+
 WARN_LEVEL = -Wall -Wextra -pedantic
 
-PRG = mlm_data_generator
 INCLUDES := -Iinc
+SRC_CPP := $(wildcard *.cpp) $(wildcard src/*.cpp)
+SRC_UT := $(SRC_CPP) $(wildcard tests/*.cpp)
 
-SRC_C := $(wildcard *.cpp) $(wildcard src/*.cpp)
+OBJECTS := $(SRC_CPP:%.cpp=$(OBJ_DIR)/%.o)
+OBJECTS_UT := $(SRC_UT:%.cpp=$(OBJ_DIR)/%.o)
+
 CXXFLAGS := -std=gnu++2a -pipe $(WARN_LEVEL)
-# warning. 
-LDFLAGS :=
+LDFLAGS := $(LIBS)
 
 debug: CXXFLAGS += -O0 -ggdb
 debug: all
@@ -30,24 +38,28 @@ debug: all
 release: CXXFLAGS += -O2
 release: all
 
-test: DEFS += -D_UNIT_TESTS_
-test: CXXFLAGS += -O0 -ggdb $(GTEST_FLAGS)
-test: LIBS += $(GTEST_LIBS)
-test: TST_SRC = $(wildcard $(TST_DIR)/*.cpp)
-test: TST_OBJ = $(TST_SRC:%.cpp=$(OBJ_DIR)/%.o)
-test: OBJECTS += $(TST_OBJ)
-test: all
+unit_test: CXXFLAGS += -O0 -ggdb $(GTEST_FLAGS)
+unit_test: LDFLAGS += $(GTEST_LIBS)
+unit_test: DEFS += -D_UNIT_TESTS_
+unit_test: all_ut
 
-OBJECTS := $(SRC_C:%.cpp=$(OBJ_DIR)/%.o)
-LDFLAGS += $(LIBS)
+all: directories clean_main_o $(PRG)
+all_ut: directories clean_main_o $(PRG_UT)
 
-all: directories $(PRG)
+.PHONY: clean_main_o
+clean_main_o:
+	@rm -rf $(OBJ_DIR)/src/main.o
 
 .PHONY: run
 run: all
 	$(BIN_DIR)/$(PRG).elf
 
+.PHONY: run_ut
+run_ut: unit_test
+	$(BIN_DIR)/$(PRG_UT).elf
+
 $(PRG): $(BIN_DIR)/$(PRG)
+$(PRG_UT): $(BIN_DIR)/$(PRG_UT)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
@@ -55,7 +67,11 @@ $(OBJ_DIR)/%.o: %.cpp
 
 $(BIN_DIR)/$(PRG): $(OBJECTS)
 	@mkdir -p $(@D)
-	$(LINK) -o $(BIN_DIR)/$(PRG).elf $^ $(LDFLAGS)
+	$(LINK) -o $@.elf $^ $(LDFLAGS)
+
+$(BIN_DIR)/$(PRG_UT): $(OBJECTS_UT)
+	@mkdir -p $(@D)
+	$(LINK) -o $@.elf $^ $(LDFLAGS)
 
 .PHONY: directories
 directories:
