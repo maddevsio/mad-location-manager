@@ -9,16 +9,16 @@ int main_generator(int argc, char *argv[]) {
   UNUSED(argc);
   UNUSED(argv);
 
-  gps_coordinate_t start_coordinate;
-  start_coordinate.location = gps_location_t(0.0, 0.0);
-  start_coordinate.speed = gps_speed_t(0.0, 0.0, 1.0);
+  gps_coordinate start_coordinate;
+  start_coordinate.location = geopoint(0.0, 0.0);
+  start_coordinate.speed = gps_speed(0.0, 0.0, 1.0);
 
-  std::vector<movement_interval_t> intervals = {{0.0, 3.0, 5.0},
+  std::vector<movement_interval> intervals = {{0.0, 3.0, 5.0},
                                                 {0.0, -6.0, 5.0}};
 
   double t = 1.5;
   for (const auto &interval : intervals) {
-    gps_coordinate_t next_coord =
+    gps_coordinate next_coord =
         sd_gps_coordinate(start_coordinate, interval, t);
 
     std::cout << next_coord.location.latitude << " "

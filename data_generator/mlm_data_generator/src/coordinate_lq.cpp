@@ -1,45 +1,48 @@
 #include "commons.h"
 #include "coordinate.h"
 #include "sensor_data.h"
-#include <math.h>
+#include <cmath>
 
 using namespace coordinate_consts;
 
 // https://en.wikipedia.org/wiki/Great-circle_distance
-static double geo_distance_meters(double lon1, double lat1, double lon2,
-                                  double lat2);
-static gps_location_t point_ahead(gps_location_t point, double distance,
-                                  double azimuth_degrees);
-static gps_location_t point_plus_distance_east(gps_location_t point,
-                                               double distance);
-static gps_location_t point_plus_distance_north(gps_location_t point,
-                                                double distance);
+static double geo_distance_meters(double lat1, double lon1, double lat2,
+                                  double lon2);
+static geopoint point_ahead(geopoint point, double distance,
+                            double azimuth_degrees);
+static geopoint point_plus_distance_east(geopoint point, double distance);
+static geopoint point_plus_distance_north(geopoint point, double distance);
 
-static double coord_distance_between_points_meters(double lat1, double lon1,
-                                                   double lat2, double lon2);
 static double coord_longitude_to_meters(double lon);
 static double coord_latitude_to_meters(double lat);
-static gps_location_t coord_meters_to_geopoint(double lon_meters,
-                                               double lat_meters);
+static geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters);
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
 double geo_distance_meters(double lon1, double lat1, double lon2, double lat2) {
-  double delta_lon = degree_to_rad(lon2 - lon1);
-  double delta_lat = degree_to_rad(lat2 - lat1);
-  double a = pow(sin(delta_lat / 2.0), 2.0) +
-             cos(degree_to_rad(lat1)) * cos(degree_to_rad(lat2)) *
-                 pow(sin(delta_lon / 2.0), 2.0);
+  // Convert latitude and longitude from degrees to radians
+  double lat1Rad = lat1 * M_PI / 180.0;
+  double lon1Rad = lon1 * M_PI / 180.0;
+  double lat2Rad = lat2 * M_PI / 180.0;
+  double lon2Rad = lon2 * M_PI / 180.0;
+
+  // Calculate differences in latitudes and longitudes
+  double delta_lat = lat2Rad - lat1Rad;
+  double delta_lon = lon2Rad - lon1Rad;
+
+  double a =
+      sin(delta_lat / 2.0) * sin(delta_lat / 2.0) +
+      cos(lat1Rad) * cos(lat2Rad) * 
+      sin(delta_lon / 2.0) * sin(delta_lon / 2.0);
   double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
   return EARTH_RADIUS * c;
 }
 //////////////////////////////////////////////////////////////
 
-gps_location_t point_ahead(gps_location_t point, double distance,
-                           double azimuth_degees) {
-  gps_location_t res;
+geopoint point_ahead(geopoint point, double distance, double azimuth_degees) {
+  geopoint res;
   double radius_fraction = distance / EARTH_RADIUS;
   double bearing = degree_to_rad(azimuth_degees);
   double lat1 = degree_to_rad(point.latitude);
@@ -60,20 +63,13 @@ gps_location_t point_ahead(gps_location_t point, double distance,
 }
 //////////////////////////////////////////////////////////////
 
-gps_location_t point_plus_distance_east(gps_location_t point, double distance) {
+geopoint point_plus_distance_east(geopoint point, double distance) {
   return point_ahead(point, distance, 90.0);
 }
 //////////////////////////////////////////////////////////////
 
-gps_location_t point_plus_distance_north(gps_location_t point,
-                                         double distance) {
+geopoint point_plus_distance_north(geopoint point, double distance) {
   return point_ahead(point, distance, 0.0);
-}
-//////////////////////////////////////////////////////////////
-
-double coord_distance_between_points_meters(double lat1, double lon1,
-                                            double lat2, double lon2) {
-  return geo_distance_meters(lon1, lat1, lon2, lat2);
 }
 //////////////////////////////////////////////////////////////
 
@@ -89,18 +85,17 @@ double coord_latitude_to_meters(double lat) {
 }
 //////////////////////////////////////////////////////////////
 
-gps_location_t coord_meters_to_geopoint(double lon_meters, double lat_meters) {
-  gps_location_t point; // = {.latitude = 0.0, .longitude = 0.0};
-  gps_location_t pointEast = point_plus_distance_east(point, lon_meters);
-  gps_location_t pointNorthEast =
-      point_plus_distance_north(pointEast, lat_meters);
+geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters) {
+  geopoint point(0.0, 0.0);
+  geopoint pointEast = point_plus_distance_east(point, lon_meters);
+  geopoint pointNorthEast = point_plus_distance_north(pointEast, lat_meters);
   return pointNorthEast;
 }
 //////////////////////////////////////////////////////////////
 
 coordinates_vptr coord_vptr(void) {
   coordinates_vptr res = {
-      .distance_between_points = coord_distance_between_points_meters,
+      .distance_between_points = geo_distance_meters,
       .longitude_to_meters = coord_longitude_to_meters,
       .latitude_to_meters = coord_latitude_to_meters,
       .meters_to_geopoint = coord_meters_to_geopoint,

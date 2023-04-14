@@ -1,5 +1,5 @@
 #include "commons.h"
-#include <math.h>
+#include <cmath>
 
 double degree_to_rad(double degree) { return degree * M_PI / 180.0; }
 ///////////////////////////////////////////////////////

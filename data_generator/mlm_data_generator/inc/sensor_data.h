@@ -45,15 +45,15 @@ struct abs_accelerometer_t {
 };
 //////////////////////////////////////////////////////////////
 
-/// gps_location - geopoint gps_coordinate
+/// geopoint - geopoint gps_coordinate
 /// @latitude - latitude (axis Y)
 /// @longitude - longitude (axis X)
-struct gps_location_t {
+struct geopoint {
   double latitude;
   double longitude;
 
-  gps_location_t() : latitude(0.0), longitude(0.0) {}
-  gps_location_t(double latitude, double longitude)
+  geopoint() : latitude(0.0), longitude(0.0) {}
+  geopoint(double latitude, double longitude)
       : latitude(latitude), longitude(longitude) {}
 };
 //////////////////////////////////////////////////////////////
@@ -62,13 +62,13 @@ struct gps_location_t {
 /// @azimuth - in degrees (HDOP in NMEA)
 /// @value - speed in m/s
 /// @accuracy - ??? 
-struct gps_speed_t {
+struct gps_speed {
   double azimuth;
   double value;
   double accuracy;
 
-  gps_speed_t() : azimuth(0.0), value(0.0), accuracy(0.0) {}
-  gps_speed_t(double azimuth, double value, double accuracy)
+  gps_speed() : azimuth(0.0), value(0.0), accuracy(0.0) {}
+  gps_speed(double azimuth, double value, double accuracy)
       : azimuth(azimuth), value(value), accuracy(accuracy) {}
 };
 //////////////////////////////////////////////////////////////
@@ -76,9 +76,9 @@ struct gps_speed_t {
 /// gps_coordinate - consists of 2 independent parts : location and speed
 /// @location - see gps_location_t
 /// @speed - see gps_speed_t
-struct gps_coordinate_t {
-  gps_location_t location;
-  gps_speed_t speed;
+struct gps_coordinate {
+  geopoint location;
+  gps_speed speed;
 };
 //////////////////////////////////////////////////////////////
 
