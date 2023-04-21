@@ -16,7 +16,7 @@ PRG = mlm_data_generator
 PRG_UT = mlm_data_generator_unit_tests
 
 LIBS := -lm -lpthread
-LIBS_UT := $(LIBS) $(GTEST_LIBS)
+LIBS_UT := -lm -lpthread $(GTEST_LIBS)
 
 DEFS := -D_USE_MATH_DEFINES
 

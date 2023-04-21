@@ -1,47 +1,54 @@
 #ifndef SENSOR_DATA_H
 #define SENSOR_DATA_H
 
+#include <cmath>
 #include <cstdint>
 /// accelerometer_t - raw accelerometer data (without g compensation)
 /// @x - axis X
 /// @y - axis Y
 /// @z - axis Z
-struct accelerometer_t {
+struct accelerometer {
   double x, y, z;
-  accelerometer_t() : x(0.0), y(0.0), z(0.0) {}
-  accelerometer_t(double x, double y, double z) : x(x), y(y), z(z) {}
+  accelerometer() : x(0.0), y(0.0), z(0.0) {}
+  accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
-// gyroscope_t - raw gyroscope data 
+// gyroscope_t - raw gyroscope data
 // @x - around axis X
 // @y - around axis Y
 // @z - around axis Z
-struct gyroscope_t {
+struct gyroscope {
   double x, y, z;
-  gyroscope_t() : x(0.0), y(0.0), z(0.0) {}
-  gyroscope_t(double x, double y, double z) : x(x), y(y), z(z) {}
+  gyroscope() : x(0.0), y(0.0), z(0.0) {}
+  gyroscope(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
 /// magnetometer_t - raw magnetometer data
 /// @x - axis X
 /// @y - axis Y
 /// @z - axis Z
-struct magnetometer_t {
+struct magnetometer {
   double x, y, z;
-  magnetometer_t() : x(0.0), y(0.0), z(0.0) {}
-  magnetometer_t(double x, double y, double z) : x(x), y(y), z(z) {}
+  magnetometer() : x(0.0), y(0.0), z(0.0) {}
+  magnetometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 //////////////////////////////////////////////////////////////
 
 /// abs_accelerometer_t  - data calculated by quaternion x
-/// linear_accelerometer_data or roatation matrix x linear_accelerometer_data
+/// linear_accelerometer_data or roatation matrix * linear_accelerometer_data vector
 /// @x - axis X (longitude)
 /// @y - axis Y (latitude)
 /// @z - axiz Z (aptitude) zero for now
-struct abs_accelerometer_t {
+struct abs_accelerometer {
   double x, y, z;
-  abs_accelerometer_t() : x(0.0), y(0.0), z(0.0) {}
-  abs_accelerometer_t(double x, double y, double z) : x(x), y(y), z(z) {}
+  abs_accelerometer() : x(0.0), y(0.0), z(0.0) {}
+  abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
+  abs_accelerometer(double acc, double azimuth) {
+    double a_rad = azimuth * M_PI / 180.0;
+    x = acc * cos(a_rad);
+    y = acc * sin(a_rad);
+    z = 0.0; // for now
+  }
 };
 //////////////////////////////////////////////////////////////
 
@@ -49,8 +56,8 @@ struct abs_accelerometer_t {
 /// @latitude - latitude (axis Y)
 /// @longitude - longitude (axis X)
 struct geopoint {
-  double latitude;
-  double longitude;
+  double latitude;  // 0 .. M_PI
+  double longitude; // 0 .. 2 * M_PI
 
   geopoint() : latitude(0.0), longitude(0.0) {}
   geopoint(double latitude, double longitude)
@@ -61,7 +68,7 @@ struct geopoint {
 /// gps_speed - speed received from GPS
 /// @azimuth - in degrees (HDOP in NMEA)
 /// @value - speed in m/s
-/// @accuracy - ??? 
+/// @accuracy - ???
 struct gps_speed {
   double azimuth;
   double value;

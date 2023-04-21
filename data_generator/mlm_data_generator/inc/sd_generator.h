@@ -6,8 +6,8 @@
 #include <vector>
 
 /// movement_interval_t - interval of movement
-/// @azimuth - in degees 
-/// @acceleration - in m/s^2 
+/// @azimuth - in degees
+/// @acceleration - in m/s^2
 /// @duration - seconds
 struct movement_interval {
   double azimuth;      // degrees
@@ -20,7 +20,6 @@ struct movement_interval {
 };
 
 gps_coordinate sd_gps_coordinate(const gps_coordinate &start,
-                                   const movement_interval &interval,
-                                   double t);
+                                 const movement_interval &interval, double t);
 
 #endif // SD_GENERATOR_H

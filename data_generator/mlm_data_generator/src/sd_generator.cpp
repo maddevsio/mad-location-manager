@@ -3,9 +3,9 @@
 #include "sensor_data.h"
 #include <assert.h>
 
+// TODO USE SOME KIND OF PROJECTIONS X and Y . value of acceleration and speed should depend on azimuth! 
 gps_coordinate sd_gps_coordinate(const gps_coordinate &start,
-                                   const movement_interval &interval,
-                                   double t) {
+                                 const movement_interval &interval, double t) {
   // todo move this vptr somewhere %)
   static coordinates_vptr vptr = coord_vptr_hq();
   assert(t <= interval.duration);
@@ -20,3 +20,4 @@ gps_coordinate sd_gps_coordinate(const gps_coordinate &start,
   res.speed = gps_speed(interval.azimuth, v0 + a * t, speed_accuracy);
   return res;
 }
+//////////////////////////////////////////////////////////////
