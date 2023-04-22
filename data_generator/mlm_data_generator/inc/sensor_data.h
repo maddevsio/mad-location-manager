@@ -35,7 +35,8 @@ struct magnetometer {
 //////////////////////////////////////////////////////////////
 
 /// abs_accelerometer_t  - data calculated by quaternion x
-/// linear_accelerometer_data or roatation matrix * linear_accelerometer_data vector
+/// linear_accelerometer_data or roatation matrix * linear_accelerometer_data
+/// vector
 /// @x - axis X (longitude)
 /// @y - axis Y (latitude)
 /// @z - axiz Z (aptitude) zero for now

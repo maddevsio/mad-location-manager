@@ -14,30 +14,30 @@ int main_generator(int argc, char *argv[]) {
   sc.location = geopoint(0.0, 0.0);
   sc.speed = gps_speed(0.0, 0.0, 1.0);
 
-  std::vector<movement_interval> intervals = {
-      {0.0, 5.0, 5.0},
-      {0.0, 0.0, 15.0},
-      {180.0, -5.0, 5.0} // hack. todo implement sign depending on azimuth.
-                         // maybe some projections x and y?
-  };
-
   double start_time = 0.0;
-  double gps_interval = 1.5;  //
+  double gps_interval = 1.5;
   double acc_interval = 0.001; // 1000 per second
   double next_gps_time = gps_interval;
+
+  std::vector<movement_interval> intervals = {
+      {0.0, 5.0, 5.0},
+      //{0.0, 0.0, 15.0},
+      {180.0, 5.0, 5.0},
+  };
 
   for (const auto &interval : intervals) {
     double end_time = start_time + interval.duration;
     abs_accelerometer acc(interval.acceleration, interval.azimuth);
-    while (!std::isgreater(start_time, end_time)) {
+
+    static const double EPS = 1e-9;
+    // while (end_time > start_time) ..
+    while (fabs(end_time - start_time) > EPS) {
       start_time += acc_interval;
-      // std::cout << start_time << "\tACC\t" << acc.x << "\t" << acc.y << "\t"
-      //           << acc.z << "\n";
       sc = sd_gps_coordinate(sc, interval, acc_interval);
-      if (fabs(start_time - next_gps_time) < 1e-9) {
+      if (fabs(start_time - next_gps_time) < EPS) {
         next_gps_time += gps_interval;
-        // std::cout << start_time << " GC " << sc.location.latitude << " "
-        //           << sc.location.longitude << "\n";
+        std::cout << start_time << "\tGC\t" << sc.location.latitude << "\t"
+                  << sc.location.longitude << "\n";
         std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
                   << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
       }
@@ -46,6 +46,8 @@ int main_generator(int argc, char *argv[]) {
     std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
               << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
   } // for (const auto &interval : intervals)
+  std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
+            << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
   return 0;
 }
 //////////////////////////////////////////////////////////////
