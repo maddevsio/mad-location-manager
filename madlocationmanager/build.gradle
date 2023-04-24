@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.library'
     id 'maven-publish'
+    id "com.jfrog.bintray" version "1.8.5"
+
 }
 
 group='com.github.maddevsio'
@@ -108,4 +110,33 @@ project.afterEvaluate {
         }
     }
 }
+bintray {
+    dryRun = false
+    publish = true
+    override = true
+    user = System.getenv('BINTRAY_USER') ?: (project.hasProperty('bintrayUser') ? project.property('bintrayUser') : '')
+    key = System.getenv('BINTRAY_KEY') ?: (project.hasProperty('bintrayKey') ? project.property('bintrayKey') : '')
+    publications = ['mavenPublication']
+
+    pkg {
+        repo = 'maven'
+        name = 'mad-location-manager'
+        userOrg = 'Lezh1k'
+        description = 'This is library for GPS and Accelerometer data "fusion" with Kalman filter'
+        publications = ['mavenPublication']
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/maddevsio/mad-location-manager.git'
+        websiteUrl = 'https://github.com/maddevsio/mad-location-manager.git'
+        issueTrackerUrl = 'https://github.com/maddevsio/mad-location-manager/issues'
+        githubRepo = 'maddevsio/mad-location-manager'
+        githubReleaseNotesFile = 'README.md'
+        version {
+            name = releaseVersion
+            desc = 'Mad Location Manager v' + releaseVersion
+            released = new Date()
+            vcsTag = releaseVersion
+        }
+    }
+}
+
 
