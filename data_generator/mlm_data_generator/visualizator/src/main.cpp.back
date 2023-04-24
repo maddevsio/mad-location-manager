@@ -1,0 +1,62 @@
+#include "gtkmm/button.h"
+#include "gtkmm/enums.h"
+#include "gtkmm/label.h"
+#include <gtkmm.h>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <shumate/shumate.h>
+
+class MyWindow : public Gtk::Window {
+public:
+  MyWindow();
+  virtual ~MyWindow();
+
+private:
+  Gtk::Button m_btnCount;
+  Gtk::Label m_lblCount;
+  Gtk::Grid m_grid;
+
+  void on_btnCount_clicked(const Glib::ustring &data);
+};
+
+MyWindow::MyWindow() : m_btnCount("btnCount"), m_lblCount("lblCount") {
+  this->set_title("Data generator visualizer");
+
+  // btnCount
+  m_btnCount.signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &MyWindow::on_btnCount_clicked), "button 1"));
+
+  // lblCount
+  m_lblCount.set_halign(Gtk::Align::CENTER);
+
+  // shumate map
+  ShumateSimpleMap *map = shumate_simple_map_new();
+  
+
+  // grid
+  m_grid.set_margin(12);
+  m_grid.attach(m_btnCount, 0, 0);
+  m_grid.attach(m_lblCount, 1, 0);
+
+  m_grid.set_column_spacing(3);
+
+  set_child(m_grid);
+}
+//////////////////////////////////////////////////////////////
+
+MyWindow::~MyWindow() {
+  // do nothing yet
+}
+//////////////////////////////////////////////////////////////
+
+void MyWindow::on_btnCount_clicked(const Glib::ustring &data) {
+  static int count = 0;
+  m_lblCount.set_text(std::to_string(++count));
+}
+//////////////////////////////////////////////////////////////
+
+int main(int argc, char *argv[]) {
+  auto app = Gtk::Application::create("org.gtkmm.examples.base");
+  return app->make_window_and_run<MyWindow>(argc, argv);
+}
