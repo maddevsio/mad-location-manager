@@ -95,7 +95,7 @@ mrproper:
 	@rm -rf $(BIN_DIR)
 
 .PHONY: valgrind_memcheck
-valgrind_memcheck:
-	@valgrind --leak-check=full --suppressions=/usr/share/gtk-4.0/valgrind/gtk.supp \
+valgrind_memcheck: debug
+	@valgrind --tool=memcheck --num-callers=50 --leak-check=full --suppressions=/usr/share/gtk-4.0/valgrind/gtk.supp \
 	--suppressions=/usr/share/glib-2.0/valgrind/glib.supp --leak-resolution=high \
-	--show-leak-kinds=definite,indirect --log-file=vgdump $(BIN_DIR)/$(PRG).elf
+	--show-leak-kinds=definite,possible --log-file=vgdump $(BIN_DIR)/$(PRG).elf

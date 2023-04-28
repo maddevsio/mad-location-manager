@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include <shumate/shumate.h>
 
-enum marker_color { MC_GREEN = 0, MC_RED, MC_BLUE };
+enum marker_color { MC_GREEN = 0, MC_RED, MC_BLUE, MC_COUNT };
 //////////////////////////////////////////////////////////////
 
 struct generator_main_window {
@@ -12,16 +12,16 @@ struct generator_main_window {
   ShumateSimpleMap *simple_map;
   ShumateMapSourceRegistry *map_source_registry;
   ShumateMarkerLayer *map_marker_layer;
-  ShumatePathLayer *map_path_layer_green;
-  ShumatePathLayer *map_path_layer_red;
-  ShumatePathLayer *map_path_layer_blue;
+  ShumatePathLayer *map_path_layers[MC_COUNT];  // see marker color
 
   generator_main_window();
   ~generator_main_window();
 };
 //////////////////////////////////////////////////////////////
 
-void generator_main_window_bind_to_app(GtkApplication *app,
-                                       generator_main_window *gmw);
+void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw);
+
+void gmw_add_marker(generator_main_window *gmw, marker_color mc,
+                    double latitude, double longitude);
 
 #endif
