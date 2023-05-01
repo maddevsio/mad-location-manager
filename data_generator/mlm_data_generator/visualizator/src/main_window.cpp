@@ -4,6 +4,9 @@
 
 static void gmw_btn_add_next_point_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
+static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
+                                                  int n_press, double x,
+                                                  double y, gpointer user_data);
 
 generator_main_window::generator_main_window()
     : window(nullptr),
@@ -60,6 +63,13 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   shumate_simple_map_add_overlay_layer(gmw->simple_map,
                                        SHUMATE_LAYER(gmw->map_marker_layer));
 
+  // todo move to gmv and free in destructor to avoid memory leak
+  GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
+  gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
+                            GTK_EVENT_CONTROLLER(ggc));
+  g_signal_connect(ggc, "pressed",
+                   G_CALLBACK(gmw_simple_map_gesture_click_released), gmw);
+
   // grid
   GtkWidget *grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
@@ -73,6 +83,17 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid);
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
+                                           int n_press, double x, double y,
+                                           gpointer user_data) {
+  generator_main_window *gmw = reinterpret_cast<generator_main_window*>(user_data);
+  ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
+  double lat, lng;
+  shumate_viewport_widget_coords_to_location(vp, GTK_WIDGET(gmw->simple_map), x, y, &lat, &lng);
+  gmw_add_marker(gmw, MC_RED, lat, lng);
 }
 //////////////////////////////////////////////////////////////
 
