@@ -18,8 +18,16 @@ struct movement_interval {
   movement_interval(double azimuth, double acceleration, double duration)
       : azimuth(azimuth), acceleration(acceleration), duration(duration) {}
 };
+//////////////////////////////////////////////////////////////
 
-gps_coordinate sd_gps_coordinate(const gps_coordinate &start,
-                                 const movement_interval &interval, double t);
+gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
+                                             const movement_interval &interval,
+                                             double t);
 
-#endif // SD_GENERATOR_H
+abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
+                                                   const gps_coordinate &b,
+                                                   double acceleration_time,
+                                                   double interval_time,
+                                                   double time_of_interest);
+
+#endif // sd_generator_h

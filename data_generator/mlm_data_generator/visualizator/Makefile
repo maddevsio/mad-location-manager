@@ -35,7 +35,7 @@ SRC_UT := $(SRC_CPP) $(wildcard tests/*.cpp)
 OBJECTS := $(SRC_CPP:%.cpp=$(OBJ_DIR)/%.o)
 OBJECTS_UT := $(SRC_UT:%.cpp=$(OBJ_DIR)/%.o)
 
-CXXFLAGS := -std=gnu++2a -pipe $(WARN_LEVEL) $(SHUMATE_FLAGS) $(GTKMM_FLAGS)
+CXXFLAGS := -std=gnu++11 -pipe $(WARN_LEVEL) $(SHUMATE_FLAGS) $(GTKMM_FLAGS)
 LDFLAGS := $(LIBS)
 
 debug: CXXFLAGS += -O0 -ggdb
@@ -98,4 +98,7 @@ mrproper:
 valgrind_memcheck: debug
 	@valgrind --tool=memcheck --num-callers=50 --leak-check=full --suppressions=/usr/share/gtk-4.0/valgrind/gtk.supp \
 	--suppressions=/usr/share/glib-2.0/valgrind/glib.supp --leak-resolution=high \
-	--show-leak-kinds=definite,possible --log-file=vgdump $(BIN_DIR)/$(PRG).elf
+	--show-leak-kinds=definite --log-file=vgdump $(BIN_DIR)/$(PRG).elf
+	# @valgrind --tool=memcheck --num-callers=50 --leak-check=full --suppressions=/usr/share/gtk-4.0/valgrind/gtk.supp \
+	# --suppressions=/usr/share/glib-2.0/valgrind/glib.supp --leak-resolution=high \
+	# --show-leak-kinds=definite,possible --log-file=vgdump $(BIN_DIR)/$(PRG).elf

@@ -21,7 +21,7 @@ int main_generator(int argc, char *argv[]) {
 
   std::vector<movement_interval> intervals = {
       {0.0, 5.0, 5.0},
-      //{0.0, 0.0, 15.0},
+      /* {0.0, 0.0, 15.0}, */
       {180.0, 5.0, 5.0},
   };
 
@@ -33,7 +33,7 @@ int main_generator(int argc, char *argv[]) {
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > EPS) {
       start_time += acc_interval;
-      sc = sd_gps_coordinate(sc, interval, acc_interval);
+      sc = sd_gps_coordinate_in_interval(sc, interval, acc_interval);
       if (fabs(start_time - next_gps_time) < EPS) {
         next_gps_time += gps_interval;
         std::cout << start_time << "\tGC\t" << sc.location.latitude << "\t"

@@ -25,7 +25,7 @@ TEST(sd_generator, test_speed_generation) {
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > EPS) {
       start_time += acc_interval;
-      sc = sd_gps_coordinate(sc, interval, acc_interval);
+      sc = sd_gps_coordinate_in_interval(sc, interval, acc_interval);
     } // while (end_time > start_time);
   }   // for (const auto &interval : intervals)
 

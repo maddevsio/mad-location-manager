@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include "commons.h"
 /// accelerometer_t - raw accelerometer data (without g compensation)
 /// @x - axis X
 /// @y - axis Y
@@ -45,7 +46,7 @@ struct abs_accelerometer {
   abs_accelerometer() : x(0.0), y(0.0), z(0.0) {}
   abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
   abs_accelerometer(double acc, double azimuth) {
-    double a_rad = azimuth * M_PI / 180.0;
+    double a_rad = degree_to_rad(azimuth);
     x = acc * cos(a_rad);
     y = acc * sin(a_rad);
     z = 0.0; // for now

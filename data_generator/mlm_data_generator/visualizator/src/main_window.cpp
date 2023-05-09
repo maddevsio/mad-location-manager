@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-static void gmw_btn_add_next_point_clicked(GtkWidget *btn, gpointer ud);
+static void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                                   int n_press, double x,
@@ -28,10 +28,10 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   gtk_window_set_default_size(GTK_WINDOW(gmw->window), 800, 600);
 
   // buttons
-  GtkWidget *btn_add_next_point = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_add_next_point), "Generate next point");
-  g_signal_connect(btn_add_next_point, "clicked",
-                   G_CALLBACK(gmw_btn_add_next_point_clicked), gmw);
+  GtkWidget *btn_save_trajectory = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_save_trajectory), "Save trajectory");
+  g_signal_connect(btn_save_trajectory, "clicked",
+                   G_CALLBACK(gmw_btn_save_trajectory), gmw);
 
   GtkWidget *btn_clear_all_points = gtk_button_new();
   gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
@@ -53,7 +53,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   // shumate_map_go_to_full(map, 36.5519514, 31.9801362, 14.0);
 
   gmw->map_marker_layer = shumate_marker_layer_new(vp);
-
   for (size_t i = 0; i < MC_COUNT; ++i) {
     gmw->map_path_layers[i] = shumate_path_layer_new(vp);
     shumate_simple_map_add_overlay_layer(
@@ -67,7 +66,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
   gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
                             GTK_EVENT_CONTROLLER(ggc));
-  g_signal_connect(ggc, "pressed",
+  g_signal_connect(ggc, "released",
                    G_CALLBACK(gmw_simple_map_gesture_click_released), gmw);
 
   // grid
@@ -77,7 +76,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
   gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
 
-  gtk_grid_attach(GTK_GRID(grid), btn_add_next_point, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(gmw->simple_map), 0, 1, 2, 2);
 
@@ -89,15 +88,23 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
 void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                            int n_press, double x, double y,
                                            gpointer user_data) {
-  generator_main_window *gmw = reinterpret_cast<generator_main_window*>(user_data);
+  if (n_press > 1) return;  // do nothing
+  GdkModifierType mt = gtk_event_controller_get_current_event_state(
+      GTK_EVENT_CONTROLLER(gesture));
+  if (!(mt & GDK_CONTROL_MASK)) return;  // add marker only with ctrl
+
+  generator_main_window *gmw =
+      reinterpret_cast<generator_main_window *>(user_data);
   ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
   double lat, lng;
-  shumate_viewport_widget_coords_to_location(vp, GTK_WIDGET(gmw->simple_map), x, y, &lat, &lng);
+  shumate_viewport_widget_coords_to_location(vp, GTK_WIDGET(gmw->simple_map), x,
+                                             y, &lat, &lng);
   gmw_add_marker(gmw, MC_RED, lat, lng);
 }
 //////////////////////////////////////////////////////////////
 
 void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
+  (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   for (int i = 0; i < MC_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->map_path_layers[i]);
@@ -106,39 +113,11 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_add_next_point_clicked(GtkWidget *btn, gpointer ud) {
+void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   (void)btn;
-  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  struct tst {
-    marker_color color;
-    double latitude;
-    double longitude;
-  };
-  // clang-format off
-  static const tst markers[] = {
-    {MC_RED, 36.5519514, 31.9801362},
-    {MC_RED, 36.5519524, 31.9813362},
-    {MC_RED, 36.5519534, 31.9823362},
-    {MC_RED, 36.5519544, 31.9834362},
-
-    {MC_BLUE, 36.5519514, 31.9815362},
-    {MC_BLUE, 36.5529524, 31.9815362},
-    {MC_BLUE, 36.5539534, 31.9815362},
-    {MC_BLUE, 36.5549544, 31.9815362},
-
-    {MC_GREEN, 36.5559514, 31.9815362},
-    {MC_GREEN, 36.5569524, 31.9815362},
-    {MC_GREEN, 36.5579534, 31.9815362},
-    {MC_GREEN, 36.5589544, 31.9815362},
-
-    {MC_COUNT, 0.0, 0.0},
-  };
-  // clang-format on
-  static const tst *m = markers;
-  gmw_add_marker(gmw, m->color, m->latitude, m->longitude);
-  if ((++m)->color == MC_COUNT) {
-    m = markers;
-  }
+  (void)ud;
+  /* generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+   */
 }
 //////////////////////////////////////////////////////////////
 
