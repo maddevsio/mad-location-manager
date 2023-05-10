@@ -22,7 +22,6 @@ struct vincenty_result {
 
 static vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
                                         double lon2);
-// todo vincenty_direct (see point_ahead)
 //////////////////////////////////////////////////////////////
 
 static double geo_distance_meters(double lat1, double lon1, double lat2,

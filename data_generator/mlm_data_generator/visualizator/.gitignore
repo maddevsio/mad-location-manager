@@ -73,5 +73,4 @@ Thumbs.db
 .cache
 bin/*
 build/*
-compile_commands.json
 vgdump
