@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdint>
+
 #include "commons.h"
 /// accelerometer_t - raw accelerometer data (without g compensation)
 /// @x - axis X
@@ -49,8 +50,11 @@ struct abs_accelerometer {
     double a_rad = degree_to_rad(azimuth);
     x = acc * cos(a_rad);
     y = acc * sin(a_rad);
-    z = 0.0; // for now
+    z = 0.0;  // for now
   }
+
+  double azimuth(void) const { return rad_to_degree(atan2(y, x)); }
+  double acceleration(void) const { return sqrt(x * x + y * y); }
 };
 //////////////////////////////////////////////////////////////
 
@@ -58,8 +62,8 @@ struct abs_accelerometer {
 /// @latitude - latitude (axis Y)
 /// @longitude - longitude (axis X)
 struct geopoint {
-  double latitude;  // 0 .. M_PI
-  double longitude; // 0 .. 2 * M_PI
+  double latitude;   // 0 .. M_PI
+  double longitude;  // 0 .. 2 * M_PI
 
   geopoint() : latitude(0.0), longitude(0.0) {}
   geopoint(double latitude, double longitude)
@@ -91,4 +95,4 @@ struct gps_coordinate {
 };
 //////////////////////////////////////////////////////////////
 
-#endif // SENSOR_DATA_H
+#endif  // SENSOR_DATA_H

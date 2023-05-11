@@ -1,12 +1,14 @@
-#include "commons.h"
-#include "coordinate.h"
-#include "sensor_data.h"
 #include <assert.h>
+#include <math.h>
+
 #include <exception>
 #include <iostream>
 #include <limits>
-#include <math.h>
 #include <stdexcept>
+
+#include "commons.h"
+#include "coordinate.h"
+#include "sensor_data.h"
 
 using namespace coordinate_consts;
 
@@ -64,12 +66,12 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
   double cosU2 = cos(U2);
 
   double l = L, lp = 2 * M_PI;
-  int iters = 200;
 
   double sinL = 0., cosL = 0.;
   double sinS = 0., cosS = 0., sig = 0.;
   double sinA = 0., cosSqA = 0.;
   double cos2SM = 0.;
+  int iters = 100;
   do {
     // iteration
     sinL = sin(l);
@@ -80,7 +82,7 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
 
     // if (sinSigma == 0.0) { }
     if (fabs(sinS) < std::numeric_limits<double>::epsilon()) {
-      return vincenty_result(0.0, 0.0, 0.0); // co-incident points
+      return vincenty_result(0.0, 0.0, 0.0);  // co-incident points
     }
 
     cosS = sinU1 * sinU2 + cosU1 * cosU2 * cosL;
@@ -105,16 +107,19 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
   }
 
   double uSq = cosSqA * (a * a - b * b) / (b * b);
+  /* https://en.wikipedia.org/wiki/Vincenty%27s_formulae#Vincenty's_modification
+   */
   double k1 = (sqrt(1 + uSq) - 1) / (sqrt(1 + uSq) + 1);
   double A = (1 + 0.25 * k1 * k1) / (1 - k1);
   double B = k1 * (1. - 3. / 8. * k1 * k1);
-  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq))); */
+  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 *
+   * uSq))); */
   /* double B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
   double ds = B * sinS *
-              (cos2SM + B / 4 *
-                            (cosS * (-1 + 2 * cos2SM * cos2SM) -
-                             B / 6 * cos2SM * (-3 + 4 * sinS * sinS) *
-                                 (-3 + 4 * cos2SM * cos2SM)));
+              (cos2SM + B / 4. *
+                            (cosS * (-1. + 2. * cos2SM * cos2SM) -
+                             B / 6. * cos2SM * (-3. + 4. * sinS * sinS) *
+                                 (-3. + 4. * cos2SM * cos2SM)));
   double s = b * A * (sig - ds);
   double a1 = atan2(cosU2 * sinL, cosU1 * sinU2 - sinU1 * cosU2 * cosL);
   double a2 = atan2(cosU1 * sinL, -sinU1 * cosU2 + cosU1 * sinU2 * cosL);
@@ -154,27 +159,30 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
   double sina = cosU1 * sina1;
 
   double uSq = (1 - sina * sina) * (a * a - b * b) / (b * b);
-  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq))); */
-  /* double B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
-
+  /* https://en.wikipedia.org/wiki/Vincenty%27s_formulae#Vincenty's_modification
+   */
   double k1 = (sqrt(1 + uSq) - 1) / (sqrt(1 + uSq) + 1);
   double A = (1 + 0.25 * k1 * k1) / (1 - k1);
   double B = k1 * (1. - 3. / 8. * k1 * k1);
+  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 *
+   * uSq))); */
+  /* double B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
 
   double sinSig = 0., cosSig = 0.;
   double cos2sigM = 0.;
   double sig = distance / (b * A);
-  double sigp; // prev
-  int iters = 200;
+  double sigp;  // prev
+  int iters = 100;
   do {
     cos2sigM = cos(2 * sig1 + sig);
     sinSig = sin(sig);
     cosSig = cos(sig);
     double dsig =
         B * sinSig *
-        (cos2sigM + (B / 4) * (cosSig * (-1 + 2 * cos2sigM * cos2sigM) -
-                               (B / 6) * cos2sigM * (-3 + 4 * sinSig * sinSig) *
-                                   (-3 + 4 * cos2sigM * cos2sigM)));
+        (cos2sigM + B / 4. *
+                        (cosSig * (-1. + 2. * cos2sigM * cos2sigM) -
+                         B / 6. * cos2sigM * (-3. + 4. * sinSig * sinSig) *
+                             (-3. + 4. * cos2sigM * cos2sigM)));
     sigp = sig;
     sig = distance / (b * A) + dsig;
   } while ((fabs(sig - sigp) > 1e-12) && --iters);
@@ -185,15 +193,15 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
 
   double x = sinU1 * sinSig - cosU1 * cosSig * cosa1;
   double lat2 = rad_to_degree(atan2(sinU1 * cosSig + cosU1 * sinSig * cosa1,
-                                    (1 - f) * sqrt(sina * sina + x * x)));
+                                    (1. - f) * sqrt(sina * sina + x * x)));
   double l = atan2(sinSig * sina1, cosU1 * cosSig - sinU1 * sinSig * cosa1);
-  double cosSqa = 1 - sina * sina;
-  double C = (f / 16) * cosSqa * (4 + f * (4 - 3 * cosSqa));
+  double cosSqa = 1. - sina * sina;
+  double C = f / 16. * cosSqa * (4. + f * (4. - 3. * cosSqa));
   double L =
-      l -
-      (1 - C) * f * sina *
-          (sig + C * sinSig *
-                     (cos2sigM + C * cosSig * (-1 + 2 * cos2sigM * cos2sigM)));
+      l - (1. - C) * f * sina *
+              (sig +
+               C * sinSig *
+                   (cos2sigM + C * cosSig * (-1. + 2. * cos2sigM * cos2sigM)));
   double l1 = degree_to_rad(point.longitude);
   // normalize to -180..+180
   double lon2 = fmod(L + l1 + 3 * M_PI, 2 * M_PI) - M_PI;
@@ -226,7 +234,7 @@ double coord_latitude_to_meters(double lat) {
 //////////////////////////////////////////////////////////////
 
 geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters) {
-  geopoint point(0.0, 0.0); // = {.latitude = 0.0, .longitude = 0.0};
+  geopoint point(0.0, 0.0);  // = {.latitude = 0.0, .longitude = 0.0};
   geopoint point_east = point_plus_distance_east(point, lon_meters);
   geopoint point_north_east = point_plus_distance_north(point_east, lat_meters);
   return point_north_east;
