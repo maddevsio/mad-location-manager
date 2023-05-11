@@ -98,15 +98,18 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
             (sig +
              C * sinS * (cos2SM + C * cosS * (-1.0 + 2.0 * cos2SM * cos2SM)));
 
-  } while (fabs(l - lp) > 1e-12 && --iters);
+  } while ((fabs(l - lp) > 1e-12) && --iters);
 
   if (!iters) {
     throw std::invalid_argument("equation does not converge");
   }
 
   double uSq = cosSqA * (a * a - b * b) / (b * b);
-  double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
-  double B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+  double k1 = (sqrt(1 + uSq) - 1) / (sqrt(1 + uSq) + 1);
+  double A = (1 + 0.25 * k1 * k1) / (1 - k1);
+  double B = k1 * (1. - 3. / 8. * k1 * k1);
+  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq))); */
+  /* double B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
   double ds = B * sinS *
               (cos2SM + B / 4 *
                             (cosS * (-1 + 2 * cos2SM * cos2SM) -
@@ -151,9 +154,12 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
   double sina = cosU1 * sina1;
 
   double uSq = (1 - sina * sina) * (a * a - b * b) / (b * b);
-  double A =
-      1 + (uSq / 16384) * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
-  double B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq))); */
+  /* double B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
+
+  double k1 = (sqrt(1 + uSq) - 1) / (sqrt(1 + uSq) + 1);
+  double A = (1 + 0.25 * k1 * k1) / (1 - k1);
+  double B = k1 * (1. - 3. / 8. * k1 * k1);
 
   double sinSig = 0., cosSig = 0.;
   double cos2sigM = 0.;
@@ -171,7 +177,7 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
                                    (-3 + 4 * cos2sigM * cos2sigM)));
     sigp = sig;
     sig = distance / (b * A) + dsig;
-  } while (fabs(sig - sigp) > 1e-12 && --iters);
+  } while ((fabs(sig - sigp) > 1e-12) && --iters);
 
   if (!iters) {
     throw std::invalid_argument("equation does not converge");

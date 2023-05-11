@@ -3,7 +3,6 @@
 #include "sensor_data.h"
 #include <cmath>
 #include <exception>
-#include <stdexcept>
 
 using namespace coordinate_consts;
 
@@ -99,8 +98,12 @@ geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters) {
 
 double azimuth_between_points(double lat1, double lon1, double lat2,
                               double lon2) {
-  throw std::invalid_argument("not implemented for lq yet");
-  return 0.0;
+  double dl = lon2 - lon1;
+  double f1 = lat1;
+  double f2 = lat2;
+  double a =
+      atan2(sin(dl) * cos(f2), cos(f1) * sin(f2) - sin(f1) * cos(f2) * cos(dl));
+  return rad_to_degree(a);
 }
 //////////////////////////////////////////////////////////////
 

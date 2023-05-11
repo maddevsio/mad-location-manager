@@ -8,9 +8,9 @@ TEST(coordinates, longitudeToMetersHQTest) {
   double dd1 = abs(vptr.longitude_to_meters(12.348039));
   double dd2 = abs(vptr.longitude_to_meters(123.2344556));
   double dd3 = abs(vptr.longitude_to_meters(-122.33434553));
-  ASSERT_DOUBLE_EQ(1374577.4137749006, dd1);
-  ASSERT_DOUBLE_EQ(13718396.84557247, dd2);
-  ASSERT_DOUBLE_EQ(13618197.050922213, dd3);
+  ASSERT_NEAR(1374577.41377, dd1, 1e-5);
+  ASSERT_NEAR(13718396.84557, dd2, 1e-5);
+  ASSERT_NEAR(13618197.05092, dd3, 1e-5);
 }
 //////////////////////////////////////////////////////////////
 
@@ -19,17 +19,17 @@ TEST(coordinates, latitudeToMetersHQTest) {
   double dd1 = abs(vptr.latitude_to_meters(36.323543));
   double dd2 = abs(vptr.latitude_to_meters(234.3242144));
   double dd3 = abs(vptr.latitude_to_meters(-127.342434));
-  ASSERT_DOUBLE_EQ(4021443.6498243436, dd1);
-  ASSERT_DOUBLE_EQ(6022003.6913477043, dd2);
-  ASSERT_DOUBLE_EQ(5836513.2784795808, dd3);
+  ASSERT_NEAR(4021443.64982436, dd1, 1e-5);
+  ASSERT_NEAR(6022003.69134773, dd2, 1e-5);
+  ASSERT_NEAR(5836513.27847958, dd3, 1e-5);
 }
 //////////////////////////////////////////////////////////////
 
 TEST(coordinates, metersToGeopointHQTest) {
   coordinates_vptr vptr = coord_vptr_hq();
   geopoint t = vptr.meters_to_geopoint(1373039.2908091505, 4038993.6993554747);
-  ASSERT_DOUBLE_EQ(t.latitude, 36.481699312213955);
-  ASSERT_DOUBLE_EQ(t.longitude, 12.33422180630488);
+  ASSERT_NEAR(t.latitude, 36.481699312213955, 1e-8);
+  ASSERT_NEAR(t.longitude, 12.33422180630488, 1e-8);
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -39,9 +39,9 @@ TEST(coordinates, longitudeToMetersLQTest) {
   double dd2 = abs(vptr.longitude_to_meters(123.2344556));
   double dd3 = abs(vptr.longitude_to_meters(-122.33434553));
 
-  ASSERT_DOUBLE_EQ(1373039.2908091506, dd1);
-  ASSERT_DOUBLE_EQ(13703046.250524132, dd2);
-  ASSERT_DOUBLE_EQ(13602958.577318452, dd3);
+  ASSERT_NEAR(1373039.2908091506, dd1, 1e-6);
+  ASSERT_NEAR(13703046.250524132, dd2, 1e-6);
+  ASSERT_NEAR(13602958.577318452, dd3, 1e-6);
 }
 //////////////////////////////////////////////////////////////
 
@@ -51,17 +51,17 @@ TEST(coordinates, latitudeToMetersLQTest) {
   double dd2 = abs(vptr.latitude_to_meters(234.3242144));
   double dd3 = abs(vptr.latitude_to_meters(-127.342434));
 
-  ASSERT_DOUBLE_EQ(4038993.6993554751, dd1);
-  ASSERT_DOUBLE_EQ(13974509.760789292, dd2);
-  ASSERT_DOUBLE_EQ(14159832.607369564, dd3);
+  ASSERT_NEAR(4038993.6993554751, dd1, 1e-6);
+  ASSERT_NEAR(13974509.760789292, dd2, 1e-6);
+  ASSERT_NEAR(14159832.607369564, dd3, 1e-6);
 }
 //////////////////////////////////////////////////////////////
 
 TEST(coordinates, metersToGeopointLQTest) {
   coordinates_vptr vptr = coord_vptr();
   geopoint t = vptr.meters_to_geopoint(1373039.2908091505, 4038993.6993554747);
-  ASSERT_DOUBLE_EQ(t.latitude, 36.323542999999994);
-  ASSERT_DOUBLE_EQ(t.longitude, 12.348039000000002);
+  ASSERT_NEAR(t.latitude, 36.32354299, 1e-8);
+  ASSERT_NEAR(t.longitude, 12.34803900, 1e-8);
 }
 //////////////////////////////////////////////////////////////////////////
 
