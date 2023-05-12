@@ -45,32 +45,16 @@ TEST(sd_generator, test_abs_acc_generation) {
 
   abs_accelerometer acc =
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
-
-  auto vptr = coord_vptr_hq();
   std::vector<movement_interval> intervals = {
       {acc.azimuth(), acc.acceleration(), 5.0},
-      {0.0, 0.0, 10.0},
+      {acc.azimuth(), 0.0, 10.0},
   };
 
   for (const auto &interval : intervals) {
     c = sd_gps_coordinate_in_interval(c, interval, interval.duration);
   }
 
-  std::cout.precision(12);
-  std::cout << "b_lat: " << b.location.latitude << "\n";
-  std::cout << "c_lat: " << c.location.latitude << "\n\n";
-  std::cout << "b_lon: " << b.location.longitude << "\n";
-  std::cout << "c_lon: " << c.location.longitude << "\n\n";
-
-  std::cout << "ab: "
-            << vptr.distance_between_points(
-                   a.location.latitude, a.location.longitude,
-                   b.location.latitude, b.location.longitude)
-            << "\n";
-  std::cout << "ac: "
-            << vptr.distance_between_points(
-                   a.location.latitude, a.location.longitude,
-                   c.location.latitude, c.location.longitude)
-            << "\n";
+  ASSERT_NEAR(c.location.longitude, b.location.longitude, 1e-6);
+  ASSERT_NEAR(c.location.latitude, b.location.latitude, 1e-6);
 }
 //////////////////////////////////////////////////////////////

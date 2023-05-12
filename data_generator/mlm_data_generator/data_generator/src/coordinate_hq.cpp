@@ -13,9 +13,9 @@
 using namespace coordinate_consts;
 
 struct vincenty_result {
-  double distance;
-  double a1;
-  double a2;
+  double distance;  // in meters
+  double a1;        // in degrees
+  double a2;        // in degrees
 
   vincenty_result() : distance(0.), a1(0.), a2(0.0) {}
   vincenty_result(double distance, double a1, double a2)
@@ -123,7 +123,8 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
   double s = b * A * (sig - ds);
   double a1 = atan2(cosU2 * sinL, cosU1 * sinU2 - sinU1 * cosU2 * cosL);
   double a2 = atan2(cosU1 * sinL, -sinU1 * cosU2 + cosU1 * sinU2 * cosL);
-  return vincenty_result(s, a1, a2);
+
+  return vincenty_result(s, rad_to_degree(a1), rad_to_degree(a2));
 }
 //////////////////////////////////////////////////////////////
 
@@ -203,8 +204,7 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
                C * sinSig *
                    (cos2sigM + C * cosSig * (-1. + 2. * cos2sigM * cos2sigM)));
   double l1 = degree_to_rad(point.longitude);
-  // normalize to -180..+180
-  double lon2 = fmod(L + l1 + 3 * M_PI, 2 * M_PI) - M_PI;
+  double lon2 = L + l1;
   lon2 = rad_to_degree(lon2);
   /* double a2 = atan2(sina, -sinU1 * sinSig + cosU1 * cosSig * cosa1); */
   return geopoint(lat2, lon2);

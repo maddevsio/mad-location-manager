@@ -82,6 +82,9 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid);
+
+  gmw_add_marker(gmw, MC_RED, 36.557275, 31.994406);
+  gmw_add_marker(gmw, MC_GREEN, 36.5704424697, 31.9768292735);
 }
 //////////////////////////////////////////////////////////////
 
