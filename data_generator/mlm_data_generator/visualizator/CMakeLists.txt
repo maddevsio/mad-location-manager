@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # These instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
-file(GLOB_RECURSE sources      src/*.cpp inc/*.h)
+file(GLOB_RECURSE sources src/*.cpp inc/*.h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
 file(GLOB_RECURSE data resources/*)
 # You can use set(sources src/main.cpp) etc if you don't want to
@@ -37,7 +37,8 @@ target_link_libraries(mlm_visualizer ${GTK_LIBRARIES})
 target_link_libraries(mlm_visualizer ${SHUMATE_LIBRARIES})
 
 # This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(mlm_visualizer PRIVATE inc)
+# target_include_directories(mlm_visualizer PRIVATE inc resources)
+target_include_directories(mlm_visualizer PUBLIC inc)
 # Just for mlm_visualizer add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)

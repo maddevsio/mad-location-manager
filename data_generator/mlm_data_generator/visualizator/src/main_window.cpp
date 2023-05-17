@@ -1,6 +1,58 @@
 #include "main_window.h"
 
+#include <filesystem>
 #include <iostream>
+#include <vector>
+
+struct geopoint {
+  double latitude;
+  double longitude;
+
+  geopoint() : latitude(0.), longitude(0.) {}
+  geopoint(double lat, double lon) : latitude(lat), longitude(lon) {}
+};
+//////////////////////////////////////////////////////////////
+
+struct generator_main_window {
+  GtkWidget *window;
+  ShumateSimpleMap *simple_map;
+  ShumateMapSourceRegistry *map_source_registry;
+  ShumateMarkerLayer *map_marker_layer;
+  ShumatePathLayer *map_path_layers[MC_COUNT];  // see marker color enum
+
+  std::string binary_path;
+  std::vector<geopoint> lst_geopoints;
+
+  generator_main_window(const char *binary_path = "");
+  ~generator_main_window();
+};
+
+generator_main_window::generator_main_window(const char *binary_path_)
+    : window(nullptr),
+      simple_map(nullptr),
+      map_source_registry(nullptr),
+      map_marker_layer(nullptr),
+      binary_path(binary_path_) {
+  const std::string target("mlm_visualizer");
+  size_t pos = std::string::npos;
+  while ((pos = binary_path.find(target)) != std::string::npos) {
+    binary_path.replace(pos, target.size(), "");
+  }
+}
+//////////////////////////////////////////////////////////////
+
+generator_main_window::~generator_main_window() {
+  g_clear_object(&map_source_registry);
+}
+//////////////////////////////////////////////////////////////
+
+generator_main_window *gmw_create(const char *binary_path) {
+  return new generator_main_window(binary_path);
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_free(generator_main_window *gmw) { delete gmw; }
+//////////////////////////////////////////////////////////////
 
 static void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
@@ -8,16 +60,8 @@ static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                                   int n_press, double x,
                                                   double y, gpointer user_data);
 
-generator_main_window::generator_main_window()
-    : window(nullptr),
-      simple_map(nullptr),
-      map_source_registry(nullptr),
-      map_marker_layer(nullptr) {}
-//////////////////////////////////////////////////////////////
-
-generator_main_window::~generator_main_window() {
-  std::cout << "~generator_main_window\n";
-  g_clear_object(&map_source_registry);
+void gmw_show(generator_main_window *gmw) {
+  gtk_widget_set_visible(GTK_WIDGET(gmw->window), true);
 }
 //////////////////////////////////////////////////////////////
 
@@ -82,9 +126,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid);
-
-  gmw_add_marker(gmw, MC_RED, 36.557275, 31.994406);
-  gmw_add_marker(gmw, MC_GREEN, 36.5704424697, 31.9768292735);
 }
 //////////////////////////////////////////////////////////////
 
@@ -103,12 +144,14 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
   shumate_viewport_widget_coords_to_location(vp, GTK_WIDGET(gmw->simple_map), x,
                                              y, &lat, &lng);
   gmw_add_marker(gmw, MC_RED, lat, lng);
+  gmw->lst_geopoints.push_back(geopoint(lat, lng));
 }
 //////////////////////////////////////////////////////////////
 
 void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  gmw->lst_geopoints.clear();
   for (int i = 0; i < MC_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->map_path_layers[i]);
     shumate_marker_layer_remove_all(gmw->map_marker_layer);
@@ -118,25 +161,22 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
 
 void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   (void)btn;
-  (void)ud;
-  /* generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-   */
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  for (auto gp : gmw->lst_geopoints) {
+    std::cout << gp.latitude << " , " << gp.longitude << "\n";
+  }
 }
 //////////////////////////////////////////////////////////////
 
 void gmw_add_marker(generator_main_window *gmw, marker_color mc,
                     double latitude, double longitude) {
-  const char *paths[] = {
-      "/home/lezh1k/SRC/work/MDPet/mad-location-manager/data_generator/"
-      "mlm_data_generator/visualizator/resources/map-marker-green.png",
-
-      "/home/lezh1k/SRC/work/MDPet/mad-location-manager/data_generator/"
-      "mlm_data_generator/visualizator/resources/map-marker-red.png",
-
-      "/home/lezh1k/SRC/work/MDPet/mad-location-manager/data_generator/"
-      "mlm_data_generator/visualizator/resources/map-marker-blue.png",
+  const std::string paths[] = {
+      "/resources/map_marker_green.png",
+      "/resources/map_marker_red.png",
+      "/resources/map_marker_blue.png",
   };
-  GtkWidget *img = gtk_image_new_from_file(paths[mc]);
+  std::string path = gmw->binary_path + paths[mc];
+  GtkWidget *img = gtk_image_new_from_file(path.c_str());
   ShumateMarker *marker = shumate_marker_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
   shumate_marker_set_child(marker, img);

@@ -21,6 +21,7 @@ struct accelerometer {
 // @z - around axis Z
 struct gyroscope {
   double x, y, z;
+
   gyroscope() : x(0.0), y(0.0), z(0.0) {}
   gyroscope(double x, double y, double z) : x(x), y(y), z(z) {}
 };
@@ -31,6 +32,7 @@ struct gyroscope {
 /// @z - axis Z
 struct magnetometer {
   double x, y, z;
+
   magnetometer() : x(0.0), y(0.0), z(0.0) {}
   magnetometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
@@ -44,6 +46,7 @@ struct magnetometer {
 /// @z - axiz Z (aptitude) zero for now
 struct abs_accelerometer {
   double x, y, z;
+
   abs_accelerometer() : x(0.0), y(0.0), z(0.0) {}
   abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
   abs_accelerometer(double acc, double azimuth) {
@@ -92,6 +95,8 @@ struct gps_speed {
 struct gps_coordinate {
   geopoint location;
   gps_speed speed;
+
+  gps_coordinate() : location(), speed() {}
 };
 //////////////////////////////////////////////////////////////
 

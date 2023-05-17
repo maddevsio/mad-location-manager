@@ -1,54 +1,80 @@
+#include <gtest/gtest.h>
+
+#include <cmath>
+#include <exception>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 #include "commons.h"
 #include "sd_generator.h"
 #include "sensor_data.h"
-#include <cmath>
-#include <gtest/gtest.h>
-#include <iostream>
-#include <vector>
+
+static geopoint parse_coordinate(const std::string &str);
 
 int main_generator(int argc, char *argv[]) {
   UNUSED(argc);
   UNUSED(argv);
 
-  gps_coordinate sc;
-  sc.location = geopoint(0.0, 0.0);
-  sc.speed = gps_speed(0.0, 0.0, 1.0);
+  // todo parse arguments and get all these constants
+  const double acceleration_time = 1.0;
+  const double interval_time = 1.5;
+  const double accelerometer_freq = 1e-3;
 
-  double start_time = 0.0;
-  double gps_interval = 1.5;
-  double acc_interval = 0.001; // 1000 per second
-  double next_gps_time = gps_interval;
+  std::string input;
+  bool is_first_coordinate = true;
 
-  std::vector<movement_interval> intervals = {
-      {0.0, 5.0, 5.0},
-      /* {0.0, 0.0, 15.0}, */
-      {180.0, 5.0, 5.0},
-  };
-
-  for (const auto &interval : intervals) {
-    double end_time = start_time + interval.duration;
-    abs_accelerometer acc(interval.acceleration, interval.azimuth);
-
-    static const double EPS = 1e-9;
-    // while (end_time > start_time) ..
-    while (fabs(end_time - start_time) > EPS) {
-      start_time += acc_interval;
-      sc = sd_gps_coordinate_in_interval(sc, interval, acc_interval);
-      if (fabs(start_time - next_gps_time) < EPS) {
-        next_gps_time += gps_interval;
-        std::cout << start_time << "\tGC\t" << sc.location.latitude << "\t"
-                  << sc.location.longitude << "\n";
-        std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
-                  << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
+  gps_coordinate prev_coord, current_coord;
+  while (std::getline(std::cin, input)) {
+    try {
+      geopoint curr_point = parse_coordinate(input);
+      current_coord.location = curr_point;
+      std::cout << "GPS: " << curr_point.latitude << " , " << curr_point.longitude << "\n";
+      if (is_first_coordinate) {
+        is_first_coordinate = false;
+        prev_coord = current_coord;
+        continue;
       }
-    } // while (end_time > start_time);
 
-    std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
-              << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
-  } // for (const auto &interval : intervals)
-  std::cout << start_time << "\tGS\t" << sc.speed.azimuth << "\t"
-            << sc.speed.value << "\t" << sc.speed.accuracy << "\n";
+      abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
+          prev_coord, current_coord, acceleration_time, interval_time, 0.);
+
+      std::cout << "acc: " << acc.x << " " << acc.y << " " << acc.z << "\n";
+      // we have GPS points but have not speed here. so:
+      std::vector<movement_interval> intervals = {
+          {acc.azimuth(), acc.acceleration(), acceleration_time},
+          {0., 0., interval_time - acceleration_time},
+      };
+
+      for (auto interval : intervals) {
+        current_coord = sd_gps_coordinate_in_interval(current_coord, interval,
+                                                      interval.duration);
+      }
+      // now we have GPS coordinate and speed
+      prev_coord = current_coord;
+
+    } catch (std::exception &exc) {
+      std::cerr << exc.what() << std::endl;
+      continue;  // maybe throw?
+    }
+  }
+
   return 0;
+}
+//////////////////////////////////////////////////////////////
+
+geopoint parse_coordinate(const std::string &str) {
+  std::istringstream iss(str);
+  char delim = 0;
+  double lat, lon;
+  iss >> lat >> std::ws >> delim >> std::ws >> lon;
+  if (!iss || delim != ',') {
+    throw std::invalid_argument(std::string("could not parse input string ") +
+                                str);
+  }
+  return geopoint(lat, lon);
 }
 //////////////////////////////////////////////////////////////
 

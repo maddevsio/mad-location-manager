@@ -2,6 +2,7 @@
 #include <gtk/gtk.h>
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "main_window.h"
@@ -24,28 +25,28 @@ int main(int argc, char **argv) {
 #endif
   GtkApplication *app;
   int status;
-  generator_main_window gmv;
+  generator_main_window *gmw = gmw_create(argv[0]);
   app = gtk_application_new("trajectory.generator.app",
                             G_APPLICATION_DEFAULT_FLAGS);
-  g_signal_connect(app, "activate", G_CALLBACK(activate), &gmv);
-  g_signal_connect(app, "shutdown", G_CALLBACK(shutdown), &gmv);
+  g_signal_connect(app, "activate", G_CALLBACK(activate), gmw);
+  g_signal_connect(app, "shutdown", G_CALLBACK(shutdown), gmw);
   status = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);
+  gmw_free(gmw);
   return status;
 }
 //////////////////////////////////////////////////////////////
 
 void activate(GtkApplication *app, gpointer user_data) {
-  generator_main_window *gmv =
+  generator_main_window *gmw =
       reinterpret_cast<generator_main_window *>(user_data);
-  gmw_bind_to_app(app, gmv);
-  gtk_widget_set_visible(GTK_WIDGET(gmv->window), true);
+  gmw_bind_to_app(app, gmw);
+  gmw_show(gmw);
 }
 //////////////////////////////////////////////////////////////
 
 void shutdown(GtkApplication *app, gpointer user_data) {
   (void)app;
   (void)user_data;
-  std::cout << "shutdown\n";
 }
 //////////////////////////////////////////////////////////////

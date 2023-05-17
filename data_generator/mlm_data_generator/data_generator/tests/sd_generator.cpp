@@ -5,7 +5,6 @@
 #include <cmath>
 #include <vector>
 
-#include "coordinate.h"
 #include "sensor_data.h"
 
 TEST(sd_generator, test_speed_generation) {
