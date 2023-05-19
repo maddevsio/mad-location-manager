@@ -1,9 +1,22 @@
 #include "main_window.h"
 
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
+#include "map_marker_blue.h"
+#include "map_marker_green.h"
+#include "map_marker_red.h"
+
+struct map_marker_resource {
+  const unsigned char *buff;
+  const size_t buff_len;
+  const size_t width;
+  const size_t heigth;
+};
+
+//////////////////////////////////////////////////////////////
 struct geopoint {
   double latitude;
   double longitude;
@@ -20,25 +33,17 @@ struct generator_main_window {
   ShumateMarkerLayer *map_marker_layer;
   ShumatePathLayer *map_path_layers[MC_COUNT];  // see marker color enum
 
-  std::string binary_path;
   std::vector<geopoint> lst_geopoints;
 
-  generator_main_window(const char *binary_path = "");
+  generator_main_window();
   ~generator_main_window();
 };
 
-generator_main_window::generator_main_window(const char *binary_path_)
+generator_main_window::generator_main_window()
     : window(nullptr),
       simple_map(nullptr),
       map_source_registry(nullptr),
-      map_marker_layer(nullptr),
-      binary_path(binary_path_) {
-  const std::string target("mlm_visualizer");
-  size_t pos = std::string::npos;
-  while ((pos = binary_path.find(target)) != std::string::npos) {
-    binary_path.replace(pos, target.size(), "");
-  }
-}
+      map_marker_layer(nullptr) {}
 //////////////////////////////////////////////////////////////
 
 generator_main_window::~generator_main_window() {
@@ -46,9 +51,7 @@ generator_main_window::~generator_main_window() {
 }
 //////////////////////////////////////////////////////////////
 
-generator_main_window *gmw_create(const char *binary_path) {
-  return new generator_main_window(binary_path);
-}
+generator_main_window *gmw_create() { return new generator_main_window(); }
 //////////////////////////////////////////////////////////////
 
 void gmw_free(generator_main_window *gmw) { delete gmw; }
@@ -162,21 +165,33 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
 void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+
   for (auto gp : gmw->lst_geopoints) {
-    std::cout << gp.latitude << " , " << gp.longitude << "\n";
+    std::cout << std::setprecision(12) << gp.latitude << " , " << gp.longitude << "\n";
   }
 }
 //////////////////////////////////////////////////////////////
 
 void gmw_add_marker(generator_main_window *gmw, marker_color mc,
                     double latitude, double longitude) {
-  const std::string paths[] = {
-      "/resources/map_marker_green.png",
-      "/resources/map_marker_red.png",
-      "/resources/map_marker_blue.png",
-  };
-  std::string path = gmw->binary_path + paths[mc];
-  GtkWidget *img = gtk_image_new_from_file(path.c_str());
+  map_marker_resource resources[] = {{.buff = map_marker_green_buff,
+                                      .buff_len = map_marker_green_len,
+                                      .width = map_marker_green_width,
+                                      .heigth = map_marker_green_heigth},
+                                     {.buff = map_marker_red_buff,
+                                      .buff_len = map_marker_red_len,
+                                      .width = map_marker_red_width,
+                                      .heigth = map_marker_red_heigth},
+                                     {.buff = map_marker_blue_buff,
+                                      .buff_len = map_marker_blue_len,
+                                      .width = map_marker_blue_width,
+                                      .heigth = map_marker_blue_heigth}};
+
+  GBytes *gbytes = g_bytes_new(resources[mc].buff, resources[mc].buff_len);
+  GdkPixbuf *pb = gdk_pixbuf_new_from_bytes(
+      gbytes, GDK_COLORSPACE_RGB, true, 8, resources[mc].width,
+      resources[mc].heigth, resources[mc].width * 4);
+  GtkWidget *img = gtk_image_new_from_pixbuf(pb);
   ShumateMarker *marker = shumate_marker_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
   shumate_marker_set_child(marker, img);

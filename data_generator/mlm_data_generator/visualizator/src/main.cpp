@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 #endif
   GtkApplication *app;
   int status;
-  generator_main_window *gmw = gmw_create(argv[0]);
+  generator_main_window *gmw = gmw_create();
   app = gtk_application_new("trajectory.generator.app",
                             G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(app, "activate", G_CALLBACK(activate), gmw);
