@@ -1,8 +1,9 @@
+#include <cmath>
+#include <exception>
+
 #include "commons.h"
 #include "coordinate.h"
 #include "sensor_data.h"
-#include <cmath>
-#include <exception>
 
 using namespace coordinate_consts;
 
@@ -11,12 +12,7 @@ static double great_circle_distance(double lat1, double lon1, double lat2,
                                     double lon2);
 static geopoint point_ahead(geopoint point, double distance,
                             double azimuth_degrees);
-static geopoint point_plus_distance_east(geopoint point, double distance);
-static geopoint point_plus_distance_north(geopoint point, double distance);
 
-static double coord_longitude_to_meters(double lon);
-static double coord_latitude_to_meters(double lat);
-static geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters);
 static double azimuth_between_points(double lat1, double lon1, double lat2,
                                      double lon2);
 
@@ -66,36 +62,6 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degees) {
 }
 //////////////////////////////////////////////////////////////
 
-geopoint point_plus_distance_east(geopoint point, double distance) {
-  return point_ahead(point, distance, 90.0);
-}
-//////////////////////////////////////////////////////////////
-
-geopoint point_plus_distance_north(geopoint point, double distance) {
-  return point_ahead(point, distance, 0.0);
-}
-//////////////////////////////////////////////////////////////
-
-double coord_longitude_to_meters(double lon) {
-  double distance = great_circle_distance(lon, 0.0, 0.0, 0.0);
-  return distance * (lon < 0.0 ? -1.0 : 1.0);
-}
-//////////////////////////////////////////////////////////////
-
-double coord_latitude_to_meters(double lat) {
-  double distance = great_circle_distance(0.0, lat, 0.0, 0.0);
-  return distance * (lat < 0.0 ? -1.0 : 1.0);
-}
-//////////////////////////////////////////////////////////////
-
-geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters) {
-  geopoint point(0.0, 0.0);
-  geopoint pointEast = point_plus_distance_east(point, lon_meters);
-  geopoint pointNorthEast = point_plus_distance_north(pointEast, lat_meters);
-  return pointNorthEast;
-}
-//////////////////////////////////////////////////////////////
-
 double azimuth_between_points(double lat1, double lon1, double lat2,
                               double lon2) {
   double dl = lon2 - lon1;
@@ -110,9 +76,6 @@ double azimuth_between_points(double lat1, double lon1, double lat2,
 coordinates_vptr coord_vptr(void) {
   coordinates_vptr res = {
       .distance_between_points = great_circle_distance,
-      .longitude_to_meters = coord_longitude_to_meters,
-      .latitude_to_meters = coord_latitude_to_meters,
-      .meters_to_geopoint = coord_meters_to_geopoint,
       .point_ahead = point_ahead,
       .azimuth_between_points = azimuth_between_points,
   };

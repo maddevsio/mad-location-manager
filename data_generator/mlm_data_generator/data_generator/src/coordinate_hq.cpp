@@ -35,13 +35,6 @@ static double azimuth_between_points(double lat1, double lon1, double lat2,
 static geopoint point_ahead(geopoint point, double distance,
                             double azimuth_degrees);
 
-static geopoint point_plus_distance_east(geopoint point, double distance);
-static geopoint point_plus_distance_north(geopoint point, double distance);
-
-static double coord_longitude_to_meters(double lon);
-static double coord_latitude_to_meters(double lat);
-static geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters);
-
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
@@ -165,9 +158,6 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
   double k1 = (sqrt(1 + uSq) - 1) / (sqrt(1 + uSq) + 1);
   double A = (1 + 0.25 * k1 * k1) / (1 - k1);
   double B = k1 * (1. - 3. / 8. * k1 * k1);
-  /* double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 *
-   * uSq))); */
-  /* double B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq))); */
 
   double sinSig = 0., cosSig = 0.;
   double cos2sigM = 0.;
@@ -211,42 +201,9 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
 }
 ///////////////////////////////////////////////////////
 
-geopoint point_plus_distance_east(geopoint point, double distance) {
-  return point_ahead(point, distance, 90.0);
-}
-//////////////////////////////////////////////////////////////
-
-geopoint point_plus_distance_north(geopoint point, double distance) {
-  return point_ahead(point, distance, 0.0);
-}
-//////////////////////////////////////////////////////////////
-
-double coord_longitude_to_meters(double lon) {
-  double distance = geo_distance_meters(0.0, lon, 0.0, 0.0);
-  return distance * (lon < 0.0 ? -1.0 : 1.0);
-}
-//////////////////////////////////////////////////////////////
-
-double coord_latitude_to_meters(double lat) {
-  double distance = geo_distance_meters(lat, 0.0, 0.0, 0.0);
-  return distance * (lat < 0.0 ? -1.0 : 1.0);
-}
-//////////////////////////////////////////////////////////////
-
-geopoint coord_meters_to_geopoint(double lon_meters, double lat_meters) {
-  geopoint point(0.0, 0.0);  // = {.latitude = 0.0, .longitude = 0.0};
-  geopoint point_east = point_plus_distance_east(point, lon_meters);
-  geopoint point_north_east = point_plus_distance_north(point_east, lat_meters);
-  return point_north_east;
-}
-//////////////////////////////////////////////////////////////
-
 coordinates_vptr coord_vptr_hq(void) {
   coordinates_vptr res = {
       .distance_between_points = geo_distance_meters,
-      .longitude_to_meters = coord_longitude_to_meters,
-      .latitude_to_meters = coord_latitude_to_meters,
-      .meters_to_geopoint = coord_meters_to_geopoint,
       .point_ahead = point_ahead,
       .azimuth_between_points = azimuth_between_points,
   };
