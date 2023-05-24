@@ -4,13 +4,13 @@
 #include "sensor_data.h"
 
 namespace coordinate_consts {
-const double earth_radius = 6371.0 * 1000.0; // meters
+const double earth_radius = 6371.0 * 1000.0;  // meters
 // https://en.wikipedia.org/wiki/World_Geodetic_System#WGS_84
 const double major_axis = 6378137.0;
-const double flattening = 298.257223563; // f
-const double inv_flattening = 1.0 / flattening; // e - eccentricity
+const double flattening = 298.257223563;         // f
+const double inv_flattening = 1.0 / flattening;  // e - eccentricity
 const double minor_axis = (1 - inv_flattening) * major_axis;
-}; // namespace coordinate_consts
+};  // namespace coordinate_consts
 
 // these typedefs just to make intellisence work
 typedef double (*f_distance_between_points_t)(double lat1, double lon1,
@@ -44,7 +44,6 @@ struct coordinates_vptr {
   f_distance_between_points_t azimuth_between_points;
 };
 
-// todo implement template magic OR migrate to C from C++
 coordinates_vptr coord_vptr(void);
 coordinates_vptr coord_vptr_hq(void);
 

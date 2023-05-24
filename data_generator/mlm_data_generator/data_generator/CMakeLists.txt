@@ -42,12 +42,11 @@ file(COPY ${data} DESTINATION resources)
 
 # This defines the variables Boost_LIBRARIES that containts all library names
 # that we need to link into the program.
-# find_package(Boost 1.36.0 COMPONENTS filesystem system REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 
-# target_link_libraries(mlm_data_generator PUBLIC
-#   ${Boost_LIBRARIES}
-#   # here you can add any library dependencies
-# )
+target_link_libraries(mlm_data_generator PUBLIC
+  ${Boost_LIBRARIES}
+)
 
 ###############################################################################
 ## testing ####################################################################
@@ -100,8 +99,8 @@ install(DIRECTORY resources DESTINATION mlm_data_generator_destination)
 # there are a lot more variables you can set, and some
 # you need to set for some package types, but we want to
 # be minimal here.
-set(CPACK_PACKAGE_NAME "MyExample")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_NAME "mlm_data_generator")
+set(CPACK_PACKAGE_VERSION "0.1.0")
 # We don't want to split our program up into several incomplete pieces.
 set(CPACK_MONOLITHIC_INSTALL 1)
 

@@ -112,8 +112,8 @@ install(DIRECTORY resources DESTINATION mlm_visualizer_destination)
 # there are a lot more variables you can set, and some
 # you need to set for some package types, but we want to
 # be minimal here.
-set(CPACK_PACKAGE_NAME "MyExample")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_NAME "mlm_visualizer")
+set(CPACK_PACKAGE_VERSION "0.1.0")
 # We don't want to split our program up into several incomplete pieces.
 set(CPACK_MONOLITHIC_INSTALL 1)
 

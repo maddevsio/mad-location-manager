@@ -8,7 +8,6 @@
 #include "main_window.h"
 
 static void activate(GtkApplication *app, gpointer user_data);
-static void shutdown(GtkApplication *app, gpointer user_data);
 //////////////////////////////////////////////////////////////
 
 #ifdef _UNIT_TESTS_
@@ -29,7 +28,6 @@ int main(int argc, char **argv) {
   app = gtk_application_new("trajectory.generator.app",
                             G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(app, "activate", G_CALLBACK(activate), gmw);
-  g_signal_connect(app, "shutdown", G_CALLBACK(shutdown), gmw);
   status = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);
   gmw_free(gmw);
@@ -42,11 +40,5 @@ void activate(GtkApplication *app, gpointer user_data) {
       reinterpret_cast<generator_main_window *>(user_data);
   gmw_bind_to_app(app, gmw);
   gmw_show(gmw);
-}
-//////////////////////////////////////////////////////////////
-
-void shutdown(GtkApplication *app, gpointer user_data) {
-  (void)app;
-  (void)user_data;
 }
 //////////////////////////////////////////////////////////////

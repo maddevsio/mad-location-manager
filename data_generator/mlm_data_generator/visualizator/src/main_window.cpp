@@ -1,6 +1,6 @@
 #include "main_window.h"
 
-#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -33,7 +33,9 @@ struct generator_main_window {
   ShumateMarkerLayer *map_marker_layer;
   ShumatePathLayer *map_path_layers[MC_COUNT];  // see marker color enum
 
-  std::vector<geopoint> lst_geopoints;
+  std::vector<geopoint> lst_geopoints_green;
+  std::vector<geopoint> lst_geopoints_red;
+  std::vector<geopoint> lst_geopoints_blue;
 
   generator_main_window();
   ~generator_main_window();
@@ -147,14 +149,17 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
   shumate_viewport_widget_coords_to_location(vp, GTK_WIDGET(gmw->simple_map), x,
                                              y, &lat, &lng);
   gmw_add_marker(gmw, MC_RED, lat, lng);
-  gmw->lst_geopoints.push_back(geopoint(lat, lng));
 }
 //////////////////////////////////////////////////////////////
 
 void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  gmw->lst_geopoints.clear();
+
+  gmw->lst_geopoints_red.clear();
+  gmw->lst_geopoints_blue.clear();
+  gmw->lst_geopoints_green.clear();
+
   for (int i = 0; i < MC_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->map_path_layers[i]);
     shumate_marker_layer_remove_all(gmw->map_marker_layer);
@@ -162,13 +167,41 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
 }
 //////////////////////////////////////////////////////////////
 
+static void dlg_save_cb(GObject *source_object, GAsyncResult *res,
+                        gpointer data) {
+  GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
+  GFile *file = gtk_file_dialog_save_finish(dlg, res, NULL);
+  if (!file) {
+    // cancel button pressed
+    return;
+  }
+
+  char *fpath = g_file_get_path(file);
+  std::ofstream of(fpath);
+  if (!of.is_open()) {
+    std::cout << "error opening file\n" << fpath << std::endl;
+    return;
+  }
+
+  for (auto gp : gmw->lst_geopoints_red) {
+    of << std::setprecision(12) << gp.latitude << " , " << gp.longitude
+       << std::endl;
+  }
+  of.close();
+}
+//////////////////////////////////////////////////////////////
+
 void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-
-  for (auto gp : gmw->lst_geopoints) {
-    std::cout << std::setprecision(12) << gp.latitude << " , " << gp.longitude << "\n";
+  if (gmw->lst_geopoints_red.empty()) {
+    return;  // do nothing
   }
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_save(dlg, GTK_WINDOW(gmw->window), NULL, dlg_save_cb, gmw);
+  /* g_clear_object(&dlg); */
+  g_object_unref(dlg);
 }
 //////////////////////////////////////////////////////////////
 
@@ -186,6 +219,13 @@ void gmw_add_marker(generator_main_window *gmw, marker_color mc,
                                       .buff_len = map_marker_blue_len,
                                       .width = map_marker_blue_width,
                                       .heigth = map_marker_blue_heigth}};
+
+  std::vector<std::vector<geopoint> *> gmw_geopoints_lists = {
+      &gmw->lst_geopoints_green,
+      &gmw->lst_geopoints_red,
+      &gmw->lst_geopoints_blue,
+  };
+  gmw_geopoints_lists[mc]->push_back(geopoint(latitude, longitude));
 
   GBytes *gbytes = g_bytes_new(resources[mc].buff, resources[mc].buff_len);
   GdkPixbuf *pb = gdk_pixbuf_new_from_bytes(
