@@ -3,6 +3,7 @@
 #include <boost/program_options.hpp>
 #include <cmath>
 #include <exception>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -14,6 +15,7 @@
 #include "sensor_data.h"
 
 static geopoint parse_coordinate(const std::string &str);
+static std::ostream &mlm_cout() { return std::cout << std::setprecision(12); }
 namespace po = boost::program_options;
 
 int main_generator(int argc, char *argv[]) {
@@ -31,8 +33,9 @@ int main_generator(int argc, char *argv[]) {
   // clang-format on
 
   double acceleration_time = 1.0;
-  double accelerometer_freq = 1e-3;
+  double accelerometer_freq = 1e-1;
   double gps_freq = 1.5;
+  double no_acceleration_time = gps_freq - acceleration_time;
   std::string output;
 
   po::variables_map vm;
@@ -70,48 +73,72 @@ int main_generator(int argc, char *argv[]) {
 
   std::string input;
   bool is_first_coordinate = true;
+  double ts = -gps_freq;
 
   gps_coordinate prev_coord, current_coord;
   while (std::getline(std::cin, input)) {
+    geopoint input_point;
     try {
-      geopoint input_point = parse_coordinate(input);
-      current_coord.location = input_point;
-      if (is_first_coordinate) {
-        is_first_coordinate = false;
-        prev_coord = current_coord;
-        std::cout << "GPS: " << input_point.latitude << " , "
-                  << input_point.longitude << "\n";
-        continue;
-      }
-
-      abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
-          prev_coord, current_coord, acceleration_time, gps_freq, 0.);
-
-      std::cout << "ACC: " << acc.x << " , " << acc.y << " , " << acc.z << "\n";
-
-      // we have GPS points but have not speed here. so:
-      std::vector<movement_interval> intervals = {
-          {acc.azimuth(), acc.acceleration(), acceleration_time},
-          {0., 0., gps_freq - acceleration_time},
-      };
-
-      for (auto interval : intervals) {
-        current_coord = sd_gps_coordinate_in_interval(current_coord, interval,
-                                                      interval.duration);
-      }
-      // now we have GPS coordinate and speed
-
-      std::cout << "GPS: " << current_coord.location.latitude << " , "
-                << current_coord.location.longitude << "\n";
-      std::cout << "GPSS: " << current_coord.speed.value << " , "
-                << current_coord.speed.azimuth << " , "
-                << current_coord.speed.accuracy << "\n";
-      prev_coord = current_coord;
-
+      input_point = parse_coordinate(input);
     } catch (std::exception &exc) {
       std::cerr << exc.what() << std::endl;
       continue;  // maybe throw?
     }
+
+    ts += gps_freq;
+    current_coord.location = input_point;
+    if (is_first_coordinate) {
+      is_first_coordinate = false;
+      prev_coord = current_coord;
+      mlm_cout() << "GPS: " << ts << " , " << current_coord.location.latitude
+                 << " , " << current_coord.location.longitude << "\n";
+      mlm_cout() << "GPSS: " << ts << " , " << current_coord.speed.value
+                 << " , " << current_coord.speed.azimuth << " , "
+                 << current_coord.speed.accuracy << "\n";
+      continue;
+    }
+
+    abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
+        prev_coord, current_coord, acceleration_time, gps_freq, 0.);
+
+    for (double ats = 0.; ats < acceleration_time; ats += accelerometer_freq) {
+      mlm_cout() << "ACC: " << ts + ats - gps_freq << " , " << acc.x << " , "
+                 << acc.y << " , " << acc.z << "\n";
+      mlm_cout() << "ACCR: " << ts + ats - gps_freq << " , "
+                 << acc.acceleration() << " , " << acc.azimuth() << "\n";
+    }
+
+    for (double ats = acceleration_time; ats < gps_freq;
+         ats += accelerometer_freq) {
+      mlm_cout() << "ACC: " << ts + ats - gps_freq << " , " << 0.0 << " , "
+                 << 0.0 << " , " << 0.0 << "\n";
+    }
+
+    // we have GPS points but have not speed here. so:
+    std::vector<movement_interval> intervals = {
+        {acc.azimuth(), acc.acceleration(), acceleration_time},
+        {0., 0., no_acceleration_time},
+    };
+
+    current_coord = prev_coord;
+    for (const auto &interval : intervals) {
+      current_coord = sd_gps_coordinate_in_interval(current_coord, interval,
+                                                    interval.duration);
+
+      mlm_cout() << "\tGPS: " << ts << " , " << current_coord.location.latitude
+                 << " , " << current_coord.location.longitude << "\n";
+      mlm_cout() << "\tGPSS: " << ts << " , " << current_coord.speed.value
+                 << " , " << current_coord.speed.azimuth << " , "
+                 << current_coord.speed.accuracy << "\n";
+    }
+    // now we have GPS coordinate and speed
+
+    mlm_cout() << "GPS: " << ts << " , " << current_coord.location.latitude
+               << " , " << current_coord.location.longitude << "\n";
+    mlm_cout() << "GPSS: " << ts << " , " << current_coord.speed.value << " , "
+               << current_coord.speed.azimuth << " , "
+               << current_coord.speed.accuracy << "\n";
+    prev_coord = current_coord;
   }
   return 0;
 }

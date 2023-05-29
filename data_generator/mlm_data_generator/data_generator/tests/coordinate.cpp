@@ -4,7 +4,19 @@
 
 #include "sensor_data.h"
 
-TEST(coordinates, distanceBetweenPointsTest) {
+TEST(coordinates, distance_between_hardcoded_points_test) {
+  coordinates_vptr vptr = coord_vptr_hq();
+  // Test data - GeoPoints with known latitude and longitude values
+  geopoint point1(11.11111, 11.11111);
+  geopoint point2(11.11112, 11.11112);
+
+  // Calculate distances using the calculateDistance function
+  double d12 = vptr.distance_between_points(point1.latitude, point1.longitude,
+                                            point2.latitude, point2.longitude);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(coordinates, distance_between_points_test) {
   coordinates_vptr vptr = coord_vptr_hq();
   // Test data - GeoPoints with known latitude and longitude values
   geopoint point1(53.48095, -2.23743);   // Manchester, UK
@@ -28,7 +40,7 @@ TEST(coordinates, distanceBetweenPointsTest) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(coordinates, azimuthBetweenPointsTest) {
+TEST(coordinates, azimuth_bitween_points_test) {
   coordinates_vptr vptr = coord_vptr_hq();
 
   geopoint point1(53.48095, -2.23743);  // Manchester, UK
@@ -40,4 +52,21 @@ TEST(coordinates, azimuthBetweenPointsTest) {
 
   vptr.azimuth_between_points(point1.latitude, point1.longitude,
                               point2.latitude, point2.longitude);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(coordinates, distance_point_ahead_test) {
+  coordinates_vptr vptr = coord_vptr_hq();
+
+  const double distance = 300.;
+  const double azimuth = 12.;
+  geopoint point1(53.48095, -2.23743);  // Manchester, UK
+  geopoint point2 = vptr.point_ahead(point1, distance, azimuth);
+
+  double s = vptr.distance_between_points(point1.latitude, point1.longitude,
+                                          point2.latitude, point2.longitude);
+  double az = vptr.azimuth_between_points(point1.latitude, point1.longitude,
+                                          point2.latitude, point2.longitude);
+  EXPECT_NEAR(s, distance, 1e-7);
+  EXPECT_NEAR(az, azimuth, 1e-7);
 }

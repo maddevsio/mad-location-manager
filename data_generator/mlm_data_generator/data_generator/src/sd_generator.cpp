@@ -25,23 +25,35 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
   double v0_y = start.speed.value * sin(ssaz_rad);
 
   double t = time_of_interest;
-  double sx = v0_x * t + ax * t * t / 2.0;  // sx = v0x*t + a*t^2/2
-  double sy = v0_y * t + ay * t * t / 2.0;  // sy = v0y*t + a*t^2/2
+  double sx = v0_x * t + ax * t * t * 0.5;  // sx = v0x*t + a*t^2/2
+  double sy = v0_y * t + ay * t * t * 0.5;  // sy = v0y*t + a*t^2/2
 
   double s = sqrt(sx * sx + sy * sy);
-  double saz_rad = atan2(sy, sx);
-  double saz_degrees = rad_to_degree(saz_rad);
+  double s_az_rad = atan2(sy, sx);
+  double s_az_degrees = rad_to_degree(s_az_rad);
+
   double vx = v0_x + ax * t;
   double vy = v0_y + ay * t;
-
   double v = sqrt(vx * vx + vy * vy);
-  double vaz_rad = atan2(vy, vx);
-  double vaz_degrees = rad_to_degree(vaz_rad);
+  double v_az_rad = atan2(vy, vx);
+  double v_az_degrees = rad_to_degree(v_az_rad);
 
   gps_coordinate res;
-  res.location = vptr.point_ahead(start.location, s, saz_degrees);
-  res.speed = gps_speed(vaz_degrees, v, 1.0);
+  res.location = vptr.point_ahead(start.location, s, s_az_degrees);
+  res.speed = gps_speed(v_az_degrees, v, 1.0);
+
   return res;
+}
+//////////////////////////////////////////////////////////////
+
+double acc_between_two_points(double distance, double v0,
+                              double acceleration_time,
+                              double no_acceleration_time) {
+  double s = distance;
+  double t1 = acceleration_time;
+  double t2 = no_acceleration_time;
+  double a = (s - v0 * (t1 + t2)) / ((0.5 * t1 + t2) * t1);
+  return a;
 }
 //////////////////////////////////////////////////////////////
 
@@ -71,11 +83,10 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
   double sx = ab_s * cos(ab_az_rad);
   double sy = ab_s * sin(ab_az_rad);
 
-  double t1 = acceleration_time;
-  double t2 = interval_time - acceleration_time;
-
-  double ax = (sx - v0_x * (t1 + t2)) / ((0.5 * t1 + t2) * t1);
-  double ay = (sy - v0_y * (t1 + t2)) / ((0.5 * t1 + t2) * t1);
+  double ax = acc_between_two_points(sx, v0_x, acceleration_time,
+                                     interval_time - acceleration_time);
+  double ay = acc_between_two_points(sy, v0_y, acceleration_time,
+                                     interval_time - acceleration_time);
 
   return abs_accelerometer(ax, ay, 0.);
 }

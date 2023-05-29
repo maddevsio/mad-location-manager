@@ -26,16 +26,24 @@ struct geopoint {
 };
 //////////////////////////////////////////////////////////////
 
+struct gmw_marker_layer {
+  ShumateMarkerLayer *marker_layer;
+  ShumatePathLayer *path_layer;
+  std::vector<geopoint> lst_geopoints;
+
+  gmw_marker_layer() : marker_layer(nullptr), path_layer(nullptr) {}
+  gmw_marker_layer(ShumateMarkerLayer *marker_layer,
+                   ShumatePathLayer *path_layer)
+      : marker_layer(marker_layer), path_layer(path_layer) {}
+};
+//////////////////////////////////////////////////////////////
+
 struct generator_main_window {
   GtkWidget *window;
   ShumateSimpleMap *simple_map;
   ShumateMapSourceRegistry *map_source_registry;
-  ShumateMarkerLayer *map_marker_layer;
-  ShumatePathLayer *map_path_layers[MC_COUNT];  // see marker color enum
-
-  std::vector<geopoint> lst_geopoints_green;
-  std::vector<geopoint> lst_geopoints_red;
-  std::vector<geopoint> lst_geopoints_blue;
+  GtkGestureClick *gesture_click_map;
+  std::vector<gmw_marker_layer> marker_layers;
 
   generator_main_window();
   ~generator_main_window();
@@ -45,10 +53,11 @@ generator_main_window::generator_main_window()
     : window(nullptr),
       simple_map(nullptr),
       map_source_registry(nullptr),
-      map_marker_layer(nullptr) {}
+      gesture_click_map(nullptr) {}
 //////////////////////////////////////////////////////////////
 
 generator_main_window::~generator_main_window() {
+  g_clear_object(&gesture_click_map);
   g_clear_object(&map_source_registry);
 }
 //////////////////////////////////////////////////////////////
@@ -101,18 +110,19 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   shumate_map_center_on(map, 36.5519514, 31.9801362);
   // shumate_map_go_to_full(map, 36.5519514, 31.9801362, 14.0);
 
-  gmw->map_marker_layer = shumate_marker_layer_new(vp);
   for (size_t i = 0; i < MC_COUNT; ++i) {
-    gmw->map_path_layers[i] = shumate_path_layer_new(vp);
-    shumate_simple_map_add_overlay_layer(
-        gmw->simple_map, SHUMATE_LAYER(gmw->map_path_layers[i]));
+    ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
+    ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
+
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(path_layer));
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(marker_layer));
+    gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
   }
 
-  shumate_simple_map_add_overlay_layer(gmw->simple_map,
-                                       SHUMATE_LAYER(gmw->map_marker_layer));
-
-  // todo move to gmv and free in destructor to avoid memory leak
   GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
+  gmw->gesture_click_map = ggc;
   gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
                             GTK_EVENT_CONTROLLER(ggc));
   g_signal_connect(ggc, "released",
@@ -156,13 +166,10 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
 
-  gmw->lst_geopoints_red.clear();
-  gmw->lst_geopoints_blue.clear();
-  gmw->lst_geopoints_green.clear();
-
   for (int i = 0; i < MC_COUNT; ++i) {
-    shumate_path_layer_remove_all(gmw->map_path_layers[i]);
-    shumate_marker_layer_remove_all(gmw->map_marker_layer);
+    shumate_path_layer_remove_all(gmw->marker_layers[i].path_layer);
+    shumate_marker_layer_remove_all(gmw->marker_layers[i].marker_layer);
+    gmw->marker_layers[i].lst_geopoints.clear();
   }
 }
 //////////////////////////////////////////////////////////////
@@ -184,7 +191,7 @@ static void dlg_save_cb(GObject *source_object, GAsyncResult *res,
     return;
   }
 
-  for (auto gp : gmw->lst_geopoints_red) {
+  for (auto gp : gmw->marker_layers[MC_RED].lst_geopoints) {
     of << std::setprecision(12) << gp.latitude << " , " << gp.longitude
        << std::endl;
   }
@@ -195,7 +202,7 @@ static void dlg_save_cb(GObject *source_object, GAsyncResult *res,
 void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   (void)btn;
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->lst_geopoints_red.empty()) {
+  if (gmw->marker_layers[MC_RED].lst_geopoints.empty()) {
     return;  // do nothing
   }
   GtkFileDialog *dlg = gtk_file_dialog_new();
@@ -220,13 +227,7 @@ void gmw_add_marker(generator_main_window *gmw, marker_color mc,
                                       .width = map_marker_blue_width,
                                       .heigth = map_marker_blue_heigth}};
 
-  std::vector<std::vector<geopoint> *> gmw_geopoints_lists = {
-      &gmw->lst_geopoints_green,
-      &gmw->lst_geopoints_red,
-      &gmw->lst_geopoints_blue,
-  };
-  gmw_geopoints_lists[mc]->push_back(geopoint(latitude, longitude));
-
+  gmw->marker_layers[mc].lst_geopoints.push_back(geopoint(latitude, longitude));
   GBytes *gbytes = g_bytes_new(resources[mc].buff, resources[mc].buff_len);
   GdkPixbuf *pb = gdk_pixbuf_new_from_bytes(
       gbytes, GDK_COLORSPACE_RGB, true, 8, resources[mc].width,
@@ -236,9 +237,8 @@ void gmw_add_marker(generator_main_window *gmw, marker_color mc,
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
   shumate_marker_set_child(marker, img);
   gtk_widget_set_size_request(GTK_WIDGET(marker), 48, 48);
-
-  shumate_marker_layer_add_marker(gmw->map_marker_layer, marker);
-  shumate_path_layer_add_node(gmw->map_path_layers[mc],
+  shumate_marker_layer_add_marker(gmw->marker_layers[mc].marker_layer, marker);
+  shumate_path_layer_add_node(gmw->marker_layers[mc].path_layer,
                               SHUMATE_LOCATION(marker));
 }
 //////////////////////////////////////////////////////////////
