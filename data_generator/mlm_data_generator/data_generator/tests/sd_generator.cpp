@@ -2,10 +2,6 @@
 
 #include <gtest/gtest.h>
 
-#include <cmath>
-#include <iomanip>
-#include <vector>
-
 #include "sensor_data.h"
 
 TEST(sd_generator, test_go_to_point_and_back) {
@@ -15,23 +11,23 @@ TEST(sd_generator, test_go_to_point_and_back) {
   sc.location = geopoint(latitude, longitude);
   sc.speed = gps_speed(0.0, 0.0, 1.0);
 
-  std::vector<movement_interval> intervals = {
-      {45.0, 5.0, 5.0},
-      {0.0, 0.0, 15.0},
+  const movement_interval intervals[] = {
+      {45.0, 5.0, 5.0},   {0.0, 0.0, 15.0},
       {225.0, 5.0, 10.0},  // opposite direction
-      {0.0, 0.0, 15.0},
-      {45.0, 5.0, 5.0}};
+      {0.0, 0.0, 15.0},   {45.0, 5.0, 5.0},
+      {0., 0., -1.},
+  };
 
   double start_time = 0.0;
   double acc_interval = 0.001;  // 1000 per second
 
-  for (const auto &interval : intervals) {
-    double end_time = start_time + interval.duration;
-    abs_accelerometer acc(interval.acceleration, interval.azimuth);
+  for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
+    double end_time = start_time + i->duration;
+    abs_accelerometer acc(i->acceleration, i->azimuth);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
-      sc = sd_gps_coordinate_in_interval(sc, interval, acc_interval);
+      sc = sd_gps_coordinate_in_interval(sc, *i, acc_interval);
     }  // while (end_time > start_time);
   }    // for (const auto &interval : intervals)
 
@@ -48,22 +44,23 @@ TEST(sd_generator, test_speed_generation) {
   sc.location = geopoint(latitude, longitude);
   sc.speed = gps_speed(0.0, 0.0, 1.0);
 
-  std::vector<movement_interval> intervals = {
+  const movement_interval intervals[] = {
       {45., 5.0, 5.0},
       {0.0, 0.0, 15.0},
       {225., 5.0, 5.0},
+      {0., 0., -1.},
   };
 
   double start_time = 0.0;
   double acc_interval = 0.001;  // 1000 per second
 
-  for (const auto &interval : intervals) {
-    double end_time = start_time + interval.duration;
-    abs_accelerometer acc(interval.acceleration, interval.azimuth);
+  for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
+    double end_time = start_time + i->duration;
+    abs_accelerometer acc(i->acceleration, i->azimuth);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
-      sc = sd_gps_coordinate_in_interval(sc, interval, acc_interval);
+      sc = sd_gps_coordinate_in_interval(sc, *i, acc_interval);
     }
   }
 
@@ -82,13 +79,14 @@ TEST(sd_generator, test_abs_acc_generation_1) {
   double interval_time = acceleration_time + no_acceleration_time;
   abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
       a, b, acceleration_time, interval_time, 0.0);
-  std::vector<movement_interval> intervals = {
+  const movement_interval intervals[] = {
       {acc.azimuth(), acc.acceleration(), acceleration_time},
       {acc.azimuth(), 0.0, no_acceleration_time},
+      {0., 0., -1.},
   };
 
-  for (const auto &interval : intervals) {
-    c = sd_gps_coordinate_in_interval(c, interval, interval.duration);
+  for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
+    c = sd_gps_coordinate_in_interval(c, *i, i->duration);
   }
 
   ASSERT_NEAR(c.location.longitude, b.location.longitude, 1e-6);
@@ -107,13 +105,14 @@ TEST(sd_generator, test_abs_acc_generation_2) {
   abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
       a, b, acceleration_time, interval_time, 0.0);
 
-  std::vector<movement_interval> intervals = {
+  const movement_interval intervals[] = {
       {acc.azimuth(), acc.acceleration(), acceleration_time},
       {0., 0.0, no_acceleration_time},
+      {0., 0., -1.},
   };
 
-  for (const auto &interval : intervals) {
-    a = sd_gps_coordinate_in_interval(a, interval, interval.duration);
+  for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
+    a = sd_gps_coordinate_in_interval(a, *i, i->duration);
   }
 
   ASSERT_NEAR(a.location.longitude, b.location.longitude, 1e-7);
@@ -129,13 +128,14 @@ TEST(sd_generator, test_abs_acc_generation_no_movement) {
 
   abs_accelerometer acc =
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
-  std::vector<movement_interval> intervals = {
+  const movement_interval intervals[] = {
       {acc.azimuth(), acc.acceleration(), 5.0},
       {acc.azimuth(), 0.0, 10.0},
+      {0., 0., -1.},
   };
 
-  for (const auto &interval : intervals) {
-    c = sd_gps_coordinate_in_interval(c, interval, interval.duration);
+  for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
+    c = sd_gps_coordinate_in_interval(c, *i, i->duration);
   }
 
   ASSERT_NEAR(c.location.longitude, b.location.longitude, 1e-6);

@@ -42,11 +42,11 @@ file(COPY ${data} DESTINATION resources)
 
 # This defines the variables Boost_LIBRARIES that containts all library names
 # that we need to link into the program.
-find_package(Boost REQUIRED COMPONENTS program_options)
-
-target_link_libraries(mlm_data_generator PUBLIC
-  ${Boost_LIBRARIES}
-)
+# find_package(Boost REQUIRED COMPONENTS program_options)
+#
+# target_link_libraries(mlm_data_generator PUBLIC
+#   ${Boost_LIBRARIES}
+# )
 
 ###############################################################################
 ## testing ####################################################################

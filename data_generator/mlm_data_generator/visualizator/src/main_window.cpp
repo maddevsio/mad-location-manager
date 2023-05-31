@@ -42,22 +42,18 @@ struct generator_main_window {
   GtkWidget *window;
   ShumateSimpleMap *simple_map;
   ShumateMapSourceRegistry *map_source_registry;
-  GtkGestureClick *gesture_click_map;
   std::vector<gmw_marker_layer> marker_layers;
 
   generator_main_window();
   ~generator_main_window();
 };
+//////////////////////////////////////////////////////////////
 
 generator_main_window::generator_main_window()
-    : window(nullptr),
-      simple_map(nullptr),
-      map_source_registry(nullptr),
-      gesture_click_map(nullptr) {}
+    : window(nullptr), simple_map(nullptr), map_source_registry(nullptr) {}
 //////////////////////////////////////////////////////////////
 
 generator_main_window::~generator_main_window() {
-  g_clear_object(&gesture_click_map);
   g_clear_object(&map_source_registry);
 }
 //////////////////////////////////////////////////////////////
@@ -110,19 +106,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   shumate_map_center_on(map, 36.5519514, 31.9801362);
   // shumate_map_go_to_full(map, 36.5519514, 31.9801362, 14.0);
 
-  for (size_t i = 0; i < MC_COUNT; ++i) {
-    ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
-    ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
-
-    shumate_simple_map_add_overlay_layer(gmw->simple_map,
-                                         SHUMATE_LAYER(path_layer));
-    shumate_simple_map_add_overlay_layer(gmw->simple_map,
-                                         SHUMATE_LAYER(marker_layer));
-    gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
-  }
-
   GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
-  gmw->gesture_click_map = ggc;
   gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
                             GTK_EVENT_CONTROLLER(ggc));
   g_signal_connect(ggc, "released",
@@ -134,6 +118,17 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw) {
   gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
   gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
   gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
+
+  for (size_t i = 0; i < MC_COUNT; ++i) {
+    ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
+    ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
+
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(path_layer));
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(marker_layer));
+    gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
+  }
 
   gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
@@ -207,8 +202,8 @@ void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   }
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_save(dlg, GTK_WINDOW(gmw->window), NULL, dlg_save_cb, gmw);
-  /* g_clear_object(&dlg); */
-  g_object_unref(dlg);
+  g_clear_object(&dlg);
+  /* g_object_unref(dlg); */
 }
 //////////////////////////////////////////////////////////////
 

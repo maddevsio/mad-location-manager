@@ -1,9 +1,6 @@
 #ifndef SD_GENERATOR_H
 #define SD_GENERATOR_H
 
-#include <cstdint>
-#include <vector>
-
 #include "sensor_data.h"
 
 /// movement_interval_t - interval of movement

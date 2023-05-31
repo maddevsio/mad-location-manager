@@ -13,6 +13,9 @@ TEST(coordinates, distance_between_hardcoded_points_test) {
   // Calculate distances using the calculateDistance function
   double d12 = vptr.distance_between_points(point1.latitude, point1.longitude,
                                             point2.latitude, point2.longitude);
+  double d21 = vptr.distance_between_points(point2.latitude, point2.longitude,
+                                            point1.latitude, point1.longitude);
+  EXPECT_NEAR(d12, d21, 1e-7);
 }
 //////////////////////////////////////////////////////////////
 
