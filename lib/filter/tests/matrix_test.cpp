@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Matrix.hpp"
+#include "matrix.h"
 
 TEST(matrix, matrix_default_constructor) {
   static const int rows = 3;

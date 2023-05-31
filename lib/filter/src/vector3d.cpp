@@ -1,12 +1,11 @@
-#include "Vector3d.hpp"
+#include "vector3d.h"
 #include <math.h>
 
 Vector3D::Vector3D() : x_(0.0), y_(0.0), z_(0.0), len_(0.0) {}
 //////////////////////////////////////////////////////////////
 
 Vector3D::Vector3D(double x, double y, double z)
-    : x_(x), y_(y), z_(z),
-    len_(sqrt(x * x + y * y + z * z)) {}
+    : x_(x), y_(y), z_(z), len_(sqrt(x * x + y * y + z * z)) {}
 //////////////////////////////////////////////////////////////
 
 void Vector3D::normalize() {

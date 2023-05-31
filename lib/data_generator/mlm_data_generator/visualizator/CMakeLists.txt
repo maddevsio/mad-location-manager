@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(CodewarsCPP)            # this sets the project name
+project(mlm_visualizer)            # this sets the project name
 
 ###############################################################################
 ## file globbing ##############################################################

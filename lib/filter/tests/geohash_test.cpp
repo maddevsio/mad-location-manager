@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <gtest/gtest.h>
-#include "Geohash.hpp"
+#include "geohash.h"
 
 typedef struct TestEncodeItem {
   double lat;

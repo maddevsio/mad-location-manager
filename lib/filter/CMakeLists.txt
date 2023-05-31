@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(CodewarsCPP)            # this sets the project name
+project(mlm_filter)            # this sets the project name
 
 ###############################################################################
 ## file globbing ##############################################################
@@ -12,7 +12,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # `sources` and `data`.
 file(GLOB_RECURSE sources      src/*.cpp inc/*.h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
-file(GLOB_RECURSE data resources/*)
 # You can use set(sources src/main.cpp) etc if you don't want to
 # use globbing to find files automatically.
 
@@ -22,15 +21,15 @@ file(GLOB_RECURSE data resources/*)
 
 find_package(PkgConfig REQUIRED)
 
-add_executable(mlm_data_generator ${sources} ${data})
+add_executable(mlm_filter ${sources} ${data})
 
 # This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(mlm_data_generator PRIVATE inc)
-# Just for mlm_data_generator add some compiler flags.
+target_include_directories(mlm_filter PUBLIC inc)
+# Just for mlm_filter add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
 set(cxxflags -pipe -O0 -g -std=gnu++2a)
-target_compile_options(mlm_data_generator PUBLIC ${warning_level} ${cxxflags})
+target_compile_options(mlm_filter PUBLIC ${warning_level} ${cxxflags})
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
@@ -44,7 +43,7 @@ file(COPY ${data} DESTINATION resources)
 # that we need to link into the program.
 # find_package(Boost REQUIRED COMPONENTS program_options)
 #
-# target_link_libraries(mlm_data_generator PUBLIC
+# target_link_libraries(mlm_filter PUBLIC
 #   ${Boost_LIBRARIES}
 # )
 
@@ -69,11 +68,11 @@ if(GTEST_FOUND)
 
   # This allows us to use the executable as a link library, and inherit all 
   # linker options and library dependencies from it, by simply adding it as dependency.
-  set_target_properties(mlm_data_generator PROPERTIES ENABLE_EXPORTS on)
+  set_target_properties(mlm_filter PROPERTIES ENABLE_EXPORTS on)
 
   target_link_libraries(unit_tests PUBLIC
     ${GTEST_BOTH_LIBRARIES}
-    mlm_data_generator
+    mlm_filter
   )
 
   target_include_directories(unit_tests PUBLIC
@@ -88,18 +87,18 @@ endif()
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS mlm_data_generator DESTINATION example_destination)
+install(TARGETS mlm_filter DESTINATION example_destination)
 
 # This is basically a repeat of the file copy instruction that copies the
 # resources in the build directory, but here we tell cmake that we want it
 # in the package.
-install(DIRECTORY resources DESTINATION mlm_data_generator_destination)
+install(DIRECTORY resources DESTINATION mlm_filter_destination)
 
 # Now comes everything we need, to create a package
 # there are a lot more variables you can set, and some
 # you need to set for some package types, but we want to
 # be minimal here.
-set(CPACK_PACKAGE_NAME "mlm_data_generator")
+set(CPACK_PACKAGE_NAME "mlm_filter")
 set(CPACK_PACKAGE_VERSION "0.1.0")
 # We don't want to split our program up into several incomplete pieces.
 set(CPACK_MONOLITHIC_INSTALL 1)

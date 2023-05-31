@@ -1,28 +1,26 @@
-#include "Geohash.hpp"
-#include <cstdint>
+#include "geohash.h"
 #include <assert.h>
+#include <cstdint>
 
 static uint64_t interleave_bits(uint64_t x, uint64_t y);
-uint64_t geohash_encode(double lat,
-                        double lon,
-                        int prec) {
-  union duint64{
+uint64_t geohash_encode(double lat, double lon, int prec) {
+  union duint64 {
     double dv;
     uint64_t ui;
   };
   duint64 ilat, ilon;
-  ilat.dv = lat/180.0 + 1.5;
-  ilon.dv = lon/360.0 + 1.5;
+  ilat.dv = lat / 180.0 + 1.5;
+  ilon.dv = lon / 360.0 + 1.5;
   ilat.ui >>= 20;
   ilon.ui >>= 20;
   ilat.ui &= 0x00000000ffffffff;
   ilon.ui &= 0x00000000ffffffff;
-  return interleave_bits(ilat.ui, ilon.ui) >> ((GEOHASH_MAX_PRECISION-prec)*5);
+  return interleave_bits(ilat.ui, ilon.ui) >>
+         ((GEOHASH_MAX_PRECISION - prec) * 5);
 }
 ///////////////////////////////////////////////////////
 
-int geohash_cmp(double lon1, double lat1,
-                double lon2, double lat2,
+int geohash_cmp(double lon1, double lat1, double lon2, double lat2,
                 int precision) {
   assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
   uint64_t gh1 = geohash_encode(lat1, lon1, precision);
@@ -45,7 +43,7 @@ uint64_t interleave_bits(uint64_t x, uint64_t y) {
   y = (y | (y << 1)) & 0x5555555555555555;
   return x | (y << 1);
   //  use pdep instructions if available !!!
-  //  return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y, 0xaaaaaaaaaaaaaaaa);
+  //  return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y,
+  //  0xaaaaaaaaaaaaaaaa);
 }
 ///////////////////////////////////////////////////////
-

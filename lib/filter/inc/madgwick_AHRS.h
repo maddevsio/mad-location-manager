@@ -10,12 +10,13 @@
 // 02/10/2011	SOH Madgwick	Optimised for reduced CPU load
 //
 // Date         Author          Notes
-// 19/08/2021   Lezh1k          Reimplemented using double precision numbers + C++
+// 19/08/2021   Lezh1k          Reimplemented using double precision numbers +
+// C++
 //=====================================================================================================
 #ifndef MadgwickAHRS_h
 #define MadgwickAHRS_h
 
-#include "Quaternion.hpp"
+#include "quaternion.h"
 
 class MadgwickFilter {
 private:
@@ -28,11 +29,10 @@ public:
   MadgwickFilter(double beta, double sample_freq_HZ);
   ~MadgwickFilter() = default;
 
-  void AHRS_update(double gx, double gy, double gz,
-                   double ax, double ay, double az,
-                   double mx, double my, double mz);
-  void AHRS_update_IMU(double gx, double gy, double gz,
-                       double ax, double ay, double az);
+  void AHRS_update(double gx, double gy, double gz, double ax, double ay,
+                   double az, double mx, double my, double mz);
+  void AHRS_update_IMU(double gx, double gy, double gz, double ax, double ay,
+                       double az);
 };
 
 #endif // MadgwickAHRS_h

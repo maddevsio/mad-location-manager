@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "MadgwickAHRS.hpp"
+#include "madgwick_AHRS.h"
 
 static double inv_sqrt(double x);
 
