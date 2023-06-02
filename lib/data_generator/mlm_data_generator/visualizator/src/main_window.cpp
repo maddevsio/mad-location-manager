@@ -54,7 +54,8 @@ generator_main_window::generator_main_window()
 //////////////////////////////////////////////////////////////
 
 generator_main_window::~generator_main_window() {
-  g_clear_object(&map_source_registry);
+  /* g_clear_object(&map_source_registry); */
+  g_object_unref(map_source_registry);
 }
 //////////////////////////////////////////////////////////////
 
@@ -202,8 +203,8 @@ void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud) {
   }
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_save(dlg, GTK_WINDOW(gmw->window), NULL, dlg_save_cb, gmw);
-  g_clear_object(&dlg);
-  /* g_object_unref(dlg); */
+  /* g_clear_object(&dlg); */
+  g_object_unref(dlg);
 }
 //////////////////////////////////////////////////////////////
 

@@ -42,8 +42,10 @@ void GPSAccFusionFilter::update(const FusionFilterState &state,
 //////////////////////////////////////////////////////////////
 
 void GPSAccFusionFilter::rebuild_F(double dt_ms) {
-  F.set({1.0, 0.0, dt_ms, 0.0, 0.0, 1.0, 0.0, dt_ms, 0.0, 0.0, 1.0, 0.0, 0.0,
-         0.0, 0.0, 1.0});
+  F.set({ 1.0, 0.0, dt_ms, 0.0,
+          0.0, 1.0, 0.0, dt_ms, 
+          0.0, 0.0, 1.0, 0.0, 
+          0.0, 0.0, 0.0, 1.0});
 }
 //////////////////////////////////////////////////////////////
 
@@ -54,7 +56,10 @@ void GPSAccFusionFilter::rebuild_U(double xAcc, double yAcc) {
 
 void GPSAccFusionFilter::rebuild_B(double dt_ms) {
   double dt_2 = 0.5 * dt_ms * dt_ms;
-  B.set({dt_2, 0.0, 0.0, dt_2, dt_ms, 0.0, 0.0, dt_ms});
+  B.set({ dt_2, 0.0, 
+          0.0, dt_2, 
+          dt_ms, 0.0, 
+          0.0, dt_ms});
 }
 //////////////////////////////////////////////////////////////
 

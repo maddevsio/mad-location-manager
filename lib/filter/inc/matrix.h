@@ -13,7 +13,7 @@ template <typename T>
 concept arithmetic = std::integral<T> or std::floating_point<T>;
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T>
+  requires arithmetic<T>
 class Matrix {
 private:
   static const size_t N = rows * cols;
@@ -38,7 +38,6 @@ private:
   }
 
 public:
-
   Matrix() : m_data({}){}; // to init matrix with zeroes
 
   explicit Matrix(const std::array<T, rows * cols> &arr) : m_data(arr) {}
@@ -84,7 +83,8 @@ public:
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols> Matrix<T, rows, cols>::Identity() {
+  requires arithmetic<T>
+Matrix<T, rows, cols> Matrix<T, rows, cols>::Identity() {
   Matrix<T, rows, cols> res;
   for (size_t rc = 0; rc < std::min<size_t>(rows, cols); ++rc)
     res(rc, rc) = 1;
@@ -96,15 +96,15 @@ requires arithmetic<T> Matrix<T, rows, cols> Matrix<T, rows, cols>::Identity() {
 /// ELEMENT ACCESS FUNCTIONS
 //////////////////////////////////////////////////////////////
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T>
+  requires arithmetic<T>
 const T &Matrix<T, rows, cols>::operator()(size_t row, size_t col) const {
   return m_data[row * cols + col];
 }
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> T &Matrix<T, rows, cols>::operator()(size_t row,
-                                                            size_t col) {
+  requires arithmetic<T>
+T &Matrix<T, rows, cols>::operator()(size_t row, size_t col) {
   return m_data[row * cols + col];
 }
 //////////////////////////////////////////////////////////////
@@ -112,8 +112,8 @@ requires arithmetic<T> T &Matrix<T, rows, cols>::operator()(size_t row,
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, cols, rows> Matrix<T, rows, cols>::transpose()
-const {
+  requires arithmetic<T>
+Matrix<T, cols, rows> Matrix<T, rows, cols>::transpose() const {
   Matrix<T, cols, rows> res;
   for (size_t r = 0; r < rows; ++r) {
     for (size_t c = 0; c < cols; ++c) {
@@ -125,8 +125,8 @@ const {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols> Matrix<T, rows, cols>::invert()
-const {
+  requires arithmetic<T>
+Matrix<T, rows, cols> Matrix<T, rows, cols>::invert() const {
   static_assert(rows == cols,
                 "matrix invert is possible only for square matrices");
   Matrix<T, rows, rows> mtxin(
@@ -168,8 +168,9 @@ const {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t l, size_t m, size_t n>
-requires arithmetic<T> Matrix<T, l, n>
-operator*(const Matrix<T, l, m> &mtx_a, const Matrix<T, m, n> &mtx_b) {
+  requires arithmetic<T>
+Matrix<T, l, n> operator*(const Matrix<T, l, m> &mtx_a,
+                          const Matrix<T, m, n> &mtx_b) {
   Matrix<T, l, n> res;
   for (size_t r = 0; r < l; ++r) {
     for (size_t c = 0; c < n; ++c) {
@@ -183,8 +184,9 @@ operator*(const Matrix<T, l, m> &mtx_a, const Matrix<T, m, n> &mtx_b) {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-operator+(const Matrix<T, rows, cols> &l, const Matrix<T, rows, cols> &r) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> operator+(const Matrix<T, rows, cols> &l,
+                                const Matrix<T, rows, cols> &r) {
   Matrix<T, rows, cols> res(l);
   res += r;
   return res;
@@ -192,8 +194,9 @@ operator+(const Matrix<T, rows, cols> &l, const Matrix<T, rows, cols> &r) {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-operator-(const Matrix<T, rows, cols> &l, const Matrix<T, rows, cols> &r) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> operator-(const Matrix<T, rows, cols> &l,
+                                const Matrix<T, rows, cols> &r) {
   Matrix<T, rows, cols> res(l);
   res -= r;
   return res;
@@ -201,8 +204,9 @@ operator-(const Matrix<T, rows, cols> &l, const Matrix<T, rows, cols> &r) {
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-&Matrix<T, rows, cols>::operator-=(const Matrix<T, rows, cols> &mtx) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> &
+Matrix<T, rows, cols>::operator-=(const Matrix<T, rows, cols> &mtx) {
   std::transform(m_data.begin(), m_data.end(), mtx.m_data.begin(),
                  m_data.begin(), std::minus<T>());
   return *this;
@@ -210,8 +214,9 @@ requires arithmetic<T> Matrix<T, rows, cols>
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-&Matrix<T, rows, cols>::operator+=(const Matrix<T, rows, cols> &mtx) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> &
+Matrix<T, rows, cols>::operator+=(const Matrix<T, rows, cols> &mtx) {
   std::transform(m_data.begin(), m_data.end(), mtx.m_data.begin(),
                  m_data.begin(), std::plus<T>());
   return *this;
@@ -219,16 +224,16 @@ requires arithmetic<T> Matrix<T, rows, cols>
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-&Matrix<T, rows, cols>::operator/=(T scalar) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> &Matrix<T, rows, cols>::operator/=(T scalar) {
   std::for_each(m_data.begin(), m_data.end(), [scalar](T &x) { x /= scalar; });
   return *this;
 }
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> Matrix<T, rows, cols>
-&Matrix<T, rows, cols>::operator*=(T scalar) {
+  requires arithmetic<T>
+Matrix<T, rows, cols> &Matrix<T, rows, cols>::operator*=(T scalar) {
   std::for_each(m_data.begin(), m_data.end(), [scalar](T &x) { x *= scalar; });
   return *this;
 }
@@ -239,8 +244,8 @@ requires arithmetic<T> Matrix<T, rows, cols>
 //////////////////////////////////////////////////////////////
 
 template <typename T, size_t rows, size_t cols>
-requires arithmetic<T> std::ostream &
-operator<<(std::ostream &out, const Matrix<T, rows, cols> &mtx) {
+  requires arithmetic<T>
+std::ostream &operator<<(std::ostream &out, const Matrix<T, rows, cols> &mtx) {
   for (size_t r = 0; r < rows; ++r) {
     for (size_t c = 0; c < cols; ++c) {
       out << mtx(r, c) << "\t";

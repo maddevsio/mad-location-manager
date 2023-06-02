@@ -101,7 +101,7 @@ endif()
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS mlm_visualizer DESTINATION example_destination)
+install(TARGETS mlm_visualizer DESTINATION mlm_visualizer_destination)
 
 # This is basically a repeat of the file copy instruction that copies the
 # resources in the build directory, but here we tell cmake that we want it

@@ -10,7 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # These instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
-file(GLOB_RECURSE sources      src/*.cpp inc/*.h)
+file(GLOB_RECURSE sources_lib src/*.cpp inc/*h)
+file(GLOB_RECURSE sources_exe src/*.cpp exe/*.cpp inc/*.h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
 # You can use set(sources src/main.cpp) etc if you don't want to
 # use globbing to find files automatically.
@@ -21,19 +22,22 @@ file(GLOB_RECURSE sources_test tests/*.cpp)
 
 find_package(PkgConfig REQUIRED)
 
-add_executable(mlm_filter ${sources} ${data})
+add_executable(mlm_filter ${sources_exe})
+add_library(mlm_filter_lib SHARED ${sources_lib})
 
 # This allows to include files relative to the root of the src directory with a <> pair
 target_include_directories(mlm_filter PUBLIC inc)
+target_include_directories(mlm_filter_lib PUBLIC inc)
 # Just for mlm_filter add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
 set(cxxflags -pipe -O0 -g -std=gnu++2a)
 target_compile_options(mlm_filter PUBLIC ${warning_level} ${cxxflags})
+target_compile_options(mlm_filter_lib PUBLIC ${warning_level} ${cxxflags})
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
-file(COPY ${data} DESTINATION resources)
+# file(COPY ${data} DESTINATION resources)
 
 ###############################################################################
 ## dependencies ###############################################################
@@ -58,8 +62,8 @@ file(COPY ${data} DESTINATION resources)
 find_package(GTest)
 
 if(GTEST_FOUND)
-  add_executable(unit_tests ${sources_test} ${sources})
-  target_include_directories(unit_tests PRIVATE inc)
+  add_executable(unit_tests ${sources_test} ${sources_exe})
+  target_include_directories(unit_tests PUBLIC inc)
 
   # This define is added to prevent collision with the main.
   # It might be better solved by not adding the source with the main to the
@@ -87,12 +91,12 @@ endif()
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS mlm_filter DESTINATION example_destination)
+install(TARGETS mlm_filter DESTINATION mad_location_manager_destination)
 
 # This is basically a repeat of the file copy instruction that copies the
 # resources in the build directory, but here we tell cmake that we want it
 # in the package.
-install(DIRECTORY resources DESTINATION mlm_filter_destination)
+install(DIRECTORY resources DESTINATION mad_location_manager_destination)
 
 # Now comes everything we need, to create a package
 # there are a lot more variables you can set, and some

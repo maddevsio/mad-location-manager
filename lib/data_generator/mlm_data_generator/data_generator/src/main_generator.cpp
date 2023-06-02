@@ -91,11 +91,11 @@ int generator_entry_point(int argc, char *argv[], char **env) {
     const movement_interval intervals[] = {
         {acc.azimuth(), acc.acceleration(), go.acceleration_time},
         {0., 0., no_acceleration_time},
-        {0., 0., 0.},
+        {0., 0., -1.0},
     };
 
     current_coord = prev_coord;
-    for (const movement_interval *i = intervals; i->duration != 0.0; ++i) {
+    for (const movement_interval *i = intervals; i->duration != -1.0; ++i) {
       current_coord =
           sd_gps_coordinate_in_interval(current_coord, *i, i->duration);
     }

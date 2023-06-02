@@ -1,3 +1,4 @@
+#include <cmath>
 #include <gtest/gtest.h>
 #include <iostream>
 
@@ -20,7 +21,6 @@ int main(int argc, char *argv[], char **env) {
   UNUSED(argv);
   UNUSED(env);
 
-  std::cout << "filter\n";
   return 0;
 #endif
 }
