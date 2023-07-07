@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <iomanip>
 #include "sensor_data.h"
 
 TEST(coordinates, distance_between_hardcoded_points_test) {
@@ -73,3 +75,4 @@ TEST(coordinates, distance_point_ahead_test) {
   EXPECT_NEAR(s, distance, 1e-7);
   EXPECT_NEAR(az, azimuth, 1e-7);
 }
+//////////////////////////////////////////////////////////////

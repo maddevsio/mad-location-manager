@@ -1,7 +1,8 @@
 #ifndef KALMAN_H
 #define KALMAN_H
 
-#include "matrix.h"
+#include <Eigen/Eigen>
+using namespace Eigen;
 
 template <size_t state_dim, size_t measure_dim, size_t control_dim>
 class KalmanFilter {
@@ -31,6 +32,10 @@ protected:
   /*auxiliary matrices*/
   Matrix<double, state_dim, state_dim> I; // (I - Kk*Hk)
 
+  static const size_t _state_dim = state_dim;
+  static const size_t _measure_dim = measure_dim;
+  static const size_t _control_dim = control_dim;
+
 public:
   KalmanFilter() : I(Matrix<double, state_dim, state_dim>::Identity()) {}
   //////////////////////////////////////////////////////////////
@@ -50,7 +55,7 @@ public:
     // Sk = Rk + Hk*Pk|k-1*Hk(t)
     Sk = R + H * Pk_km1 * H.transpose();
     // Kk = Pk|k-1*Hk(t)*Sk(inv)
-    K = Pk_km1 * H.transpose() * Sk.invert();
+    K = Pk_km1 * H.transpose() * Sk.inverse();
     // xk|k = xk|k-1 + Kk*Yk
     Xk_k = Xk_km1 + K * Yk;
     // Pk|k = (I - Kk*Hk) * Pk|k-1

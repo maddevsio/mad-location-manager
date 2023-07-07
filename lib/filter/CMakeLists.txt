@@ -21,13 +21,53 @@ file(GLOB_RECURSE sources_test tests/*.cpp)
 ###############################################################################
 
 find_package(PkgConfig REQUIRED)
+find_package(Git REQUIRED)
+
+# Eigen 
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+# include_directories(${EIGEN_INCLUDE_DIRS})
+# link_directories(${EIGEN_LIBRARY_DIRS})
+
+# GeographicLib
+# include(FetchContent)
+find_path(GEOGRAPHICLIB "geographiclib" ${CMAKE_CURRENT_SOURCE_DIR}/external)
+if (NOT GEOGRAPHICLIB) 
+  message("unable to find geographiclib sources")
+  execute_process(COMMAND git submodule update --init -- external/geographiclib
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  set(GEOGRAPHICLIB ${CMAKE_CURRENT_SOURCE_DIR}/external)
+endif()
+
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_DOCUMENTATION OFF)
 
 add_executable(mlm_filter ${sources_exe})
 add_library(mlm_filter_lib SHARED ${sources_lib})
 
 # This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(mlm_filter PUBLIC inc)
-target_include_directories(mlm_filter_lib PUBLIC inc)
+target_include_directories(mlm_filter 
+  PUBLIC inc
+  PUBLIC external/geographiclib/include
+  PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
+)
+
+target_include_directories(mlm_filter_lib 
+  PUBLIC inc
+  PUBLIC external/geographiclib/include
+  PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
+)
+
+add_subdirectory(${GEOGRAPHICLIB}/geographiclib)
+
+target_link_libraries(mlm_filter 
+  PUBLIC Eigen3::Eigen
+  PUBLIC GeographicLib
+)
+
+target_link_libraries(mlm_filter_lib 
+  PUBLIC Eigen3::Eigen
+  PUBLIC GeographicLib
+)
 # Just for mlm_filter add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
@@ -78,6 +118,7 @@ if(GTEST_FOUND)
     ${GTEST_BOTH_LIBRARIES}
     mlm_filter
   )
+  target_link_libraries(unit_tests PUBLIC Eigen3::Eigen)
 
   target_include_directories(unit_tests PUBLIC
     ${GTEST_INCLUDE_DIRS} # doesn't do anything on linux

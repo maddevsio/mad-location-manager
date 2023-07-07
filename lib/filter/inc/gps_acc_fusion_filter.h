@@ -22,9 +22,6 @@ struct FusionFilterState {
 // todo make some interface with predict/update methods
 class GPSAccFusionFilter : public KalmanFilter<4, 4, 2> {
 private:
-  static const size_t state_dim = 4;
-  static const size_t measure_dim = 4;
-  static const size_t control_dim = 2;
 
   double m_last_predict_ms;
   double m_acc_deviation; // accelerometer sigma
