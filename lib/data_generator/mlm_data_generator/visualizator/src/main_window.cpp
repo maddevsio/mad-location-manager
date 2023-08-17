@@ -225,10 +225,12 @@ void gmw_add_marker(generator_main_window *gmw, marker_color mc,
 
   gmw->marker_layers[mc].lst_geopoints.push_back(geopoint(latitude, longitude));
   GBytes *gbytes = g_bytes_new(resources[mc].buff, resources[mc].buff_len);
-  GdkPixbuf *pb = gdk_pixbuf_new_from_bytes(
-      gbytes, GDK_COLORSPACE_RGB, true, 8, resources[mc].width,
-      resources[mc].heigth, resources[mc].width * 4);
-  GtkWidget *img = gtk_image_new_from_pixbuf(pb);
+
+  GdkTexture *texture = gdk_memory_texture_new(
+      resources[mc].width, resources[mc].heigth, GDK_MEMORY_R8G8B8A8, gbytes,
+      resources[mc].width * 4);
+
+  GtkWidget *img = gtk_image_new_from_paintable(GDK_PAINTABLE(texture));
   ShumateMarker *marker = shumate_marker_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
   shumate_marker_set_child(marker, img);

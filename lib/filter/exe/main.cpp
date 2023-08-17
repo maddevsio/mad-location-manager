@@ -24,7 +24,7 @@ int main(int argc, char *argv[], char **env) {
   UNUSED(env);
 
   double start_lat = 36.5519514;
-  double start_lon = 31.9801362;
+  double start_lon = 32.9801362;
 
   GeographicLib::LocalCartesian lc;
   lc.Reset(start_lat, start_lon);
