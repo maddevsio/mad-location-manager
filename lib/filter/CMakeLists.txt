@@ -37,9 +37,8 @@ if (NOT GEOGRAPHICLIB)
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   set(GEOGRAPHICLIB ${CMAKE_CURRENT_SOURCE_DIR}/external)
 endif()
+set(GEOGRAPHICLIB ${GEOGRAPHICLIB}/geographiclib)
 
-set(BUILD_SHARED_LIBS OFF)
-set(BUILD_DOCUMENTATION OFF)
 
 add_executable(mlm_filter ${sources_exe})
 add_library(mlm_filter_lib SHARED ${sources_lib})
@@ -57,7 +56,14 @@ target_include_directories(mlm_filter_lib
   PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
 )
 
-add_subdirectory(${GEOGRAPHICLIB}/geographiclib)
+set(CMAKE_CXX_FLAGS_BACK ${CMAKE_CXX_FLAGS})
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_DOCUMENTATION OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+add_subdirectory(${GEOGRAPHICLIB})
+unset(BUILD_SHARED_LIBS)
+unset(BUILD_DOCUMENTATION)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_BACK})
 
 target_link_libraries(mlm_filter 
   PUBLIC Eigen3::Eigen
@@ -72,8 +78,9 @@ target_link_libraries(mlm_filter_lib
 
 set(warning_level -Wall -Wextra -pedantic)
 set(cxxflags -pipe -O0 -g -std=gnu++2a)
+
 target_compile_options(mlm_filter PUBLIC ${warning_level} ${cxxflags})
-target_compile_options(mlm_filter_lib PUBLIC ${warning_level} ${cxxflags})
+target_compile_options(mlm_filter_lib PUBLIC ${warning_level} ${cxxflags} -fPIC)
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.

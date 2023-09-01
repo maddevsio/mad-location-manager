@@ -11,14 +11,16 @@ static void activate(GtkApplication *app, gpointer user_data);
 //////////////////////////////////////////////////////////////
 
 #ifdef _UNIT_TESTS_
-int main_tests(int argc, char *argv[]) {
+int main_tests(int argc, char *argv[])
+{
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
 #endif
 //////////////////////////////////////////////////////////////
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 #ifdef _UNIT_TESTS_
   return main_tests(argc, argv);
 #endif
@@ -35,7 +37,8 @@ int main(int argc, char **argv) {
 }
 //////////////////////////////////////////////////////////////
 
-void activate(GtkApplication *app, gpointer user_data) {
+void activate(GtkApplication *app, gpointer user_data)
+{
   generator_main_window *gmw =
       reinterpret_cast<generator_main_window *>(user_data);
   gmw_bind_to_app(app, gmw);

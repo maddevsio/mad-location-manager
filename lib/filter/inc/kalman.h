@@ -36,7 +36,7 @@ protected:
   static const size_t _measure_dim = measure_dim;
   static const size_t _control_dim = control_dim;
 
-public:
+protected:
   KalmanFilter() : I(Matrix<double, state_dim, state_dim>::Identity()) {}
   //////////////////////////////////////////////////////////////
 

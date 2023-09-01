@@ -22,7 +22,6 @@ struct FusionFilterState {
 // todo make some interface with predict/update methods
 class GPSAccFusionFilter : public KalmanFilter<4, 4, 2> {
 private:
-
   double m_last_predict_ms;
   double m_acc_deviation; // accelerometer sigma
   FusionFilterState m_current_state;
@@ -35,9 +34,12 @@ private:
   void rebuild_R(double pos_sigma, double vel_sigma);
 
 public:
-  GPSAccFusionFilter() = delete;
-  GPSAccFusionFilter(const FusionFilterState &init_state, double acc_deviation,
-                     double pos_deviation, double last_predict_ms);
+  GPSAccFusionFilter();
+
+  void reset(double x, // longitude in meters
+             double y, // latitude in meters
+             double x_vel, double y_vel, double acc_deviation,
+             double pos_deviation);
 
   void predict(double xAcc, double yAcc, double time_ms);
   void update(const FusionFilterState &state, double pos_deviation,

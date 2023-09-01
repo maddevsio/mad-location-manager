@@ -22,35 +22,56 @@ struct generator_options {
       : acceleration_time(1.0),
         accelerometer_period(1e-1),
         gps_period(1.5),
-        output(nullptr) {}
+        output(nullptr)
+  {
+  }
 };
 static int process_cl_arguments(int argc, char *argv[], generator_options &go);
 //////////////////////////////////////////////////////////////
 
-static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts) {
-  fprintf(stream, "GPS: %.12f , %.12f , %.12f , %.12f , %.12f , %12f\n", ts,
-          gc.location.latitude, gc.location.longitude, gc.speed.value,
-          gc.speed.azimuth, gc.speed.accuracy);
+static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
+{
+  fprintf(stream,
+          "GPS: %.12f , %.12f , %.12f , %.12f , %.12f , %12f\n",
+          ts,
+          gc.location.latitude,
+          gc.location.longitude,
+          gc.speed.value,
+          gc.speed.azimuth,
+          gc.speed.accuracy);
 }
 //////////////////////////////////////////////////////////////
 
-static void mlm_acc_out(FILE *stream, const abs_accelerometer &acc, double ts,
-                        double acceleration_time, double accelerometer_period,
-                        double no_acceleration_time) {
+static void mlm_acc_out(FILE *stream,
+                        const abs_accelerometer &acc,
+                        double ts,
+                        double acceleration_time,
+                        double accelerometer_period,
+                        double no_acceleration_time)
+{
   for (double ats = 0.; ats < acceleration_time; ats += accelerometer_period) {
-    fprintf(stream, "ACC: %.12f , %.12f , %.12f , %.12f\n", ts + ats, acc.x,
-            acc.y, acc.z);
+    fprintf(stream,
+            "ACC: %.12f , %.12f , %.12f , %.12f\n",
+            ts + ats,
+            acc.x,
+            acc.y,
+            acc.z);
   }
 
-  for (double ats = 0.; ats < no_acceleration_time;
-       ats += accelerometer_period) {
-    fprintf(stream, "ACC: %.12f , %.12f , %.12f , %.12f\n",
-            ts + acceleration_time + ats, 0., 0., 0.);
+  for (double ats  = 0.; ats < no_acceleration_time;
+       ats        += accelerometer_period) {
+    fprintf(stream,
+            "ACC: %.12f , %.12f , %.12f , %.12f\n",
+            ts + acceleration_time + ats,
+            0.,
+            0.,
+            0.);
   }
 }
 //////////////////////////////////////////////////////////////
 
-int generator_entry_point(int argc, char *argv[], char **env) {
+int generator_entry_point(int argc, char *argv[], char **env)
+{
   UNUSED(env);
 
   generator_options go;
@@ -75,23 +96,31 @@ int generator_entry_point(int argc, char *argv[], char **env) {
   }
 
   current_coord.location = input_point;
-  prev_coord = current_coord;
+  prev_coord             = current_coord;
   mlm_gps_out(mlm_out, current_coord, 0.);
 
   double ts = 0.;
   while (get_input_coordinate(input_point)) {
     current_coord.location = input_point;
-    abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
-        prev_coord, current_coord, go.acceleration_time, go.gps_period, 0.);
-    mlm_acc_out(mlm_out, acc, ts, go.acceleration_time, go.accelerometer_period,
+    abs_accelerometer acc =
+        sd_abs_acc_between_two_geopoints(prev_coord,
+                                         current_coord,
+                                         go.acceleration_time,
+                                         go.gps_period,
+                                         0.);
+    mlm_acc_out(mlm_out,
+                acc,
+                ts,
+                go.acceleration_time,
+                go.accelerometer_period,
                 no_acceleration_time);
 
     ts += go.gps_period;
     // we have GPS point but have not speed for that point. generating:
     const movement_interval intervals[] = {
         {acc.azimuth(), acc.acceleration(), go.acceleration_time},
-        {0., 0., no_acceleration_time},
-        {0., 0., -1.0},
+        {           0.,                 0., no_acceleration_time},
+        {           0.,                 0.,                 -1.0},
     };
 
     current_coord = prev_coord;
@@ -112,12 +141,14 @@ int generator_entry_point(int argc, char *argv[], char **env) {
 }
 //////////////////////////////////////////////////////////////
 
-bool get_input_coordinate(geopoint &gp) {
+bool get_input_coordinate(geopoint &gp)
+{
   return scanf("%lf,%lf", &gp.latitude, &gp.longitude) == 2;
 }
 //////////////////////////////////////////////////////////////
 
-static void usage() {
+static void usage()
+{
   fprintf(
       stderr,
       "mlm_data_generator %s - reads coordinates from stdin and outputs GPS "
@@ -142,14 +173,15 @@ static void usage() {
 }
 //////////////////////////////////////////////////////////////
 /// process_cl_arguments = process command line arguments
-int process_cl_arguments(int argc, char *argv[], generator_options &go) {
+int process_cl_arguments(int argc, char *argv[], generator_options &go)
+{
   static const struct option lopts[] = {
-      {"acceleration-time", required_argument, NULL, 'a'},
+      {  "acceleration-time", required_argument, NULL, 'a'},
       {"acceleration-period", required_argument, NULL, 'f'},
-      {"gps-period", required_argument, NULL, 'g'},
-      {"output", required_argument, NULL, 'o'},
-      {"help", no_argument, NULL, 'h'},
-      {NULL, 0, NULL, 0},
+      {         "gps-period", required_argument, NULL, 'g'},
+      {             "output", required_argument, NULL, 'o'},
+      {               "help",       no_argument, NULL, 'h'},
+      {                 NULL,                 0, NULL,   0},
   };
 
   int opt_idx;
@@ -166,7 +198,7 @@ int process_cl_arguments(int argc, char *argv[], generator_options &go) {
         go.gps_period = atof(optarg);
         break;
       case 'o':
-        opt_len = strlen(optarg);
+        opt_len   = strlen(optarg);
         go.output = new char[opt_len + 1];
         strncpy(go.output, optarg, opt_len);
         go.output[opt_len] = 0;
@@ -178,7 +210,8 @@ int process_cl_arguments(int argc, char *argv[], generator_options &go) {
         printf(
             "something bad is happened. option index is out of bounds (%d "
             "%c)\n",
-            opt_idx, (char)opt_idx);
+            opt_idx,
+            (char)opt_idx);
         return 2;
     }
   }

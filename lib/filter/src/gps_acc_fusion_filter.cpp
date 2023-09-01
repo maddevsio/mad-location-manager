@@ -2,24 +2,27 @@
 #include <assert.h>
 #include <stdlib.h>
 
-GPSAccFusionFilter::GPSAccFusionFilter(const FusionFilterState &init_state,
-                                       double acc_deviation,
-                                       double pos_deviation,
-                                       double last_predict_ms)
-    : m_last_predict_ms(last_predict_ms), m_acc_deviation(acc_deviation),
-      m_current_state(init_state), m_predicts_count(0) {
-  Xk_k << init_state.x, init_state.y, init_state.x_vel, init_state.y_vel;
-
+GPSAccFusionFilter::GPSAccFusionFilter() {
   H = Matrix<double, _measure_dim, _state_dim>::Identity();
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
-  Pk_k *= pos_deviation;
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_ms) {
+void GPSAccFusionFilter::reset(double x, // longitude in meters
+                               double y, // latitude in meters
+                               double x_vel, double y_vel, double acc_deviation,
+                               double pos_deviation) {
+  Xk_k << x, y, x_vel, y_vel;
+  Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
+  Pk_k *= pos_deviation;
+  m_acc_deviation = acc_deviation;
+};
+//////////////////////////////////////////////////////////////
 
-  double dt_sec = (time_ms - m_last_predict_ms) /
-                  1.0e+3; // ms to sec. cause we use m/sec, m/sec^2 etc.
+void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_ms) {
+  // ms to sec. cause we use m/sec, m/sec^2 etc.
+  double dt_sec = (time_ms - m_last_predict_ms) / 1.0e+3;
+
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
@@ -71,11 +74,12 @@ void GPSAccFusionFilter::rebuild_Q(double acc_deviation) {
   // TODO RE-IMPLEMENT and find good velocity and position deviations.
 
   double vel_dev = acc_deviation * m_predicts_count;
-  double pos_dev = vel_dev * m_predicts_count;
+  double pos_dev = vel_dev * m_predicts_count; // check!
   double cov_dev = vel_dev * pos_dev;
 
   double pos_dev_2 = pos_dev * pos_dev;
   double vel_dev_2 = vel_dev * vel_dev;
+
   // clang-format off
   Q <<  pos_dev_2,  0.0,        cov_dev,    0.0, 
         0.0,        pos_dev_2,  0.0,        cov_dev, 
@@ -86,12 +90,8 @@ void GPSAccFusionFilter::rebuild_Q(double acc_deviation) {
 //////////////////////////////////////////////////////////////
 
 void GPSAccFusionFilter::rebuild_R(double pos_sigma, double vel_sigma) {
-  // TODO FIND HOW MANY TIMES GPS VELOCITY
-  // ACCURACY BETTER THEN GPS COORDINATES ACCURACY
-  // NOW it's assumed that velocity sigma 10 times worse
-  // than position sigma
   // clang-format off
-  vel_sigma = pos_sigma * 1.0e-01;
+  /* vel_sigma = pos_sigma * 1.0e-01; */
   R << 
     pos_sigma,  0.0,        0.0,        0.0, 
     0.0,        pos_sigma,  0.0,        0.0, 

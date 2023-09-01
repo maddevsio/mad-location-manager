@@ -3,4 +3,4 @@
 
 int generator_entry_point(int argc, char *argv[], char **env);
 
-#endif // !_MAIN_GENERATOR_H_
+#endif  // !_MAIN_GENERATOR_H_
