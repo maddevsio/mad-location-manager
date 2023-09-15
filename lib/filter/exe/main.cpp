@@ -36,7 +36,8 @@ int main_mlm(int argc, char *argv[], char **env)
   MLM mlm;
 
   // see order in SD_RECORD_TYPE enum
-  bool (*record_handlers[])(MLM &, const char *) = {
+  typedef bool (*fp_record_handler)(MLM &, const char *);
+  fp_record_handler record_handlers[] = {
       handle_acc_record,
       handle_gps_record,
   };
@@ -92,8 +93,12 @@ bool handle_gps_record(MLM &mlm, const char *line)
   if (!parsed)
     return false;
 
+  std::cout << "parsed gps data\n";
   // WARNING!!!! TODO!!!! get velocity and position deviations
-  mlm.process_gps_data(gps, 0., gps.speed.accuracy); 
+  mlm.process_gps_data(gps, 0., 0.);
+
+  std::cout << "processed gps data\n";
+  
   return true;
 }
 //////////////////////////////////////////////////////////////

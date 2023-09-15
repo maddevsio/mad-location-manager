@@ -44,3 +44,16 @@ void MLM::process_gps_data(const gps_coordinate &gps,
   m_fk.update(st, pos_deviation, vel_deviation);
 }
 //////////////////////////////////////////////////////////////
+
+gps_coordinate MLM::predicted_coordinate() const
+{
+  gps_coordinate res;
+  m_lc.Reverse(m_fk.current_state().x,
+               m_fk.current_state().y,
+               0.,
+               res.location.latitude,
+               res.location.longitude,
+               res.location.altitude);
+  return res;
+}
+//////////////////////////////////////////////////////////////

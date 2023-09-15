@@ -74,11 +74,12 @@ struct abs_accelerometer {
 struct geopoint {
   double latitude;   // 0 .. M_PI
   double longitude;  // 0 .. 2 * M_PI
+  double altitude;
   double accuracy;
 
-  geopoint() : latitude(0.0), longitude(0.0), accuracy(0.0) {}
-  geopoint(double latitude, double longitude)
-      : latitude(latitude), longitude(longitude)
+  geopoint() : latitude(0.0), longitude(0.0), altitude(0.0), accuracy(0.0) {}
+  geopoint(double latitude, double longitude, double altitude = 0.)
+      : latitude(latitude), longitude(longitude), altitude(altitude)
   {
   }
 };

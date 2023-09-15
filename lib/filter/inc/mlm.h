@@ -21,6 +21,9 @@ public:
   // update
   void process_gps_data(const gps_coordinate &gps, double pos_deviation,
                         double vel_deviation);
+
+  gps_coordinate predicted_coordinate() const; 
+
 };
 
 #endif

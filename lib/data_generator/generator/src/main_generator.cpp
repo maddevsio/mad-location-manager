@@ -37,6 +37,7 @@ static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
   size_t record_len = sd_gps_serialize_str(gc, ts, buff, buff_len);
   assert(record_len < buff_len);
   fwrite(static_cast<void *>(buff), record_len, 1, stream);
+  fprintf(stream, "\n");
 }
 //////////////////////////////////////////////////////////////
 
@@ -58,6 +59,7 @@ static void mlm_acc_out(FILE *stream,
     size_t record_len = sd_acc_serialize_str(acc, ts + ats, buff, buff_len);
     assert(record_len < buff_len);
     fwrite(static_cast<void *>(buff), record_len, 1, stream);
+    fprintf(stream, "\n");
   }
 
   for (double ats = 0.; ats < nat; ats += amp) {
@@ -66,6 +68,7 @@ static void mlm_acc_out(FILE *stream,
     size_t record_len = sd_acc_serialize_str(zacc, nts, buff, buff_len);
     assert(record_len < buff_len);
     fwrite(static_cast<void *>(buff), record_len, 1, stream);
+    fprintf(stream, "\n");
   }
 }
 //////////////////////////////////////////////////////////////
