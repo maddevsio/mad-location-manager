@@ -49,15 +49,22 @@ struct abs_accelerometer {
 
   abs_accelerometer() : x(0.0), y(0.0), z(0.0) {}
   abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
-  abs_accelerometer(double acc, double azimuth) {
+  abs_accelerometer(double acc, double azimuth)
+  {
     double a_rad = degree_to_rad(azimuth);
     x = acc * cos(a_rad);
     y = acc * sin(a_rad);
-    z = 0.0; // for now
+    z = 0.0;  // for now
   }
 
-  double azimuth(void) const { return rad_to_degree(atan2(y, x)); }
-  double acceleration(void) const { return sqrt(x * x + y * y); }
+  double azimuth(void) const
+  {
+    return rad_to_degree(atan2(y, x));
+  }
+  double acceleration(void) const
+  {
+    return sqrt(x * x + y * y);
+  }
 };
 //////////////////////////////////////////////////////////////
 
@@ -65,13 +72,15 @@ struct abs_accelerometer {
 /// @latitude - latitude (axis Y)
 /// @longitude - longitude (axis X)
 struct geopoint {
-  double latitude;  // 0 .. M_PI
-  double longitude; // 0 .. 2 * M_PI
+  double latitude;   // 0 .. M_PI
+  double longitude;  // 0 .. 2 * M_PI
   double accuracy;
 
   geopoint() : latitude(0.0), longitude(0.0), accuracy(0.0) {}
   geopoint(double latitude, double longitude)
-      : latitude(latitude), longitude(longitude) {}
+      : latitude(latitude), longitude(longitude)
+  {
+  }
 };
 //////////////////////////////////////////////////////////////
 
@@ -86,7 +95,9 @@ struct gps_speed {
 
   gps_speed() : azimuth(0.0), value(0.0), accuracy(0.0) {}
   gps_speed(double azimuth, double value, double accuracy)
-      : azimuth(azimuth), value(value), accuracy(accuracy) {}
+      : azimuth(azimuth), value(value), accuracy(accuracy)
+  {
+  }
 };
 //////////////////////////////////////////////////////////////
 
@@ -101,4 +112,29 @@ struct gps_coordinate {
 };
 //////////////////////////////////////////////////////////////
 
-#endif // SENSOR_DATA_H
+enum SD_RECORD_TYPE { SD_ACCELEROMETER = 0, SD_GPS, SD_UNKNOWN };
+/// sd_record_hdr - header for all sensor data output records
+struct sd_record_hdr {
+  SD_RECORD_TYPE type;
+  double timestamp;
+};
+
+size_t sd_gps_serialize_str(const gps_coordinate &gc,
+                            double ts,
+                            char buff[],
+                            size_t len);
+
+size_t sd_acc_serialize_str(const abs_accelerometer &acc,
+                            double ts,
+                            char buff[],
+                            size_t len);
+
+bool sd_gps_deserialize_str(const char *line,
+                            sd_record_hdr &hdr,
+                            gps_coordinate &gc);
+
+bool sd_acc_deserialize_str(const char *line,
+                            sd_record_hdr &hdr,
+                            abs_accelerometer &acc);
+
+#endif  // SENSOR_DATA_H

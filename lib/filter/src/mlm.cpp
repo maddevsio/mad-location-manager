@@ -22,6 +22,9 @@ void MLM::process_gps_data(const gps_coordinate &gps,
                            double pos_deviation,
                            double vel_deviation)
 {
+  // 1e-3g for smarphones
+  // TODO FIND BEST VALUE HERE
+  const double accelerometer_deviation = 1e-3;
   double x, y, z;
 
   double az_rad = degree_to_rad(gps.speed.azimuth);
@@ -30,12 +33,12 @@ void MLM::process_gps_data(const gps_coordinate &gps,
 
   if (!m_got_start_point) {
     m_got_start_point = true;
-    const double TODO_MAGIC_NUMBER = 42.0;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
-    m_fk.reset(x, y, speed_x, speed_y, TODO_MAGIC_NUMBER, pos_deviation);
+    m_fk.reset(x, y, speed_x, speed_y, accelerometer_deviation, pos_deviation);
     return;
   }
+
   m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
   FusionFilterState st(x, y, speed_x, speed_y);
   m_fk.update(st, pos_deviation, vel_deviation);

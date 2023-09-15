@@ -1,5 +1,6 @@
 #include "main_generator.h"
 
+#include <assert.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,14 +32,11 @@ static int process_cl_arguments(int argc, char *argv[], generator_options &go);
 
 static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
 {
-  fprintf(stream,
-          "GPS: %.12f , %.12f , %.12f , %.12f , %.12f , %12f\n",
-          ts,
-          gc.location.latitude,
-          gc.location.longitude,
-          gc.speed.value,
-          gc.speed.azimuth,
-          gc.speed.accuracy);
+  const int buff_len = 128;
+  char buff[buff_len] = {0};
+  size_t record_len = sd_gps_serialize_str(gc, ts, buff, buff_len);
+  assert(record_len < buff_len);
+  fwrite(static_cast<void *>(buff), record_len, 1, stream);
 }
 //////////////////////////////////////////////////////////////
 
@@ -46,26 +44,28 @@ static void mlm_acc_out(FILE *stream,
                         const abs_accelerometer &acc,
                         double ts,
                         double acceleration_time,
-                        double accelerometer_period,
+                        double acc_measurement_period,
                         double no_acceleration_time)
 {
-  for (double ats = 0.; ats < acceleration_time; ats += accelerometer_period) {
-    fprintf(stream,
-            "ACC: %.12f , %.12f , %.12f , %.12f\n",
-            ts + ats,
-            acc.x,
-            acc.y,
-            acc.z);
+  // these temp varialbes are supposed to make one line loops
+  double at = acceleration_time;
+  double amp = acc_measurement_period;
+  double nat = no_acceleration_time;
+
+  const int buff_len = 128;
+  char buff[buff_len] = {0};
+  for (double ats = 0.; ats < at; ats += amp) {
+    size_t record_len = sd_acc_serialize_str(acc, ts + ats, buff, buff_len);
+    assert(record_len < buff_len);
+    fwrite(static_cast<void *>(buff), record_len, 1, stream);
   }
 
-  for (double ats  = 0.; ats < no_acceleration_time;
-       ats        += accelerometer_period) {
-    fprintf(stream,
-            "ACC: %.12f , %.12f , %.12f , %.12f\n",
-            ts + acceleration_time + ats,
-            0.,
-            0.,
-            0.);
+  for (double ats = 0.; ats < nat; ats += amp) {
+    double nts = ts + at + ats;
+    abs_accelerometer zacc(0, 0, 0);
+    size_t record_len = sd_acc_serialize_str(zacc, nts, buff, buff_len);
+    assert(record_len < buff_len);
+    fwrite(static_cast<void *>(buff), record_len, 1, stream);
   }
 }
 //////////////////////////////////////////////////////////////
@@ -87,16 +87,15 @@ int generator_entry_point(int argc, char *argv[], char **env)
   if (!get_input_coordinate(input_point)) {
     return 0;
   }
+
   FILE *mlm_out = stdout;
-  if (go.output) {
-    if ((mlm_out = fopen(go.output, "w")) == NULL) {
-      fprintf(stderr, "failed to open %s. using stdout instead", go.output);
-      mlm_out = stdout;
-    }
+  if (go.output && ((mlm_out = fopen(go.output, "w")) == NULL)) {
+    fprintf(stderr, "failed to open %s. using stdout instead", go.output);
+    mlm_out = stdout;
   }
 
   current_coord.location = input_point;
-  prev_coord             = current_coord;
+  prev_coord = current_coord;
   mlm_gps_out(mlm_out, current_coord, 0.);
 
   double ts = 0.;
@@ -198,7 +197,7 @@ int process_cl_arguments(int argc, char *argv[], generator_options &go)
         go.gps_period = atof(optarg);
         break;
       case 'o':
-        opt_len   = strlen(optarg);
+        opt_len = strlen(optarg);
         go.output = new char[opt_len + 1];
         strncpy(go.output, optarg, opt_len);
         go.output[opt_len] = 0;
