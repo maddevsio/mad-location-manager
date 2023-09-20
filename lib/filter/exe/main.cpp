@@ -35,9 +35,8 @@ int main_mlm(int argc, char *argv[], char **env)
 
   MLM mlm;
 
-  // see order in SD_RECORD_TYPE enum
-  typedef bool (*fp_record_handler)(MLM &, const char *);
-  fp_record_handler record_handlers[] = {
+  // see the order of SD_RECORD_TYPE enum
+  bool (*record_handlers[])(MLM &, const char *) = {
       handle_acc_record,
       handle_gps_record,
   };
@@ -58,7 +57,7 @@ int main_mlm(int argc, char *argv[], char **env)
     if (handled)
       continue;  // do nothing
 
-    // todo handle error somehow
+    printf("failed to handle '%s' record", line);
   }
 
   free(line);
@@ -98,7 +97,7 @@ bool handle_gps_record(MLM &mlm, const char *line)
   mlm.process_gps_data(gps, 0., 0.);
 
   std::cout << "processed gps data\n";
-  
+
   return true;
 }
 //////////////////////////////////////////////////////////////

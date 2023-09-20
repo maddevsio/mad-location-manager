@@ -1,9 +1,12 @@
 #include "geohash.h"
+
 #include <assert.h>
+
 #include <cstdint>
 
 static uint64_t interleave_bits(uint64_t x, uint64_t y);
-uint64_t geohash_encode(double lat, double lon, int prec) {
+uint64_t geohash_encode(double lat, double lon, int prec)
+{
   union duint64 {
     double dv;
     uint64_t ui;
@@ -20,8 +23,12 @@ uint64_t geohash_encode(double lat, double lon, int prec) {
 }
 ///////////////////////////////////////////////////////
 
-int geohash_cmp(double lon1, double lat1, double lon2, double lat2,
-                int precision) {
+int geohash_cmp(double lon1,
+                double lat1,
+                double lon2,
+                double lat2,
+                int precision)
+{
   assert(precision >= 1 && precision <= GEOHASH_MAX_PRECISION);
   uint64_t gh1 = geohash_encode(lat1, lon1, precision);
   uint64_t gh2 = geohash_encode(lat2, lon2, precision);
@@ -29,7 +36,8 @@ int geohash_cmp(double lon1, double lat1, double lon2, double lat2,
 }
 ///////////////////////////////////////////////////////
 
-uint64_t interleave_bits(uint64_t x, uint64_t y) {
+uint64_t interleave_bits(uint64_t x, uint64_t y)
+{
   x = (x | (x << 16)) & 0x0000ffff0000ffff;
   x = (x | (x << 8)) & 0x00ff00ff00ff00ff;
   x = (x | (x << 4)) & 0x0f0f0f0f0f0f0f0f;
