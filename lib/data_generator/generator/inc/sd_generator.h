@@ -14,7 +14,9 @@ struct movement_interval {
 
   movement_interval() = delete;
   movement_interval(double azimuth, double acceleration, double duration)
-      : azimuth(azimuth), acceleration(acceleration), duration(duration) {}
+      : azimuth(azimuth), acceleration(acceleration), duration(duration)
+  {
+  }
 };
 //////////////////////////////////////////////////////////////
 
@@ -28,8 +30,8 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    double interval_time,
                                                    double time_of_interest);
 
-// todo move this into module and make static
-double acc_between_two_points(double distance, double v0,
+double acc_between_two_points(double distance,
+                              double v0,
                               double acceleration_time,
                               double no_acceleration_time);
 #endif  // sd_generator_h

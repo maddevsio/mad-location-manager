@@ -3,7 +3,8 @@
 
 #include "sensor_data.h"
 
-namespace coordinate_consts {
+namespace coordinate_consts
+{
 const double earth_radius = 6371.0 * 1000.0;  // meters
 // https://en.wikipedia.org/wiki/World_Geodetic_System#WGS_84
 const double major_axis = 6378137.0;
@@ -13,12 +14,17 @@ const double minor_axis = (1 - inv_flattening) * major_axis;
 };  // namespace coordinate_consts
 
 // these typedefs just to make intellisence work
-typedef double (*f_distance_between_points_t)(double lat1, double lon1,
-                                              double lat2, double lon2);
-typedef geopoint (*f_point_ahead_t)(geopoint point, double distance,
+typedef double (*f_distance_between_points_t)(double lat1,
+                                              double lon1,
+                                              double lat2,
+                                              double lon2);
+typedef geopoint (*f_point_ahead_t)(geopoint point,
+                                    double distance,
                                     double azimuth);
-typedef double (*f_azimuth_between_points_t)(double lat1, double lon1,
-                                             double lat2, double lon2);
+typedef double (*f_azimuth_between_points_t)(double lat1,
+                                             double lon1,
+                                             double lat2,
+                                             double lon2);
 
 struct coordinates_vptr {
   /// distance_between_points - distance between geopoints in meters

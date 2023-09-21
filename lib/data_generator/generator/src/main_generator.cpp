@@ -15,14 +15,14 @@ static bool get_input_coordinate(geopoint &gp);
 
 struct generator_options {
   double acceleration_time;
-  double accelerometer_period;
-  double gps_period;
+  double acc_measurement_period;
+  double gps_measurement_period;
   char *output;
 
   generator_options()
       : acceleration_time(1.0),
-        accelerometer_period(1e-1),
-        gps_period(1.5),
+        acc_measurement_period(1e-1),
+        gps_measurement_period(1.5),
         output(nullptr)
   {
   }
@@ -83,7 +83,7 @@ int generator_entry_point(int argc, char *argv[], char **env)
     return pcr;
   }
 
-  double no_acceleration_time = go.gps_period - go.acceleration_time;
+  double no_acceleration_time = go.gps_measurement_period - go.acceleration_time;
   gps_coordinate prev_coord, current_coord;
   geopoint input_point;
 
@@ -108,16 +108,16 @@ int generator_entry_point(int argc, char *argv[], char **env)
         sd_abs_acc_between_two_geopoints(prev_coord,
                                          current_coord,
                                          go.acceleration_time,
-                                         go.gps_period,
+                                         go.gps_measurement_period,
                                          0.);
     mlm_acc_out(mlm_out,
                 acc,
                 ts,
                 go.acceleration_time,
-                go.accelerometer_period,
+                go.acc_measurement_period,
                 no_acceleration_time);
 
-    ts += go.gps_period;
+    ts += go.gps_measurement_period;
     // we have GPS point but have not speed for that point. generating:
     const movement_interval intervals[] = {
         {acc.azimuth(), acc.acceleration(), go.acceleration_time},
@@ -164,10 +164,12 @@ static void usage()
       "-a, --acceleration-time\tacceleration time in seconds (floating point "
       "value)"
       "double\n"
-      "-f, --acceleration-period\taccelerometer data period (seconds between "
+      "-f, --accelerometer-measurement-period\taccelerometer data period "
+      "(seconds between "
       "measurements)"
       "double\n"
-      "-g, --gps-period\tgps data period (seconds between measurements)"
+      "-g, --gps-measurement-period\tgps data period (seconds between "
+      "measurements)"
       "double\n"
       "-o, --output\tpath to output file"
       "string\n"
@@ -178,12 +180,12 @@ static void usage()
 int process_cl_arguments(int argc, char *argv[], generator_options &go)
 {
   static const struct option lopts[] = {
-      {  "acceleration-time", required_argument, NULL, 'a'},
-      {"acceleration-period", required_argument, NULL, 'f'},
-      {         "gps-period", required_argument, NULL, 'g'},
-      {             "output", required_argument, NULL, 'o'},
-      {               "help",       no_argument, NULL, 'h'},
-      {                 NULL,                 0, NULL,   0},
+      {               "acceleration-time", required_argument, NULL, 'a'},
+      {"accelerometer-measurement-period", required_argument, NULL, 'f'},
+      {          "gps-measurement-period", required_argument, NULL, 'g'},
+      {                          "output", required_argument, NULL, 'o'},
+      {                            "help",       no_argument, NULL, 'h'},
+      {                              NULL,                 0, NULL,   0},
   };
 
   int opt_idx;
@@ -194,10 +196,10 @@ int process_cl_arguments(int argc, char *argv[], generator_options &go)
         go.acceleration_time = atof(optarg);
         break;
       case 'f':
-        go.accelerometer_period = atof(optarg);
+        go.acc_measurement_period = atof(optarg);
         break;
       case 'g':
-        go.gps_period = atof(optarg);
+        go.gps_measurement_period = atof(optarg);
         break;
       case 'o':
         opt_len = strlen(optarg);

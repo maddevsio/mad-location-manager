@@ -67,8 +67,6 @@ int main_mlm(int argc, char *argv[], char **env)
 
 bool handle_acc_record(MLM &mlm, const char *line)
 {
-  std::cout << "acc ::: " << line;
-
   sd_record_hdr hdr;
   abs_accelerometer acc;
 
@@ -83,8 +81,6 @@ bool handle_acc_record(MLM &mlm, const char *line)
 
 bool handle_gps_record(MLM &mlm, const char *line)
 {
-  std::cout << "gps ::: " << line;
-
   sd_record_hdr hdr;
   gps_coordinate gps;
 
@@ -92,12 +88,11 @@ bool handle_gps_record(MLM &mlm, const char *line)
   if (!parsed)
     return false;
 
-  std::cout << "parsed gps data\n";
   // WARNING!!!! TODO!!!! get velocity and position deviations
+  // maybe not necessary in generated data.
   mlm.process_gps_data(gps, 0., 0.);
 
-  std::cout << "processed gps data\n";
-
+  // todo output predicted GPS
   return true;
 }
 //////////////////////////////////////////////////////////////

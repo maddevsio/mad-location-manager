@@ -19,28 +19,40 @@ struct vincenty_result {
 
   vincenty_result() : distance(0.), a1(0.), a2(0.0) {}
   vincenty_result(double distance, double a1, double a2)
-      : distance(distance), a1(a1), a2(a2) {}
+      : distance(distance), a1(a1), a2(a2)
+  {
+  }
 };
 
-static vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
+static vincenty_result vincenty_inverse(double lat1,
+                                        double lon1,
+                                        double lat2,
                                         double lon2);
 //////////////////////////////////////////////////////////////
 
-static double geo_distance_meters(double lat1, double lon1, double lat2,
+static double geo_distance_meters(double lat1,
+                                  double lon1,
+                                  double lat2,
                                   double lon2);
-static double azimuth_between_points(double lat1, double lon1, double lat2,
+static double azimuth_between_points(double lat1,
+                                     double lon1,
+                                     double lat2,
                                      double lon2);
 
 // vincent_direct problem
-static geopoint point_ahead(geopoint point, double distance,
+static geopoint point_ahead(geopoint point,
+                            double distance,
                             double azimuth_degrees);
 
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
-                                 double lon2) {
+vincenty_result vincenty_inverse(double lat1,
+                                 double lon1,
+                                 double lat2,
+                                 double lon2)
+{
   // https://en.wikipedia.org/wiki/Azimuth
   // https://en.wikipedia.org/wiki/Vincenty%27s_formulae#Inverse_problem
   double a = major_axis;
@@ -121,20 +133,25 @@ vincenty_result vincenty_inverse(double lat1, double lon1, double lat2,
 }
 //////////////////////////////////////////////////////////////
 
-double geo_distance_meters(double lat1, double lon1, double lat2, double lon2) {
+double geo_distance_meters(double lat1, double lon1, double lat2, double lon2)
+{
   vincenty_result vr = vincenty_inverse(lat1, lon1, lat2, lon2);
   return vr.distance;
 }
 ///////////////////////////////////////////////////////
 
-double azimuth_between_points(double lat1, double lon1, double lat2,
-                              double lon2) {
+double azimuth_between_points(double lat1,
+                              double lon1,
+                              double lat2,
+                              double lon2)
+{
   vincenty_result vr = vincenty_inverse(lat1, lon1, lat2, lon2);
   return vr.a1;
 }
 //////////////////////////////////////////////////////////////
 
-geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
+geopoint point_ahead(geopoint point, double distance, double azimuth_degrees)
+{
   // https://en.wikipedia.org/wiki/Azimuth
   // https://en.wikipedia.org/wiki/Vincenty%27s_formulae#Direct_problem
   double a = major_axis;
@@ -201,7 +218,8 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degrees) {
 }
 ///////////////////////////////////////////////////////
 
-coordinates_vptr coord_vptr_hq(void) {
+coordinates_vptr coord_vptr_hq(void)
+{
   coordinates_vptr res = {
       .distance_between_points = geo_distance_meters,
       .point_ahead = point_ahead,

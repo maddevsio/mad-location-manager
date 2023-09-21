@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-static const char *gps_format = "1: %.9f , %.9f , %.9f , %.9f , %.9f , %9f";
+static const char *gps_format = "1: %.9f , %.9f , %.9f , %.9f , %.9f , %.9f";
 static const char *acc_format = "0: %.9f , %.9f , %.9f , %.9f";
 
 size_t sd_gps_serialize_str(const gps_coordinate &gc,

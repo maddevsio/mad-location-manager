@@ -8,20 +8,25 @@
 using namespace coordinate_consts;
 
 // https://en.wikipedia.org/wiki/Great-circle_distance
-static double great_circle_distance(double lat1, double lon1, double lat2,
+static double great_circle_distance(double lat1,
+                                    double lon1,
+                                    double lat2,
                                     double lon2);
-static geopoint point_ahead(geopoint point, double distance,
+static geopoint point_ahead(geopoint point,
+                            double distance,
                             double azimuth_degrees);
 
-static double azimuth_between_points(double lat1, double lon1, double lat2,
+static double azimuth_between_points(double lat1,
+                                     double lon1,
+                                     double lat2,
                                      double lon2);
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-double great_circle_distance(double lon1, double lat1, double lon2,
-                             double lat2) {
+double great_circle_distance(double lon1, double lat1, double lon2, double lat2)
+{
   // Convert latitude and longitude from degrees to radians
   double lat1Rad = degree_to_rad(lat1);
   double lon1Rad = degree_to_rad(lon1);
@@ -40,7 +45,8 @@ double great_circle_distance(double lon1, double lat1, double lon2,
 }
 //////////////////////////////////////////////////////////////
 
-geopoint point_ahead(geopoint point, double distance, double azimuth_degees) {
+geopoint point_ahead(geopoint point, double distance, double azimuth_degees)
+{
   geopoint res;
   double radius_fraction = distance / earth_radius;
   double bearing = degree_to_rad(azimuth_degees);
@@ -62,8 +68,11 @@ geopoint point_ahead(geopoint point, double distance, double azimuth_degees) {
 }
 //////////////////////////////////////////////////////////////
 
-double azimuth_between_points(double lat1, double lon1, double lat2,
-                              double lon2) {
+double azimuth_between_points(double lat1,
+                              double lon1,
+                              double lat2,
+                              double lon2)
+{
   double dl = lon2 - lon1;
   double f1 = lat1;
   double f2 = lat2;
@@ -73,7 +82,8 @@ double azimuth_between_points(double lat1, double lon1, double lat2,
 }
 //////////////////////////////////////////////////////////////
 
-coordinates_vptr coord_vptr(void) {
+coordinates_vptr coord_vptr(void)
+{
   coordinates_vptr res = {
       .distance_between_points = great_circle_distance,
       .point_ahead = point_ahead,

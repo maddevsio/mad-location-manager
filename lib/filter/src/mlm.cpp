@@ -24,6 +24,7 @@ void MLM::process_gps_data(const gps_coordinate &gps,
 {
   // 1e-3g for smarphones
   // TODO FIND BEST VALUE HERE
+  // and move to fields :)
   const double accelerometer_deviation = 1e-3;
   double x, y, z;
 

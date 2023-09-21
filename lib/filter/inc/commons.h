@@ -10,4 +10,4 @@ double degree_to_rad(double degree);
 
 double rad_to_degree(double rad);
 //////////////////////////////////////////////////////////////////////////
-#endif // COMMONS_H
+#endif  // COMMONS_H

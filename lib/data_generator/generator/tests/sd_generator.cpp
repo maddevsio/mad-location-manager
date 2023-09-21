@@ -4,7 +4,8 @@
 
 #include "sensor_data.h"
 
-TEST(sd_generator, test_go_to_point_and_back) {
+TEST(sd_generator, test_go_to_point_and_back)
+{
   gps_coordinate sc;
   const double latitude = 20.0;
   const double longitude = 30.0;
@@ -12,10 +13,12 @@ TEST(sd_generator, test_go_to_point_and_back) {
   sc.speed = gps_speed(0.0, 0.0, 1.0);
 
   const movement_interval intervals[] = {
-      {45.0, 5.0, 5.0},   {0.0, 0.0, 15.0},
-      {225.0, 5.0, 10.0},  // opposite direction
-      {0.0, 0.0, 15.0},   {45.0, 5.0, 5.0},
-      {0., 0., -1.},
+      { 45.0, 5.0,  5.0},
+      {  0.0, 0.0, 15.0},
+      {225.0, 5.0, 10.0}, // opposite direction
+      {  0.0, 0.0, 15.0},
+      { 45.0, 5.0,  5.0},
+      {   0.,  0.,  -1.},
   };
 
   double start_time = 0.0;
@@ -37,7 +40,8 @@ TEST(sd_generator, test_go_to_point_and_back) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(sd_generator, test_speed_generation) {
+TEST(sd_generator, test_speed_generation)
+{
   gps_coordinate sc;
   const double latitude = 20.0;
   const double longitude = 30.0;
@@ -45,10 +49,10 @@ TEST(sd_generator, test_speed_generation) {
   sc.speed = gps_speed(0.0, 0.0, 1.0);
 
   const movement_interval intervals[] = {
-      {45., 5.0, 5.0},
-      {0.0, 0.0, 15.0},
-      {225., 5.0, 5.0},
-      {0., 0., -1.},
+      { 45., 5.0,  5.0},
+      { 0.0, 0.0, 15.0},
+      {225., 5.0,  5.0},
+      {  0.,  0.,  -1.},
   };
 
   double start_time = 0.0;
@@ -68,7 +72,8 @@ TEST(sd_generator, test_speed_generation) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(sd_generator, test_abs_acc_generation_1) {
+TEST(sd_generator, test_abs_acc_generation_1)
+{
   gps_coordinate a, b;
   a.location = geopoint(36.556144, 31.976737);
   b.location = geopoint(36.557275, 31.994406);
@@ -77,12 +82,15 @@ TEST(sd_generator, test_abs_acc_generation_1) {
   double acceleration_time = 5.0;
   double no_acceleration_time = 10.0;
   double interval_time = acceleration_time + no_acceleration_time;
-  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
-      a, b, acceleration_time, interval_time, 0.0);
+  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
+                                                           b,
+                                                           acceleration_time,
+                                                           interval_time,
+                                                           0.0);
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(), acceleration_time},
-      {acc.azimuth(), 0.0, no_acceleration_time},
-      {0., 0., -1.},
+      {acc.azimuth(), acc.acceleration(),    acceleration_time},
+      {acc.azimuth(),                0.0, no_acceleration_time},
+      {           0.,                 0.,                  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -94,7 +102,8 @@ TEST(sd_generator, test_abs_acc_generation_1) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(sd_generator, test_abs_acc_generation_2) {
+TEST(sd_generator, test_abs_acc_generation_2)
+{
   gps_coordinate a, b;
   a.location = geopoint(11.11111, 11.11111);
   b.location = geopoint(11.11112, 11.11112);
@@ -102,13 +111,16 @@ TEST(sd_generator, test_abs_acc_generation_2) {
   double acceleration_time = 1.0;
   double no_acceleration_time = 0.5;
   double interval_time = acceleration_time + no_acceleration_time;
-  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
-      a, b, acceleration_time, interval_time, 0.0);
+  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
+                                                           b,
+                                                           acceleration_time,
+                                                           interval_time,
+                                                           0.0);
 
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(), acceleration_time},
-      {0., 0.0, no_acceleration_time},
-      {0., 0., -1.},
+      {acc.azimuth(), acc.acceleration(),    acceleration_time},
+      {           0.,                0.0, no_acceleration_time},
+      {           0.,                 0.,                  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -120,7 +132,8 @@ TEST(sd_generator, test_abs_acc_generation_2) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(sd_generator, test_abs_acc_generation_no_movement) {
+TEST(sd_generator, test_abs_acc_generation_no_movement)
+{
   gps_coordinate a, b;
   a.location = geopoint(36.556144, 31.976737);
   b.location = geopoint(36.556144, 31.976737);
@@ -129,9 +142,9 @@ TEST(sd_generator, test_abs_acc_generation_no_movement) {
   abs_accelerometer acc =
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(), 5.0},
-      {acc.azimuth(), 0.0, 10.0},
-      {0., 0., -1.},
+      {acc.azimuth(), acc.acceleration(),  5.0},
+      {acc.azimuth(),                0.0, 10.0},
+      {           0.,                 0.,  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -145,7 +158,8 @@ TEST(sd_generator, test_abs_acc_generation_no_movement) {
 }
 //////////////////////////////////////////////////////////////
 
-TEST(sd_generator, test_acc_generation_1D) {
+TEST(sd_generator, test_acc_generation_1D)
+{
   double s = 112.5;
   double t1 = 5;
   double t2 = 2;
