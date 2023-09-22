@@ -16,7 +16,11 @@ struct FusionFilterState {
       : x(x_), y(y_), x_vel(x_vel_), y_vel(y_vel_)
   {
   }
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const FusionFilterState& obj);
 };
+
 //////////////////////////////////////////////////////////////
 
 // state dim = 4
@@ -25,14 +29,13 @@ struct FusionFilterState {
 class GPSAccFusionFilter : public KalmanFilter<4, 4, 2>
 {
  private:
-  double m_last_predict_ms;
-  double m_acc_deviation;  // accelerometer sigma
-  FusionFilterState m_current_state;
+  double m_last_predict_sec;
+  double m_acc_deviation;     // accelerometer sigma
   uint32_t m_predicts_count;  // should be replaced with delta time
 
-  void rebuild_F(double dt_ms);
+  void rebuild_F(double dt_sec);
   void rebuild_U(double xAcc, double yAcc);
-  void rebuild_B(double dt_ms);
+  void rebuild_B(double dt_sec);
   void rebuild_Q(double acc_deviation);
   void rebuild_R(double pos_sigma, double vel_sigma);
 
@@ -46,15 +49,12 @@ class GPSAccFusionFilter : public KalmanFilter<4, 4, 2>
              double acc_deviation,
              double pos_deviation);
 
-  void predict(double xAcc, double yAcc, double time_ms);
-  void update(const FusionFilterState &state,
+  void predict(double xAcc, double yAcc, double time_sec);
+  void update(const FusionFilterState& state,
               double pos_deviation,
               double vel_deviation = 0.0);
 
-  const FusionFilterState &current_state() const
-  {
-    return m_current_state;
-  }
+  const FusionFilterState current_state() const;
 };
 //////////////////////////////////////////////////////////////
 

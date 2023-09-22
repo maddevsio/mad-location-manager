@@ -17,7 +17,7 @@ class MLM
   MLM(void);
   ~MLM(void);
   // predict
-  void process_acc_data(const abs_accelerometer &acc, double time_ms);
+  void process_acc_data(const abs_accelerometer &acc, double time_sec);
   // update
   void process_gps_data(const gps_coordinate &gps,
                         double pos_deviation,

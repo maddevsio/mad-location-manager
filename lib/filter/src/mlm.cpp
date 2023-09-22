@@ -1,7 +1,5 @@
 #include "mlm.h"
 
-#include <iostream>
-
 #include "commons.h"
 
 MLM::MLM(void) : m_got_start_point(false) {}
@@ -10,11 +8,11 @@ MLM::MLM(void) : m_got_start_point(false) {}
 MLM::~MLM(void) {}
 //////////////////////////////////////////////////////////////
 
-void MLM::process_acc_data(const abs_accelerometer &acc, double time_ms)
+void MLM::process_acc_data(const abs_accelerometer &acc, double time_sec)
 {
   if (!m_got_start_point)
     return;  // do nothing until first GPS coordinate
-  m_fk.predict(acc.x, acc.y, time_ms);
+  m_fk.predict(acc.x, acc.y, time_sec);
 }
 //////////////////////////////////////////////////////////////
 
@@ -55,6 +53,7 @@ gps_coordinate MLM::predicted_coordinate() const
                res.location.latitude,
                res.location.longitude,
                res.location.altitude);
+
   return res;
 }
 //////////////////////////////////////////////////////////////

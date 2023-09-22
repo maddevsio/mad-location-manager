@@ -3,10 +3,27 @@
 #include <assert.h>
 #include <stdlib.h>
 
+std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
+{
+  os << "x: " << obj.x << "; y: " << obj.y << "\n";
+  os << "x_vel: " << obj.x_vel;
+  os << "; y_vel: " << obj.y_vel << "\n";
+  return os;
+}
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+
 GPSAccFusionFilter::GPSAccFusionFilter()
 {
   H = Matrix<double, _measure_dim, _state_dim>::Identity();
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
+}
+//////////////////////////////////////////////////////////////
+
+const FusionFilterState GPSAccFusionFilter::current_state() const
+{
+  FusionFilterState res(Xk_k[0], Xk_k[1], Xk_k[2], Xk_k[3]);
+  return res;
 }
 //////////////////////////////////////////////////////////////
 
@@ -24,10 +41,10 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
 };
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_ms)
+void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
 {
   // ms to sec. cause we use m/sec, m/sec^2 etc.
-  double dt_sec = (time_ms - m_last_predict_ms) / 1.0e+3;
+  double dt_sec = time_sec - m_last_predict_sec;
 
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
@@ -35,13 +52,18 @@ void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_ms)
 
   ++m_predicts_count;
   rebuild_Q(m_acc_deviation);
-  m_last_predict_ms = time_ms;
+
+  m_last_predict_sec = time_sec;
   estimate();
-  Xk_km1 = Xk_k;
+
+  // this copy is not necessary. it's supposed
+  // to provide current state on each step
+  // will be updated during correct() step
+  Xk_k = Xk_km1;
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::update(const FusionFilterState &state,
+void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double pos_deviation,
                                 double vel_deviation)
 {
@@ -52,11 +74,11 @@ void GPSAccFusionFilter::update(const FusionFilterState &state,
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::rebuild_F(double dt_ms)
+void GPSAccFusionFilter::rebuild_F(double dt_sec)
 {
   // clang-format off
-  F << 1.,	0.,  dt_ms,  0.,
-       0.,	1.,  0.,     dt_ms,
+  F << 1.,	0.,  dt_sec, 0.,
+       0.,	1.,  0.,     dt_sec,
        0.,	0.,  1.,     0.,
        0.,	0.,  0.,     1.;
   // clang-format on
@@ -69,14 +91,14 @@ void GPSAccFusionFilter::rebuild_U(double xAcc, double yAcc)
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::rebuild_B(double dt_ms)
+void GPSAccFusionFilter::rebuild_B(double dt_sec)
 {
-  double dt_2 = 0.5 * dt_ms * dt_ms;
+  double dt_2 = 0.5 * dt_sec * dt_sec;
   // clang-format off
   B << dt_2,    0.,
        0.,      dt_2,
-       dt_ms,   0.,
-       0.,      dt_ms;
+       dt_sec,  0.,
+       0.,      dt_sec;
   // clang-format on
 }
 //////////////////////////////////////////////////////////////

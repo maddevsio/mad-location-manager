@@ -75,6 +75,9 @@ bool handle_acc_record(MLM &mlm, const char *line)
     return false;
 
   mlm.process_acc_data(acc, hdr.timestamp);
+
+  gps_coordinate pgps = mlm.predicted_coordinate();
+  printf("3: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
   return true;
 }
 //////////////////////////////////////////////////////////////
@@ -90,9 +93,10 @@ bool handle_gps_record(MLM &mlm, const char *line)
 
   // WARNING!!!! TODO!!!! get velocity and position deviations
   // maybe not necessary in generated data.
-  mlm.process_gps_data(gps, 0., 0.);
+  mlm.process_gps_data(gps, 1e-3, 1e-3);
 
-  // todo output predicted GPS
+  gps_coordinate pgps = mlm.predicted_coordinate();
+  printf("3: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
   return true;
 }
 //////////////////////////////////////////////////////////////
