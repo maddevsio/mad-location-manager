@@ -96,7 +96,7 @@ bool handle_gps_record(MLM &mlm, const char *line)
   mlm.process_gps_data(gps, 1e-3, 1e-3);
 
   gps_coordinate pgps = mlm.predicted_coordinate();
-  printf("3: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
+  printf("4: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
   return true;
 }
 //////////////////////////////////////////////////////////////

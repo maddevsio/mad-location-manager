@@ -1,6 +1,7 @@
 #include "mlm.h"
 
 #include "commons.h"
+#include <iostream>
 
 MLM::MLM(void) : m_got_start_point(false) {}
 //////////////////////////////////////////////////////////////
@@ -47,6 +48,7 @@ void MLM::process_gps_data(const gps_coordinate &gps,
 gps_coordinate MLM::predicted_coordinate() const
 {
   gps_coordinate res;
+  std::cout << m_fk.current_state() << std::endl;
   m_lc.Reverse(m_fk.current_state().x,
                m_fk.current_state().y,
                0.,

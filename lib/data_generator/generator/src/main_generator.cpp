@@ -145,7 +145,8 @@ int generator_entry_point(int argc, char *argv[], char **env)
 
 bool get_input_coordinate(geopoint &gp)
 {
-  return scanf("%lf,%lf", &gp.latitude, &gp.longitude) == 2;
+  // todo handle comas and spaces
+  return scanf(" %lf , %lf", &gp.latitude, &gp.longitude) == 2;
 }
 //////////////////////////////////////////////////////////////
 
@@ -190,7 +191,7 @@ int process_cl_arguments(int argc, char *argv[], generator_options &go)
 
   int opt_idx;
   size_t opt_len;
-  while ((opt_idx = getopt_long(argc, argv, "a:f:g:h", lopts, NULL)) != -1) {
+  while ((opt_idx = getopt_long(argc, argv, "a:f:g:o:h", lopts, NULL)) != -1) {
     switch (opt_idx) {
       case 'a':
         go.acceleration_time = atof(optarg);

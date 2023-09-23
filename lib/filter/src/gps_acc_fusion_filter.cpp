@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <iostream>
 
 std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
 {
@@ -70,6 +71,8 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
   m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
   Zk << state.x, state.y, state.x_vel, state.y_vel;
+  std::cout << "R\n" << R << std::endl;
+  std::cout << "Zk\n" << Zk << std::endl;
   correct();
 }
 //////////////////////////////////////////////////////////////
