@@ -20,9 +20,7 @@ TEST(matrix, matrix_default_constructor)
 TEST(matrix, matrix_parametrized_constructor)
 {
   Matrix<int, 2, 2> ma({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   ASSERT_EQ(ma(0, 0), 1);
@@ -35,21 +33,15 @@ TEST(matrix, matrix_parametrized_constructor)
 TEST(matrix, matrix_equality)
 {
   Matrix<int, 2, 2> ma({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   Matrix<int, 2, 2> mb({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   Matrix<int, 2, 2> mc({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 3}
   });
 
@@ -61,15 +53,11 @@ TEST(matrix, matrix_equality)
 TEST(matrix, matrix_scale)
 {
   Matrix<int, 2, 2> ma({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   Matrix<int, 2, 2> mb({
-      {
-       2, 4,
-       },
+      {2, 4},
       {6, 8}
   });
   Matrix<int, 2, 2> mc(ma);
@@ -84,15 +72,11 @@ TEST(matrix, matrix_scale)
 TEST(matrix, matrix_sub)
 {
   Matrix<int, 2, 2> ma({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   Matrix<int, 2, 2> mb({
-      {
-       2, 4,
-       },
+      {2, 4},
       {6, 8}
   });
   Matrix<int, 2, 2> mc = mb - ma;
@@ -104,15 +88,11 @@ TEST(matrix, matrix_sub)
 TEST(matrix, matrix_sum)
 {
   Matrix<int, 2, 2> ma({
-      {
-       1, 2,
-       },
+      {1, 2},
       {3, 4}
   });
   Matrix<int, 2, 2> mb({
-      {
-       2, 4,
-       },
+      {2, 4},
       {6, 8}
   });
   Matrix<int, 2, 2> mc = ma + ma;
@@ -145,9 +125,7 @@ TEST(matrix, matrix_identity)
 TEST(matrix, matrix_invert)
 {
   Matrix<double, 2, 2> mtx({
-      {
-       1., 2.,
-       },
+      {1., 2.},
       {3., 4.}
   });
   Matrix<double, 2, 2> exp({

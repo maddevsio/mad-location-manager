@@ -2,6 +2,7 @@
 #define KALMAN_H
 
 #include <Eigen/Eigen>
+#include <iostream>
 using namespace Eigen;
 
 template <size_t state_dim, size_t measure_dim, size_t control_dim>

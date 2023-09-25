@@ -2,19 +2,20 @@
 
 #include <assert.h>
 #include <stdlib.h>
+
 #include <iostream>
 
 std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
 {
   os << "x: " << obj.x << "; y: " << obj.y << "\n";
   os << "x_vel: " << obj.x_vel;
-  os << "; y_vel: " << obj.y_vel << "\n";
+  os << "; y_vel: " << obj.y_vel << std::endl;
   return os;
 }
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-GPSAccFusionFilter::GPSAccFusionFilter()
+GPSAccFusionFilter::GPSAccFusionFilter() : m_predicts_count(0)
 {
   H = Matrix<double, _measure_dim, _state_dim>::Identity();
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
@@ -23,7 +24,7 @@ GPSAccFusionFilter::GPSAccFusionFilter()
 
 const FusionFilterState GPSAccFusionFilter::current_state() const
 {
-  FusionFilterState res(Xk_k[0], Xk_k[1], Xk_k[2], Xk_k[3]);
+  FusionFilterState res(Xk_k(0, 0), Xk_k(1, 0), Xk_k(2, 0), Xk_k(3, 0));
   return res;
 }
 //////////////////////////////////////////////////////////////
@@ -71,8 +72,6 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
   m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
   Zk << state.x, state.y, state.x_vel, state.y_vel;
-  std::cout << "R\n" << R << std::endl;
-  std::cout << "Zk\n" << Zk << std::endl;
   correct();
 }
 //////////////////////////////////////////////////////////////

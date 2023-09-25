@@ -62,9 +62,9 @@ static void mlm_acc_out(FILE *stream,
     fprintf(stream, "\n");
   }
 
+  abs_accelerometer zacc(0, 0, 0);
   for (double ats = 0.; ats < nat; ats += amp) {
     double nts = ts + at + ats;
-    abs_accelerometer zacc(0, 0, 0);
     size_t record_len = sd_acc_serialize_str(zacc, nts, buff, buff_len);
     assert(record_len < buff_len);
     fwrite(static_cast<void *>(buff), record_len, 1, stream);
