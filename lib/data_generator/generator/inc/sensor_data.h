@@ -74,11 +74,12 @@ struct abs_accelerometer {
 struct geopoint {
   double latitude;   // 0 .. M_PI
   double longitude;  // 0 .. 2 * M_PI
+  double altitude;
   double accuracy;
 
-  geopoint() : latitude(0.0), longitude(0.0), accuracy(0.0) {}
-  geopoint(double latitude, double longitude)
-      : latitude(latitude), longitude(longitude)
+  geopoint() : latitude(0.0), longitude(0.0), altitude(0.0), accuracy(0.0) {}
+  geopoint(double latitude, double longitude, double altitude = 0.)
+      : latitude(latitude), longitude(longitude), altitude(altitude)
   {
   }
 };
@@ -112,7 +113,14 @@ struct gps_coordinate {
 };
 //////////////////////////////////////////////////////////////
 
-enum SD_RECORD_TYPE { SD_ACCELEROMETER = 0, SD_GPS = 1 };
+enum SD_RECORD_TYPE {
+  SD_ACCELEROMETER_MEASURED = 0,
+  SD_GPS_MEASURED,
+  SD_GPS_PREDICTED,  // after kalman.predict() operation
+  SD_GPS_CORRECTED,  // after kalman.correct() operation (and received new gps
+                     // coordinate)
+  SD_UNKNOWN
+};
 /// sd_record_hdr - header for all sensor data output records
 struct sd_record_hdr {
   SD_RECORD_TYPE type;
@@ -120,6 +128,7 @@ struct sd_record_hdr {
 };
 
 size_t sd_gps_serialize_str(const gps_coordinate &gc,
+                            SD_RECORD_TYPE rc,
                             double ts,
                             char buff[],
                             size_t len);
@@ -128,5 +137,13 @@ size_t sd_acc_serialize_str(const abs_accelerometer &acc,
                             double ts,
                             char buff[],
                             size_t len);
+
+bool sd_gps_deserialize_str(const char *line,
+                            sd_record_hdr &hdr,
+                            gps_coordinate &gc);
+
+bool sd_acc_deserialize_str(const char *line,
+                            sd_record_hdr &hdr,
+                            abs_accelerometer &acc);
 
 #endif  // SENSOR_DATA_H

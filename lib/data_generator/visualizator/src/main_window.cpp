@@ -8,6 +8,7 @@
 #include "map_marker_blue.h"
 #include "map_marker_green.h"
 #include "map_marker_red.h"
+#include "sensor_data.h"
 
 struct map_marker_resource {
   const unsigned char *buff;
@@ -16,14 +17,6 @@ struct map_marker_resource {
   const size_t heigth;
 };
 
-//////////////////////////////////////////////////////////////
-struct geopoint {
-  double latitude;
-  double longitude;
-
-  geopoint() : latitude(0.), longitude(0.) {}
-  geopoint(double lat, double lon) : latitude(lat), longitude(lon) {}
-};
 //////////////////////////////////////////////////////////////
 
 struct gmw_marker_layer {
@@ -78,6 +71,7 @@ void gmw_free(generator_main_window *gmw)
 
 static void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
+static void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                                   int n_press,
                                                   double x,
@@ -112,6 +106,13 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
                    G_CALLBACK(gmw_btn_clear_all_points_clicked),
                    gmw);
 
+  GtkWidget *btn_load_track = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_load_track), "Load");
+  g_signal_connect(btn_load_track,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_load_track_clicked),
+                   gmw);
+
   // map
   gmw->simple_map = shumate_simple_map_new();
   gmw->map_source_registry = shumate_map_source_registry_new_with_defaults();
@@ -125,7 +126,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 
   ShumateMap *map = shumate_simple_map_get_map(gmw->simple_map);
   shumate_map_center_on(map, 36.5519514, 31.9801362);
-  // shumate_map_go_to_full(map, 36.5519514, 31.9801362, 14.0);
 
   GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
   gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
@@ -155,7 +155,8 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 
   gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(gmw->simple_map), 0, 1, 2, 2);
+  gtk_grid_attach(GTK_GRID(grid), btn_load_track, 2, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(gmw->simple_map), 0, 1, 3, 2);
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid);
@@ -186,6 +187,117 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                              &lat,
                                              &lng);
   gmw_add_marker(gmw, MC_RED, lat, lng);
+}
+//////////////////////////////////////////////////////////////
+
+static bool get_sd_record_hdr(sd_record_hdr &hdr, const char *line)
+{
+  return sscanf(line, "%d: %lf", &hdr.type, &hdr.timestamp) == 2;
+}
+//////////////////////////////////////////////////////////////
+
+static bool acc_record_handler(generator_main_window *gmw,
+                               sd_record_hdr &hdr,
+                               const char *line)
+{
+  UNUSED(gmw);
+  UNUSED(hdr);
+  UNUSED(line);
+  return true;
+};
+//////////////////////////////////////////////////////////////
+
+static bool gps_record_handler(generator_main_window *gmw,
+                               sd_record_hdr &hdr,
+                               const char *line)
+{
+  UNUSED(gmw);
+  gps_coordinate gps;
+
+  bool parsed = sd_gps_deserialize_str(line, hdr, gps);
+  if (!parsed)
+    return false;
+
+  if (hdr.type == SD_GPS_PREDICTED) {
+    // do nothing
+    return true;
+  }
+
+  marker_color mc = MC_RED;
+  if (hdr.type == SD_GPS_CORRECTED)
+    mc = MC_GREEN;
+
+  gmw_add_marker(gmw, mc, gps.location.latitude, gps.location.longitude);
+  return true;
+};
+//////////////////////////////////////////////////////////////
+
+static void dlg_open_cb(GObject *source_object,
+                        GAsyncResult *res,
+                        gpointer data)
+{
+  GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
+  GFile *g_file = gtk_file_dialog_open_finish(dlg, res, NULL);
+  if (!g_file) {
+    // cancel button pressed
+    return;
+  }
+
+  char *fpath = g_file_get_path(g_file);
+  FILE *f_track = fopen(fpath, "r");
+  if (!f_track) {
+    // todo log
+    return;
+  }
+
+  sd_record_hdr hdr;
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t nread;
+
+  // SEE SD_RECORD_TYPE enum
+  bool (*record_handlers[])(generator_main_window *,
+                            sd_record_hdr &,
+                            const char *){
+      acc_record_handler,
+      gps_record_handler,
+      gps_record_handler,
+      gps_record_handler,
+  };
+
+  while ((nread = getline(&line, &len, f_track)) != -1) {
+    if (!get_sd_record_hdr(hdr, line)) {
+      std::cout << line << "\nis not a header\n";
+      break;
+    }
+
+    int record_type = line[0] - '0';
+    if (record_type < 0 || record_type >= SD_UNKNOWN) {
+      std::cout << "unknown record type\n";
+      continue;
+    }
+
+    bool handled = record_handlers[record_type](gmw, hdr, line);
+    if (handled)
+      continue;  // do nothing
+
+    std::cout << "failed to handle record: " << line << std::endl;
+  }
+
+  free(line);
+  fclose(f_track);
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud)
+{
+  (void)btn;
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_open(dlg, GTK_WINDOW(gmw->window), NULL, dlg_open_cb, gmw);
+  /* g_clear_object(&dlg); */
+  g_object_unref(dlg);
 }
 //////////////////////////////////////////////////////////////
 

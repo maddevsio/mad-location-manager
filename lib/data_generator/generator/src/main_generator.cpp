@@ -34,7 +34,7 @@ static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
 {
   const int buff_len = 128;
   char buff[buff_len] = {0};
-  size_t record_len = sd_gps_serialize_str(gc, ts, buff, buff_len);
+  size_t record_len = sd_gps_serialize_str(gc, SD_GPS_MEASURED, ts, buff, buff_len);
   assert(record_len < buff_len);
   fwrite(static_cast<void *>(buff), record_len, 1, stream);
   fprintf(stream, "\n");

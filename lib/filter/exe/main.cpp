@@ -20,7 +20,24 @@ int main_tests(int argc, char *argv[])
 
 static bool get_sd_record_hdr(sd_record_hdr &hdr, const char *line);
 static bool handle_acc_record(MLM &mlm, const char *line);
-static bool handle_gps_record(MLM &mlm, const char *line);
+static bool handle_gps_measured_record(MLM &mlm, const char *line);
+//////////////////////////////////////////////////////////////
+
+/*in next 2 methods we just ignore input*/
+static bool handle_gps_predicted_record(MLM &mlm, const char *line)
+{
+  UNUSED(mlm);
+  UNUSED(line);
+  return true;
+};
+
+static bool handle_gps_corrected_record(MLM &mlm, const char *line)
+{
+  UNUSED(mlm);
+  UNUSED(line);
+  return true;
+};
+//////////////////////////////////////////////////////////////
 
 int main_mlm(int argc, char *argv[], char **env)
 {
@@ -38,7 +55,9 @@ int main_mlm(int argc, char *argv[], char **env)
   // see the order of SD_RECORD_TYPE enum
   bool (*record_handlers[])(MLM &, const char *) = {
       handle_acc_record,
-      handle_gps_record,
+      handle_gps_measured_record,
+      handle_gps_predicted_record,
+      handle_gps_corrected_record
   };
 
   while ((nread = getline(&line, &len, stdin)) != -1) {
@@ -77,12 +96,14 @@ bool handle_acc_record(MLM &mlm, const char *line)
   mlm.process_acc_data(acc, hdr.timestamp);
 
   gps_coordinate pgps = mlm.predicted_coordinate();
-  printf("3: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
+  char buff[128] = {0};
+  sd_gps_serialize_str(pgps, SD_GPS_PREDICTED, hdr.timestamp, buff, sizeof(buff));
+  printf("%s\n", buff);
   return true;
 }
 //////////////////////////////////////////////////////////////
 
-bool handle_gps_record(MLM &mlm, const char *line)
+bool handle_gps_measured_record(MLM &mlm, const char *line)
 {
   sd_record_hdr hdr;
   gps_coordinate gps;
@@ -96,7 +117,9 @@ bool handle_gps_record(MLM &mlm, const char *line)
   mlm.process_gps_data(gps, 1e-3, 1e-3);
 
   gps_coordinate pgps = mlm.predicted_coordinate();
-  printf("4: %.9lf, %.9lf\n", pgps.location.latitude, pgps.location.longitude);
+  char buff[128] = {0};
+  sd_gps_serialize_str(pgps, SD_GPS_CORRECTED, hdr.timestamp, buff, sizeof(buff));
+  printf("%s\n", buff);
   return true;
 }
 //////////////////////////////////////////////////////////////
