@@ -13,28 +13,12 @@
 
 static bool get_input_coordinate(geopoint &gp);
 
-struct generator_options {
-  double acceleration_time;
-  double acc_measurement_period;
-  double gps_measurement_period;
-  char *output;
-
-  generator_options()
-      : acceleration_time(1.0),
-        acc_measurement_period(1e-1),
-        gps_measurement_period(1.5),
-        output(nullptr)
-  {
-  }
-};
-static int process_cl_arguments(int argc, char *argv[], generator_options &go);
-//////////////////////////////////////////////////////////////
-
 static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
 {
   const int buff_len = 128;
   char buff[buff_len] = {0};
-  size_t record_len = sd_gps_serialize_str(gc, SD_GPS_MEASURED, ts, buff, buff_len);
+  size_t record_len =
+      sd_gps_serialize_str(gc, SD_GPS_MEASURED, ts, buff, buff_len);
   assert(record_len < buff_len);
   fwrite(static_cast<void *>(buff), record_len, 1, stream);
   fprintf(stream, "\n");
@@ -83,7 +67,21 @@ int generator_entry_point(int argc, char *argv[], char **env)
     return pcr;
   }
 
-  double no_acceleration_time = go.gps_measurement_period - go.acceleration_time;
+  fprintf(stderr,
+          "next settings are applied:\n"
+          "acceleration_time=%lg\n"
+          "acc_measurement_period=%lg\n"
+          "gps_measurement_period=%lg\n"
+          "acc_noise=%lg\n"
+          "gps_noise=%lg\n",
+          go.acceleration_time,
+          go.acc_measurement_period,
+          go.gps_measurement_period,
+          go.acc_noise,
+          go.gps_noise);
+
+  double no_acceleration_time =
+      go.gps_measurement_period - go.acceleration_time;
   gps_coordinate prev_coord, current_coord;
   geopoint input_point;
 
@@ -158,68 +156,87 @@ static void usage()
       "coorinates, speed + accelerometer data.\n\n",
       "undefined version");
 
-  fprintf(
-      stderr,
-      "Usage: mlm_data_generator [options]\n\n"
-      "Options:\n"
-      "-a, --acceleration-time\tacceleration time in seconds (floating point "
-      "value)"
-      "double\n"
-      "-f, --accelerometer-measurement-period\taccelerometer data period "
-      "(seconds between "
-      "measurements)"
-      "double\n"
-      "-g, --gps-measurement-period\tgps data period (seconds between "
-      "measurements)"
-      "double\n"
-      "-o, --output\tpath to output file"
-      "string\n"
-      "-h, --help\tprint this help.\n");
+  fprintf(stderr,
+          "Usage: mlm_data_generator [options]\n\n"
+          "Options:\n"
+          "--acceleration-time\tacceleration time in seconds (floating point "
+          "value)"
+          "\tdouble\n"
+          "--accelerometer-measurement-period\taccelerometer data period "
+          "(seconds between "
+          "measurements)"
+          "\tdouble\n"
+          "--gps-measurement-period\tgps data period (seconds between "
+          "measurements)"
+          "\tdouble\n"
+          "--accelerometer-noise\tmax value of accelerometer error in m/sec^2"
+          "\tdouble\n"
+          "--gps-noise\tmax value of GPS error in meters"
+          "\tdouble\n"
+          "-o, --output\tpath to output file"
+          "\tstring\n"
+          "-h, --help\tprint this help.\n");
 }
 //////////////////////////////////////////////////////////////
 /// process_cl_arguments = process command line arguments
 int process_cl_arguments(int argc, char *argv[], generator_options &go)
 {
   static const struct option lopts[] = {
-      {               "acceleration-time", required_argument, NULL, 'a'},
-      {"accelerometer-measurement-period", required_argument, NULL, 'f'},
-      {          "gps-measurement-period", required_argument, NULL, 'g'},
+      {               "acceleration-time", required_argument, NULL,   0},
+      {"accelerometer-measurement-period", required_argument, NULL,   1},
+      {          "gps-measurement-period", required_argument, NULL,   2},
+      {             "accelerometer-noise", required_argument, NULL,   3},
+      {                       "gps-noise", required_argument, NULL,   4},
       {                          "output", required_argument, NULL, 'o'},
       {                            "help",       no_argument, NULL, 'h'},
-      {                              NULL,                 0, NULL,   0},
+      {                              NULL,                 0, NULL,  -1},
   };
 
-  int opt_idx;
+  double *go_doubles[] = {&go.acceleration_time,
+                          &go.acc_measurement_period,
+                          &go.gps_measurement_period,
+                          &go.acc_noise,
+                          &go.gps_noise};
+
+  int co;
   size_t opt_len;
-  while ((opt_idx = getopt_long(argc, argv, "a:f:g:o:h", lopts, NULL)) != -1) {
-    switch (opt_idx) {
-      case 'a':
-        go.acceleration_time = atof(optarg);
+  while ((co = getopt_long(argc, argv, "o:h", lopts, NULL)) != -1) {
+    switch (co) {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        *go_doubles[co] = atof(optarg);
         break;
-      case 'f':
-        go.acc_measurement_period = atof(optarg);
-        break;
-      case 'g':
-        go.gps_measurement_period = atof(optarg);
-        break;
+
       case 'o':
         opt_len = strlen(optarg);
         go.output = new char[opt_len + 1];
         strncpy(go.output, optarg, opt_len);
         go.output[opt_len] = 0;
         break;
+
+      case '?':
+        printf("unrecognized option: %d\n", optopt);
+        usage();
+        break;
+
       case 'h':
         usage();
         return 1;
+
       default:
         printf(
             "something bad is happened. option index is out of bounds (%d "
             "%c)\n",
-            opt_idx,
-            (char)opt_idx);
+            co,
+            static_cast<char>(co));
+        usage();
         return 2;
     }
   }
+
   return 0;
 };
 //////////////////////////////////////////////////////////////
