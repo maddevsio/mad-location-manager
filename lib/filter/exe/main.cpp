@@ -19,24 +19,35 @@ int main_tests(int argc, char *argv[])
 //////////////////////////////////////////////////////////////
 
 static bool get_sd_record_hdr(sd_record_hdr &hdr, const char *line);
-static bool handle_acc_record(MLM &mlm, const char *line);
+static bool handle_acc_measured_record(MLM &mlm, const char *line);
+static bool handle_acc_noised_record(MLM &mlm, const char *line);
 static bool handle_gps_measured_record(MLM &mlm, const char *line);
+static bool handle_gps_corrected_record(MLM &mlm, const char *line);
+static bool handle_gps_noised_record(MLM &mlm, const char *line);
 //////////////////////////////////////////////////////////////
 
-/*in next 2 methods we just ignore input*/
-static bool handle_gps_predicted_record(MLM &mlm, const char *line)
-{
-  UNUSED(mlm);
-  UNUSED(line);
-  return true;
-};
+// functions that should return true and do nothing
 
-static bool handle_gps_corrected_record(MLM &mlm, const char *line)
+bool handle_acc_measured_record(MLM &mlm, const char *line)
 {
   UNUSED(mlm);
   UNUSED(line);
   return true;
-};
+}
+
+bool handle_gps_measured_record(MLM &mlm, const char *line)
+{
+  UNUSED(mlm);
+  UNUSED(line);
+  return true;
+}
+
+bool handle_gps_corrected_record(MLM &mlm, const char *line)
+{
+  UNUSED(mlm);
+  UNUSED(line);
+  return true;
+}
 //////////////////////////////////////////////////////////////
 
 int main_mlm(int argc, char *argv[], char **env)
@@ -54,21 +65,22 @@ int main_mlm(int argc, char *argv[], char **env)
 
   // see the order of SD_RECORD_TYPE enum
   bool (*record_handlers[])(MLM &, const char *) = {
-      handle_acc_record,
+      handle_acc_measured_record,
+      handle_acc_noised_record,
       handle_gps_measured_record,
-      handle_gps_predicted_record,
-      handle_gps_corrected_record
+      handle_gps_corrected_record,
+      handle_gps_noised_record,
   };
 
   while ((nread = getline(&line, &len, stdin)) != -1) {
     if (!get_sd_record_hdr(hdr, line)) {
-      printf("it's not hdr\n");
+      perror("it's not hdr\n");
       break;
     }
 
     int record_type = line[0] - '0';
     if (record_type < 0 || record_type >= SD_UNKNOWN) {
-      printf("unknown record type\n");
+      perror("unknown record type\n");
       continue;
     }
 
@@ -76,7 +88,7 @@ int main_mlm(int argc, char *argv[], char **env)
     if (handled)
       continue;  // do nothing
 
-    printf("failed to handle '%s' record", line);
+    fprintf(stderr, "failed to handle '%s' record", line);
   }
 
   free(line);
@@ -84,7 +96,7 @@ int main_mlm(int argc, char *argv[], char **env)
 }
 //////////////////////////////////////////////////////////////
 
-bool handle_acc_record(MLM &mlm, const char *line)
+bool handle_acc_noised_record(MLM &mlm, const char *line)
 {
   sd_record_hdr hdr;
   abs_accelerometer acc;
@@ -94,16 +106,11 @@ bool handle_acc_record(MLM &mlm, const char *line)
     return false;
 
   mlm.process_acc_data(acc, hdr.timestamp);
-
-  gps_coordinate pgps = mlm.predicted_coordinate();
-  char buff[128] = {0};
-  sd_gps_serialize_str(pgps, SD_GPS_PREDICTED, hdr.timestamp, buff, sizeof(buff));
-  printf("%s\n", buff);
   return true;
 }
 //////////////////////////////////////////////////////////////
 
-bool handle_gps_measured_record(MLM &mlm, const char *line)
+bool handle_gps_noised_record(MLM &mlm, const char *line)
 {
   sd_record_hdr hdr;
   gps_coordinate gps;
@@ -114,11 +121,15 @@ bool handle_gps_measured_record(MLM &mlm, const char *line)
 
   // WARNING!!!! TODO!!!! get velocity and position deviations
   // maybe not necessary in generated data.
-  mlm.process_gps_data(gps, 1e-3, 1e-3);
 
+  mlm.process_gps_data(gps, 1e-3, 1e-3);
   gps_coordinate pgps = mlm.predicted_coordinate();
   char buff[128] = {0};
-  sd_gps_serialize_str(pgps, SD_GPS_CORRECTED, hdr.timestamp, buff, sizeof(buff));
+  sd_gps_serialize_str(pgps,
+                       SD_GPS_CORRECTED,
+                       hdr.timestamp,
+                       buff,
+                       sizeof(buff));
   printf("%s\n", buff);
   return true;
 }

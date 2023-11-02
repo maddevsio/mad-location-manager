@@ -6,19 +6,53 @@
 #include <string.h>
 
 #include <cmath>
+#include <functional>
+#include <random>
 
 #include "commons.h"
+#include "coordinate.h"
 #include "sd_generator.h"
 #include "sensor_data.h"
 
+static coordinates_vptr m_coord_vptr = coord_vptr_hq();
 static bool get_input_coordinate(geopoint &gp);
 
-static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
+static geopoint noised_geopoint(const geopoint &src, double gps_noise)
+{
+  // Will be used to obtain a seed for the random number engine
+  std::random_device rd;
+  // Standard mersenne_twister_engine seeded with rd()
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> gps_dist(0.0, gps_noise);
+  static std::uniform_real_distribution<> az_dist(0.0, 360.0);
+  double gps_error = gps_dist(gen);
+  double az_rnd = az_dist(gen);
+  geopoint n_gps = m_coord_vptr.point_ahead(src, gps_error, az_rnd);
+  return n_gps;
+}
+//////////////////////////////////////////////////////////////
+
+static abs_accelerometer noised_acc(const abs_accelerometer &acc,
+                                    double acc_noise)
+{
+  // Will be used to obtain a seed for the random number engine
+  std::random_device rd;
+  // Standard mersenne_twister_engine seeded with rd()
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> gps_dist(-acc_noise / 2.0, acc_noise / 2.0);
+  abs_accelerometer nacc(acc.x + gps_dist(gen), acc.y + gps_dist(gen), acc.z);
+  return nacc;
+}
+//////////////////////////////////////////////////////////////
+
+static void mlm_gps_out(FILE *stream,
+                        const gps_coordinate &gc,
+                        SD_RECORD_TYPE type,
+                        double ts)
 {
   const int buff_len = 128;
   char buff[buff_len] = {0};
-  size_t record_len =
-      sd_gps_serialize_str(gc, SD_GPS_MEASURED, ts, buff, buff_len);
+  size_t record_len = sd_gps_serialize_str(gc, type, ts, buff, buff_len);
   assert(record_len < buff_len);
   fwrite(static_cast<void *>(buff), record_len, 1, stream);
   fprintf(stream, "\n");
@@ -27,6 +61,7 @@ static void mlm_gps_out(FILE *stream, const gps_coordinate &gc, double ts)
 
 static void mlm_acc_out(FILE *stream,
                         const abs_accelerometer &acc,
+                        SD_RECORD_TYPE rc,
                         double ts,
                         double acceleration_time,
                         double acc_measurement_period,
@@ -40,7 +75,7 @@ static void mlm_acc_out(FILE *stream,
   const int buff_len = 128;
   char buff[buff_len] = {0};
   for (double ats = 0.; ats < at; ats += amp) {
-    size_t record_len = sd_acc_serialize_str(acc, ts + ats, buff, buff_len);
+    size_t record_len = sd_acc_serialize_str(acc, rc, ts + ats, buff, buff_len);
     assert(record_len < buff_len);
     fwrite(static_cast<void *>(buff), record_len, 1, stream);
     fprintf(stream, "\n");
@@ -49,7 +84,7 @@ static void mlm_acc_out(FILE *stream,
   abs_accelerometer zacc(0, 0, 0);
   for (double ats = 0.; ats < nat; ats += amp) {
     double nts = ts + at + ats;
-    size_t record_len = sd_acc_serialize_str(zacc, nts, buff, buff_len);
+    size_t record_len = sd_acc_serialize_str(zacc, rc, nts, buff, buff_len);
     assert(record_len < buff_len);
     fwrite(static_cast<void *>(buff), record_len, 1, stream);
     fprintf(stream, "\n");
@@ -97,7 +132,7 @@ int generator_entry_point(int argc, char *argv[], char **env)
 
   current_coord.location = input_point;
   prev_coord = current_coord;
-  mlm_gps_out(mlm_out, current_coord, 0.);
+  mlm_gps_out(mlm_out, current_coord, SD_GPS_MEASURED, 0.);
 
   double ts = 0.;
   while (get_input_coordinate(input_point)) {
@@ -108,8 +143,19 @@ int generator_entry_point(int argc, char *argv[], char **env)
                                          go.acceleration_time,
                                          go.gps_measurement_period,
                                          0.);
+
+    abs_accelerometer acc_with_noise = noised_acc(acc, go.acc_noise);
     mlm_acc_out(mlm_out,
                 acc,
+                SD_ACCELEROMETER_MEASURED,
+                ts,
+                go.acceleration_time,
+                go.acc_measurement_period,
+                no_acceleration_time);
+
+    mlm_acc_out(mlm_out,
+                acc_with_noise,
+                SD_ACCELEROMETER_NOISED,
                 ts,
                 go.acceleration_time,
                 go.acc_measurement_period,
@@ -129,7 +175,13 @@ int generator_entry_point(int argc, char *argv[], char **env)
           sd_gps_coordinate_in_interval(current_coord, *i, i->duration);
     }
     // now we have GPS coordinate and speed
-    mlm_gps_out(mlm_out, current_coord, ts);
+    mlm_gps_out(mlm_out, current_coord, SD_GPS_MEASURED, ts);
+
+    gps_coordinate gps_with_noise = gps_coordinate(current_coord);
+    gps_with_noise.location =
+        noised_geopoint(current_coord.location, go.gps_noise);
+
+    mlm_gps_out(mlm_out, gps_with_noise, SD_GPS_NOISED, ts);
     prev_coord = current_coord;
   }
 

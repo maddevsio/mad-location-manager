@@ -218,14 +218,13 @@ static bool gps_record_handler(generator_main_window *gmw,
   if (!parsed)
     return false;
 
-  if (hdr.type == SD_GPS_PREDICTED) {
-    // do nothing
-    return true;
-  }
-
   marker_color mc = MC_RED;
   if (hdr.type == SD_GPS_CORRECTED)
     mc = MC_GREEN;
+  if (hdr.type == SD_GPS_MEASURED)
+    mc = MC_BLUE;
+  if (hdr.type == SD_GPS_NOISED)
+    mc = MC_RED;
 
   gmw_add_marker(gmw, mc, gps.location.latitude, gps.location.longitude);
   return true;
@@ -260,6 +259,7 @@ static void dlg_open_cb(GObject *source_object,
   bool (*record_handlers[])(generator_main_window *,
                             sd_record_hdr &,
                             const char *){
+      acc_record_handler,
       acc_record_handler,
       gps_record_handler,
       gps_record_handler,

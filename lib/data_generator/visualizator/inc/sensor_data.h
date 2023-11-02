@@ -115,10 +115,10 @@ struct gps_coordinate {
 
 enum SD_RECORD_TYPE {
   SD_ACCELEROMETER_MEASURED = 0,
+  SD_ACCELEROMETER_NOISED,
   SD_GPS_MEASURED,
-  SD_GPS_PREDICTED,  // after kalman.predict() operation
-  SD_GPS_CORRECTED,  // after kalman.correct() operation (and received new gps
-                     // coordinate)
+  SD_GPS_CORRECTED,
+  SD_GPS_NOISED,
   SD_UNKNOWN
 };
 /// sd_record_hdr - header for all sensor data output records
@@ -134,6 +134,7 @@ size_t sd_gps_serialize_str(const gps_coordinate &gc,
                             size_t len);
 
 size_t sd_acc_serialize_str(const abs_accelerometer &acc,
+                            SD_RECORD_TYPE rc,
                             double ts,
                             char buff[],
                             size_t len);
