@@ -64,6 +64,11 @@ int main_mlm(int argc, char *argv[], char **env)
   MLM mlm;
 
   // see the order of SD_RECORD_TYPE enum
+  /* SD_ACCELEROMETER_MEASURED = 0, */
+  /* SD_ACCELEROMETER_NOISED, */
+  /* SD_GPS_MEASURED, */
+  /* SD_GPS_CORRECTED, */
+  /* SD_GPS_NOISED, */
   bool (*record_handlers[])(MLM &, const char *) = {
       handle_acc_measured_record,
       handle_acc_noised_record,
@@ -122,7 +127,7 @@ bool handle_gps_noised_record(MLM &mlm, const char *line)
   // WARNING!!!! TODO!!!! get velocity and position deviations
   // maybe not necessary in generated data.
 
-  mlm.process_gps_data(gps, 1e-3, 1e-3);
+  mlm.process_gps_data(gps, 1.0, 1e-3);
   gps_coordinate pgps = mlm.predicted_coordinate();
   char buff[128] = {0};
   sd_gps_serialize_str(pgps,

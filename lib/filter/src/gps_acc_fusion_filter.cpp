@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <iostream>
+#include "commons.h"
 
 std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
 {
@@ -69,8 +70,8 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double pos_deviation,
                                 double vel_deviation)
 {
-  m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
+  m_predicts_count = 0;
   Zk << state.x, state.y, state.x_vel, state.y_vel;
   correct();
 }
@@ -78,11 +79,12 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
 
 void GPSAccFusionFilter::rebuild_F(double dt_sec)
 {
+  double dt = dt_sec;
   // clang-format off
-  F << 1.,	0.,  dt_sec, 0.,
-       0.,	1.,  0.,     dt_sec,
-       0.,	0.,  1.,     0.,
-       0.,	0.,  0.,     1.;
+  F << 1.,	0.,  dt, 0.,
+       0.,	1.,  0., dt,
+       0.,	0.,  1., 0.,
+       0.,	0.,  0., 1.;
   // clang-format on
 }
 //////////////////////////////////////////////////////////////
@@ -110,10 +112,10 @@ void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
   double vel_dev = acc_deviation * m_predicts_count;
   double pos_dev = vel_dev * m_predicts_count;  // todo check!
   double cov_dev = vel_dev * pos_dev;
-
+  
   double pos_dev_2 = pos_dev * pos_dev;
   double vel_dev_2 = vel_dev * vel_dev;
-
+  
   // clang-format off
   Q <<  pos_dev_2,  0.0,        cov_dev,    0.0, 
         0.0,        pos_dev_2,  0.0,        cov_dev, 

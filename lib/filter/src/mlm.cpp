@@ -35,6 +35,7 @@ void MLM::process_gps_data(const gps_coordinate &gps,
     m_got_start_point = true;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
+
     m_fk.reset(x, y, speed_x, speed_y, accelerometer_deviation, pos_deviation);
     return;
   }
