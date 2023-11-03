@@ -70,7 +70,7 @@ bool sd_gps_deserialize_str(const char *line,
        ++ppt) {
     is_type_correct = hdr.type == *ppt;
   }
-  return matched == 6 && is_type_correct;
+  return matched == 7 && is_type_correct;
 }
 //////////////////////////////////////////////////////////////
 
@@ -96,6 +96,6 @@ bool sd_acc_deserialize_str(const char *line,
        ++ppt) {
     is_type_correct = hdr.type == *ppt;
   }
-  return matched == 4 && is_type_correct;
+  return matched == 5 && is_type_correct;
 }
 //////////////////////////////////////////////////////////////
