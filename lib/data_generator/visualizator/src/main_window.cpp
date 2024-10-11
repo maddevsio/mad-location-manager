@@ -9,6 +9,7 @@
 #include "map_marker_green.h"
 #include "map_marker_red.h"
 #include "sensor_data.h"
+#include "shumate/shumate-data-source.h"
 
 struct map_marker_resource {
   const unsigned char *buff;
@@ -114,11 +115,16 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
                    gmw);
 
   // map
+  printf("vector renderer supported : %d\n",
+         shumate_vector_renderer_is_supported());
   gmw->simple_map = shumate_simple_map_new();
   gmw->map_source_registry = shumate_map_source_registry_new_with_defaults();
   ShumateMapSource *ms =
       shumate_map_source_registry_get_by_id(gmw->map_source_registry,
                                             SHUMATE_MAP_SOURCE_OSM_MAPNIK);
+  printf("is raster renderer: %d\n", SHUMATE_IS_RASTER_RENDERER(ms));
+  printf("is vector renderer: %d\n", SHUMATE_IS_VECTOR_RENDERER(ms));
+
   shumate_simple_map_set_map_source(gmw->simple_map, ms);
 
   ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
@@ -139,7 +145,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   GtkWidget *grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
   gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
-  gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
+  gtk_widget_set_vexpand(GTK_WIDGET(grid), true);
   gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
 
   for (size_t i = 0; i < MC_COUNT; ++i) {
@@ -157,6 +163,18 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), btn_load_track, 2, 0, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(gmw->simple_map), 0, 1, 3, 2);
+
+  GtkWidget *wte[] = {
+      btn_save_trajectory,
+      btn_clear_all_points,
+      btn_load_track,
+      GTK_WIDGET(gmw->simple_map),
+      NULL,
+  };
+  for (GtkWidget **pwte = wte; *pwte; ++pwte) {
+    gtk_widget_set_hexpand(*pwte, true);
+  }
+  gtk_widget_set_vexpand(GTK_WIDGET(gmw->simple_map), true);
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid);

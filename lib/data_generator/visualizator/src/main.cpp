@@ -1,10 +1,6 @@
 #include <gtest/gtest.h>
 #include <gtk/gtk.h>
 
-#include <iostream>
-#include <memory>
-#include <string>
-
 #include "main_window.h"
 
 static void activate(GtkApplication *app, gpointer user_data);

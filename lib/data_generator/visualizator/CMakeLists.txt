@@ -7,6 +7,20 @@ project(mlm_visualizer)            # this sets the project name
 ###############################################################################
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("Debug build.")
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  message("Release build.")
+else()
+  message("Some other build type. Setting up default = Debug")
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+
 # These instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
@@ -41,25 +55,13 @@ target_include_directories(mlm_visualizer PUBLIC inc resources)
 # Just for mlm_visualizer add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
-set(cxxflags -pipe -O0 -g -std=gnu++2a)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 target_compile_options(mlm_visualizer PUBLIC ${warning_level} ${cxxflags})
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
 file(COPY ${data} DESTINATION resources)
-
-###############################################################################
-## dependencies ###############################################################
-###############################################################################
-
-# This defines the variables Boost_LIBRARIES that containts all library names
-# that we need to link into the program.
-# find_package(Boost 1.36.0 COMPONENTS filesystem system REQUIRED)
-
-# target_link_libraries(mlm_visualizer PUBLIC
-#   ${Boost_LIBRARIES}
-#   # here you can add any library dependencies
-# )
 
 ###############################################################################
 ## testing ####################################################################

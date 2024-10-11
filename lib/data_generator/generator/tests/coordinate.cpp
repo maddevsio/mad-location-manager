@@ -56,7 +56,7 @@ TEST(coordinates, distance_between_points_test)
 }
 //////////////////////////////////////////////////////////////
 
-TEST(coordinates, azimuth_bitween_points_test)
+TEST(coordinates, azimuth_between_points_test)
 {
   coordinates_vptr vptr = coord_vptr_hq();
 

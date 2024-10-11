@@ -64,11 +64,6 @@ int main_mlm(int argc, char *argv[], char **env)
   MLM mlm;
 
   // see the order of SD_RECORD_TYPE enum
-  /* SD_ACCELEROMETER_MEASURED = 0, */
-  /* SD_ACCELEROMETER_NOISED, */
-  /* SD_GPS_MEASURED, */
-  /* SD_GPS_CORRECTED, */
-  /* SD_GPS_NOISED, */
   bool (*record_handlers[])(MLM &, const char *) = {
       handle_acc_measured_record,
       handle_acc_noised_record,

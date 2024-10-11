@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include <iostream>
-#include "commons.h"
 
 std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
 {
@@ -109,13 +108,14 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 
 void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
 {
+  // todo dependence on time instead of count (somehow). 
   double vel_dev = acc_deviation * m_predicts_count;
-  double pos_dev = vel_dev * m_predicts_count;  // todo check!
+  double pos_dev = vel_dev * m_predicts_count;
+
   double cov_dev = vel_dev * pos_dev;
-  
   double pos_dev_2 = pos_dev * pos_dev;
   double vel_dev_2 = vel_dev * vel_dev;
-  
+
   // clang-format off
   Q <<  pos_dev_2,  0.0,        cov_dev,    0.0, 
         0.0,        pos_dev_2,  0.0,        cov_dev, 

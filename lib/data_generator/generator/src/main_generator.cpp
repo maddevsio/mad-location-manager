@@ -133,6 +133,7 @@ int generator_entry_point(int argc, char *argv[], char **env)
   current_coord.location = input_point;
   prev_coord = current_coord;
   mlm_gps_out(mlm_out, current_coord, SD_GPS_MEASURED, 0.);
+  mlm_gps_out(mlm_out, current_coord, SD_GPS_NOISED, 0.);
 
   double ts = 0.;
   while (get_input_coordinate(input_point)) {
