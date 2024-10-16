@@ -9,6 +9,7 @@ struct generator_options {
   double gps_measurement_period;
   double acc_noise;
   double gps_noise;
+  bool coordinates_hq;
   char *output;
 
   generator_options()
@@ -17,6 +18,7 @@ struct generator_options {
         gps_measurement_period(1.5),
         acc_noise(0.0),
         gps_noise(0.0),
+        coordinates_hq(true),
         output(nullptr)
   {
   }

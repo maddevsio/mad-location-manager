@@ -1,7 +1,5 @@
 #include "mlm.h"
 
-#include <iostream>
-
 #include "commons.h"
 
 MLM::MLM(void) : m_got_start_point(false) {}

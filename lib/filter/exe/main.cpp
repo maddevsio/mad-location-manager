@@ -122,7 +122,7 @@ bool handle_gps_noised_record(MLM &mlm, const char *line)
   // WARNING!!!! TODO!!!! get velocity and position deviations
   // maybe not necessary in generated data.
 
-  mlm.process_gps_data(gps, 1.0, 1e-3);
+  mlm.process_gps_data(gps, 1.0, 1e-2);
   gps_coordinate pgps = mlm.predicted_coordinate();
   char buff[128] = {0};
   sd_gps_serialize_str(pgps,

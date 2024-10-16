@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include <cmath>
-#include <functional>
 #include <random>
 
 #include "commons.h"
@@ -17,8 +16,7 @@
 static coordinates_vptr m_coord_vptr = coord_vptr_hq();
 static bool get_input_coordinate(geopoint &gp);
 
-static geopoint noised_geopoint(const geopoint &src, double gps_noise)
-{
+static geopoint noised_geopoint(const geopoint &src, double gps_noise) {
   // Will be used to obtain a seed for the random number engine
   std::random_device rd;
   // Standard mersenne_twister_engine seeded with rd()
@@ -33,8 +31,7 @@ static geopoint noised_geopoint(const geopoint &src, double gps_noise)
 //////////////////////////////////////////////////////////////
 
 static abs_accelerometer noised_acc(const abs_accelerometer &acc,
-                                    double acc_noise)
-{
+                                    double acc_noise) {
   // Will be used to obtain a seed for the random number engine
   std::random_device rd;
   // Standard mersenne_twister_engine seeded with rd()
@@ -45,11 +42,8 @@ static abs_accelerometer noised_acc(const abs_accelerometer &acc,
 }
 //////////////////////////////////////////////////////////////
 
-static void mlm_gps_out(FILE *stream,
-                        const gps_coordinate &gc,
-                        SD_RECORD_TYPE type,
-                        double ts)
-{
+static void mlm_gps_out(FILE *stream, const gps_coordinate &gc,
+                        SD_RECORD_TYPE type, double ts) {
   const int buff_len = 128;
   char buff[buff_len] = {0};
   size_t record_len = sd_gps_serialize_str(gc, type, ts, buff, buff_len);
@@ -59,14 +53,10 @@ static void mlm_gps_out(FILE *stream,
 }
 //////////////////////////////////////////////////////////////
 
-static void mlm_acc_out(FILE *stream,
-                        const abs_accelerometer &acc,
-                        SD_RECORD_TYPE rc,
-                        double ts,
-                        double acceleration_time,
+static void mlm_acc_out(FILE *stream, const abs_accelerometer &acc,
+                        SD_RECORD_TYPE rc, double ts, double acceleration_time,
                         double acc_measurement_period,
-                        double no_acceleration_time)
-{
+                        double no_acceleration_time) {
   // these temp varialbes are supposed to make one line loops
   double at = acceleration_time;
   double amp = acc_measurement_period;
@@ -92,8 +82,7 @@ static void mlm_acc_out(FILE *stream,
 }
 //////////////////////////////////////////////////////////////
 
-int generator_entry_point(int argc, char *argv[], char **env)
-{
+int generator_entry_point(int argc, char *argv[], char **env) {
   UNUSED(env);
 
   generator_options go;
@@ -104,16 +93,15 @@ int generator_entry_point(int argc, char *argv[], char **env)
 
   fprintf(stderr,
           "next settings are applied:\n"
-          "acceleration_time=%lg\n"
-          "acc_measurement_period=%lg\n"
-          "gps_measurement_period=%lg\n"
-          "acc_noise=%lg\n"
-          "gps_noise=%lg\n",
-          go.acceleration_time,
-          go.acc_measurement_period,
-          go.gps_measurement_period,
-          go.acc_noise,
-          go.gps_noise);
+          "acceleration_time=\t%lg\n"
+          "acc_measurement_period=\t%lg\n"
+          "gps_measurement_period=\t%lg\n"
+          "acc_noise=\t%lg\n"
+          "gps_noise=\t%lg\n"
+          "coordinates_hq=\t%d\n",
+          go.acceleration_time, go.acc_measurement_period,
+          go.gps_measurement_period, go.acc_noise, go.gps_noise,
+          go.coordinates_hq);
 
   double no_acceleration_time =
       go.gps_measurement_period - go.acceleration_time;
@@ -132,48 +120,39 @@ int generator_entry_point(int argc, char *argv[], char **env)
 
   current_coord.location = input_point;
   prev_coord = current_coord;
+
   mlm_gps_out(mlm_out, current_coord, SD_GPS_MEASURED, 0.);
   mlm_gps_out(mlm_out, current_coord, SD_GPS_NOISED, 0.);
 
   double ts = 0.;
+  coordinates_vptr c_vptr = go.coordinates_hq ? coord_vptr_hq() : coord_vptr();
   while (get_input_coordinate(input_point)) {
     current_coord.location = input_point;
-    abs_accelerometer acc =
-        sd_abs_acc_between_two_geopoints(prev_coord,
-                                         current_coord,
-                                         go.acceleration_time,
-                                         go.gps_measurement_period,
-                                         0.);
+    abs_accelerometer acc = sd_abs_acc_between_two_geopoints(
+        prev_coord, current_coord, go.acceleration_time,
+        go.gps_measurement_period, 0., &c_vptr);
 
     abs_accelerometer acc_with_noise = noised_acc(acc, go.acc_noise);
-    mlm_acc_out(mlm_out,
-                acc,
-                SD_ACCELEROMETER_MEASURED,
-                ts,
-                go.acceleration_time,
-                go.acc_measurement_period,
+    mlm_acc_out(mlm_out, acc, SD_ACCELEROMETER_MEASURED, ts,
+                go.acceleration_time, go.acc_measurement_period,
                 no_acceleration_time);
 
-    mlm_acc_out(mlm_out,
-                acc_with_noise,
-                SD_ACCELEROMETER_NOISED,
-                ts,
-                go.acceleration_time,
-                go.acc_measurement_period,
+    mlm_acc_out(mlm_out, acc_with_noise, SD_ACCELEROMETER_NOISED, ts,
+                go.acceleration_time, go.acc_measurement_period,
                 no_acceleration_time);
 
     ts += go.gps_measurement_period;
     // we have GPS point but have not speed for that point. generating:
     const movement_interval intervals[] = {
         {acc.azimuth(), acc.acceleration(), go.acceleration_time},
-        {           0.,                 0., no_acceleration_time},
-        {           0.,                 0.,                 -1.0},
+        {0., 0., no_acceleration_time},
+        {0., 0., -1.0},
     };
 
     current_coord = prev_coord;
     for (const movement_interval *i = intervals; i->duration != -1.0; ++i) {
-      current_coord =
-          sd_gps_coordinate_in_interval(current_coord, *i, i->duration);
+      current_coord = sd_gps_coordinate_in_interval(current_coord, *i,
+                                                    i->duration, &c_vptr);
     }
     // now we have GPS coordinate and speed
     mlm_gps_out(mlm_out, current_coord, SD_GPS_MEASURED, ts);
@@ -194,15 +173,13 @@ int generator_entry_point(int argc, char *argv[], char **env)
 }
 //////////////////////////////////////////////////////////////
 
-bool get_input_coordinate(geopoint &gp)
-{
+bool get_input_coordinate(geopoint &gp) {
   // todo handle comas and spaces
   return scanf(" %lf , %lf", &gp.latitude, &gp.longitude) == 2;
 }
 //////////////////////////////////////////////////////////////
 
-static void usage()
-{
+static void usage() {
   fprintf(
       stderr,
       "mlm_data_generator %s - reads coordinates from stdin and outputs GPS "
@@ -232,61 +209,61 @@ static void usage()
 }
 //////////////////////////////////////////////////////////////
 /// process_cl_arguments = process command line arguments
-int process_cl_arguments(int argc, char *argv[], generator_options &go)
-{
+int process_cl_arguments(int argc, char *argv[], generator_options &go) {
   static const struct option lopts[] = {
-      {               "acceleration-time", required_argument, NULL,   0},
-      {"accelerometer-measurement-period", required_argument, NULL,   1},
-      {          "gps-measurement-period", required_argument, NULL,   2},
-      {             "accelerometer-noise", required_argument, NULL,   3},
-      {                       "gps-noise", required_argument, NULL,   4},
-      {                          "output", required_argument, NULL, 'o'},
-      {                            "help",       no_argument, NULL, 'h'},
-      {                              NULL,                 0, NULL,  -1},
+      {"acceleration-time", required_argument, NULL, 0},
+      {"accelerometer-measurement-period", required_argument, NULL, 1},
+      {"gps-measurement-period", required_argument, NULL, 2},
+      {"accelerometer-noise", required_argument, NULL, 3},
+      {"gps-noise", required_argument, NULL, 4},
+      {"coordinates_hq", required_argument, NULL, 5},
+      {"output", required_argument, NULL, 'o'},
+      {"help", no_argument, NULL, 'h'},
+      {NULL, 0, NULL, -1},
   };
 
-  double *go_doubles[] = {&go.acceleration_time,
-                          &go.acc_measurement_period,
-                          &go.gps_measurement_period,
-                          &go.acc_noise,
+  double *go_doubles[] = {&go.acceleration_time, &go.acc_measurement_period,
+                          &go.gps_measurement_period, &go.acc_noise,
                           &go.gps_noise};
 
   int co;
   size_t opt_len;
   while ((co = getopt_long(argc, argv, "o:h", lopts, NULL)) != -1) {
     switch (co) {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-        *go_doubles[co] = atof(optarg);
-        break;
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+      *go_doubles[co] = atof(optarg);
+      break;
 
-      case 'o':
-        opt_len = strlen(optarg);
-        go.output = new char[opt_len + 1];
-        strncpy(go.output, optarg, opt_len);
-        go.output[opt_len] = 0;
-        break;
+    case 5:
+      go.coordinates_hq = optarg[0] == '1';
+      break;
 
-      case '?':
-        printf("unrecognized option: %d\n", optopt);
-        usage();
-        break;
+    case 'o':
+      opt_len = strlen(optarg);
+      go.output = new char[opt_len + 1];
+      strncpy(go.output, optarg, opt_len);
+      go.output[opt_len] = 0;
+      break;
 
-      case 'h':
-        usage();
-        return 1;
+    case '?':
+      printf("unrecognized option: %d\n", optopt);
+      usage();
+      break;
 
-      default:
-        printf(
-            "something bad is happened. option index is out of bounds (%d "
-            "%c)\n",
-            co,
-            static_cast<char>(co));
-        usage();
-        return 2;
+    case 'h':
+      usage();
+      return 1;
+
+    default:
+      printf("something bad is happened. option index is out of bounds (%d "
+             "%c)\n",
+             co, static_cast<char>(co));
+      usage();
+      return 2;
     }
   }
 

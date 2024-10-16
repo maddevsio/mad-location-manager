@@ -4,7 +4,7 @@
 #include "sensor_data.h"
 
 /// movement_interval_t - interval of movement
-/// @azimuth - in degees
+/// @azimuth - in degrees
 /// @acceleration - in m/s^2
 /// @duration - seconds
 struct movement_interval {
@@ -20,18 +20,23 @@ struct movement_interval {
 };
 //////////////////////////////////////////////////////////////
 
+struct coordinates_vptr;  // see coordinate.h
 gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                                              const movement_interval &interval,
-                                             double time_of_interest);
+                                             double time_of_interest,
+                                             const coordinates_vptr *vptr);
 
-abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
-                                                   const gps_coordinate &b,
-                                                   double acceleration_time,
-                                                   double interval_time,
-                                                   double time_of_interest);
+abs_accelerometer sd_abs_acc_between_two_geopoints(
+    const gps_coordinate &a,
+    const gps_coordinate &b,
+    double acceleration_time,
+    double interval_time,
+    double time_of_interest,
+    const coordinates_vptr *vptr);
 
 double acc_between_two_points(double distance,
                               double v0,
                               double acceleration_time,
-                              double no_acceleration_time);
+                              double no_acceleration_time,
+                              const coordinates_vptr *vptr);
 #endif  // sd_generator_h

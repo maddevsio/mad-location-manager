@@ -7,6 +7,19 @@ project(mlm_filter)            # this sets the project name
 ###############################################################################
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("Debug build.")
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  message("Release build.")
+else()
+  message("Some other build type. Setting up default = Debug")
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 # These instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
@@ -77,10 +90,11 @@ target_link_libraries(mlm_filter_lib
 # Just for mlm_filter add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
-set(cxxflags -pipe -O0 -g -std=gnu++2a)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 
-target_compile_options(mlm_filter PUBLIC ${warning_level} ${cxxflags})
-target_compile_options(mlm_filter_lib PUBLIC ${warning_level} ${cxxflags} -fPIC)
+target_compile_options(mlm_filter PUBLIC ${warning_level})
+target_compile_options(mlm_filter_lib PUBLIC ${warning_level} -fPIC)
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
@@ -109,25 +123,25 @@ target_compile_options(mlm_filter_lib PUBLIC ${warning_level} ${cxxflags} -fPIC)
 find_package(GTest)
 
 if(GTEST_FOUND)
-  add_executable(unit_tests ${sources_test} ${sources_exe})
-  target_include_directories(unit_tests PUBLIC inc)
+  add_executable(filter_unit_tests ${sources_test} ${sources_exe})
+  target_include_directories(filter_unit_tests PUBLIC inc)
 
   # This define is added to prevent collision with the main.
   # It might be better solved by not adding the source with the main to the
   # testing target.
-  target_compile_definitions(unit_tests PUBLIC _UNIT_TESTS_)
+  target_compile_definitions(filter_unit_tests PUBLIC _UNIT_TESTS_)
 
   # This allows us to use the executable as a link library, and inherit all 
   # linker options and library dependencies from it, by simply adding it as dependency.
   set_target_properties(mlm_filter PROPERTIES ENABLE_EXPORTS on)
 
-  target_link_libraries(unit_tests PUBLIC
+  target_link_libraries(filter_unit_tests PUBLIC
     ${GTEST_BOTH_LIBRARIES}
     mlm_filter
   )
-  target_link_libraries(unit_tests PUBLIC Eigen3::Eigen)
+  target_link_libraries(filter_unit_tests PUBLIC Eigen3::Eigen)
 
-  target_include_directories(unit_tests PUBLIC
+  target_include_directories(filter_unit_tests PUBLIC
     ${GTEST_INCLUDE_DIRS} # doesn't do anything on linux
   )
   

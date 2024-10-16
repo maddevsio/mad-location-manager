@@ -2,18 +2,14 @@
 
 #include <assert.h>
 
-#include <iostream>
-
 #include "commons.h"
 #include "coordinate.h"
 #include "sensor_data.h"
 
-// todo move this vptr somewhere %)
-static coordinates_vptr vptr = coord_vptr_hq();
-
 gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                                              const movement_interval &interval,
-                                             double time_of_interest)
+                                             double time_of_interest,
+                                             const coordinates_vptr *vptr)
 {
   assert(time_of_interest <= interval.duration);
 
@@ -40,7 +36,7 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
   double v_az_degrees = rad_to_degree(v_az_rad);
 
   gps_coordinate res;
-  res.location = vptr.point_ahead(start.location, s, s_az_degrees);
+  res.location = vptr->point_ahead(start.location, s, s_az_degrees);
   res.speed = gps_speed(v_az_degrees, v, 1.0);
 
   return res;
@@ -50,8 +46,10 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
 double acc_between_two_points(double distance,
                               double v0,
                               double acceleration_time,
-                              double no_acceleration_time)
+                              double no_acceleration_time,
+                              const coordinates_vptr *vptr)
 {
+  UNUSED(vptr);
   double s = distance;
   double t1 = acceleration_time;
   double t2 = no_acceleration_time;
@@ -64,7 +62,8 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    const gps_coordinate &b,
                                                    double acceleration_time,
                                                    double interval_time,
-                                                   double time_of_interest)
+                                                   double time_of_interest,
+                                                   const coordinates_vptr *vptr)
 {
   assert(acceleration_time <= interval_time);
 
@@ -76,15 +75,15 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
   double v0_x = a.speed.value * cos(a_az_rad);
   double v0_y = a.speed.value * sin(a_az_rad);
 
-  double ab_az = vptr.azimuth_between_points(a.location.latitude,
-                                             a.location.longitude,
-                                             b.location.latitude,
-                                             b.location.longitude);
+  double ab_az = vptr->azimuth_between_points(a.location.latitude,
+                                              a.location.longitude,
+                                              b.location.latitude,
+                                              b.location.longitude);
   double ab_az_rad = degree_to_rad(ab_az);
-  double ab_s = vptr.distance_between_points(a.location.latitude,
-                                             a.location.longitude,
-                                             b.location.latitude,
-                                             b.location.longitude);
+  double ab_s = vptr->distance_between_points(a.location.latitude,
+                                              a.location.longitude,
+                                              b.location.latitude,
+                                              b.location.longitude);
 
   double sx = ab_s * cos(ab_az_rad);
   double sy = ab_s * sin(ab_az_rad);
@@ -92,11 +91,13 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
   double ax = acc_between_two_points(sx,
                                      v0_x,
                                      acceleration_time,
-                                     interval_time - acceleration_time);
+                                     interval_time - acceleration_time,
+                                     vptr);
   double ay = acc_between_two_points(sy,
                                      v0_y,
                                      acceleration_time,
-                                     interval_time - acceleration_time);
+                                     interval_time - acceleration_time,
+                                     vptr);
 
   return abs_accelerometer(ax, ay, 0.);
 }
