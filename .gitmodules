@@ -1,6 +1,3 @@
 [submodule "lib/filter/external/geographiclib"]
 	path = lib/filter/external/geographiclib
 	url = https://github.com/geographiclib/geographiclib.git
-[submodule "lib/visualizator/filter/external/geographiclib"]
-	path = lib/visualizator/filter/external/geographiclib
-	url = https://github.com/geographiclib/geographiclib.git

@@ -44,6 +44,9 @@ pkg_check_modules(SHUMATE REQUIRED shumate-1.0)
 include_directories(${SHUMATE_INCLUDE_DIRS})
 link_directories(${SHUMATE_LIBRARY_DIRS})
 
+# mlm filter
+add_subdirectory(filter)
+
 add_executable(mlm_visualizer ${sources})
 target_link_libraries(mlm_visualizer ${GTK_LIBRARIES})
 target_link_libraries(mlm_visualizer ${SHUMATE_LIBRARIES})
