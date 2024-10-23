@@ -57,16 +57,16 @@ add_executable(mlm_filter ${sources_exe})
 add_library(mlm_filter_lib SHARED ${sources_lib})
 
 # This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(mlm_filter 
-  PUBLIC inc
-  PUBLIC external/geographiclib/include
-  PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
+target_include_directories(mlm_filter PRIVATE
+  inc
+  external/geographiclib/include
+  ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
 )
 
-target_include_directories(mlm_filter_lib 
-  PUBLIC inc
-  PUBLIC external/geographiclib/include
-  PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
+target_include_directories(mlm_filter_lib PUBLIC inc)
+target_include_directories(mlm_filter_lib PRIVATE
+  external/geographiclib/include
+  ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
 )
 
 set(CMAKE_CXX_FLAGS_BACK ${CMAKE_CXX_FLAGS})
@@ -99,18 +99,12 @@ target_compile_options(mlm_filter_lib PUBLIC ${warning_level} -fPIC)
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
 # file(COPY ${data} DESTINATION resources)
+file(COPY inc DESTINATION inc)
 
 ###############################################################################
 ## dependencies ###############################################################
 ###############################################################################
 
-# This defines the variables Boost_LIBRARIES that containts all library names
-# that we need to link into the program.
-# find_package(Boost REQUIRED COMPONENTS program_options)
-#
-# target_link_libraries(mlm_filter PUBLIC
-#   ${Boost_LIBRARIES}
-# )
 
 ###############################################################################
 ## testing ####################################################################
@@ -153,12 +147,14 @@ endif()
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS mlm_filter DESTINATION mad_location_manager_destination)
-
 # This is basically a repeat of the file copy instruction that copies the
 # resources in the build directory, but here we tell cmake that we want it
 # in the package.
+install(TARGETS mlm_filter DESTINATION mad_location_manager_destination)
 install(DIRECTORY resources DESTINATION mad_location_manager_destination)
+
+install(TARGETS mlm_filter_lib DESTINATION mad_location_manager_destination)
+install(DIRECTORY inc DESTINATION mad_location_manager_destination)
 
 # Now comes everything we need, to create a package
 # there are a lot more variables you can set, and some

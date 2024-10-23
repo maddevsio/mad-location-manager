@@ -9,7 +9,6 @@
 #include "map_marker_green.h"
 #include "map_marker_red.h"
 #include "sensor_data.h"
-#include "shumate/shumate-data-source.h"
 
 struct map_marker_resource {
   const unsigned char *buff;
@@ -347,7 +346,7 @@ static void dlg_save_cb(GObject *source_object,
   char *fpath = g_file_get_path(file);
   std::ofstream of(fpath);
   if (!of.is_open()) {
-    std::cout << "error opening file\n" << fpath << std::endl;
+    std::cerr << "error opening file\n" << fpath << std::endl;
     return;
   }
 

@@ -34,7 +34,6 @@ file(GLOB_RECURSE sources_test tests/*.cpp)
 ###############################################################################
 
 find_package(PkgConfig REQUIRED)
-
 # GTK4
 pkg_check_modules(GTK REQUIRED gtk4)
 include_directories(${GTK_INCLUDE_DIRS})

@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "commons.h"
 #include "main_generator.h"
 
 #ifdef _UNIT_TESTS_
@@ -15,7 +14,6 @@ int main_tests(int argc, char *argv[])
 int main(int argc, char *argv[], char **env)
 {
 #ifdef _UNIT_TESTS_
-  UNUSED(env);
   return main_tests(argc, argv);
 #else
   return generator_entry_point(argc, argv, env);
