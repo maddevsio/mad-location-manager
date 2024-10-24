@@ -5,9 +5,6 @@
 #include <iostream>
 #include <vector>
 
-#include "map_marker_blue.h"
-#include "map_marker_green.h"
-#include "map_marker_red.h"
 #include "sensor_data.h"
 
 struct map_marker_resource {
@@ -86,9 +83,27 @@ void gmw_show(generator_main_window *gmw)
 
 void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 {
+  const gchar *css_data =
+      ".red-shumate-marker {"
+      "   background-color: red;"
+      "}"
+      ".green-shumate-marker {"
+      "   background-color: green;"
+      "}"
+      ".blue-shumate-marker {"
+      "   background-color: blue;"
+      "}";
+  GtkCssProvider *css_provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_string(css_provider, css_data);
+  gtk_style_context_add_provider_for_display(gdk_display_get_default(),
+                                             GTK_STYLE_PROVIDER(css_provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_USER);
+  g_object_unref(css_provider);
+
   // window
   gmw->window = gtk_application_window_new(app);
-  gtk_window_set_title(GTK_WINDOW(gmw->window), "Trajectory generator");
+  gtk_window_set_title(GTK_WINDOW(gmw->window),
+                       "MLM filter test and visualizer tool");
   gtk_window_set_default_size(GTK_WINDOW(gmw->window), 800, 600);
 
   // buttons
@@ -121,8 +136,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   ShumateMapSource *ms =
       shumate_map_source_registry_get_by_id(gmw->map_source_registry,
                                             SHUMATE_MAP_SOURCE_OSM_MAPNIK);
-  printf("is raster renderer: %d\n", SHUMATE_IS_RASTER_RENDERER(ms));
-  printf("is vector renderer: %d\n", SHUMATE_IS_VECTOR_RENDERER(ms));
 
   shumate_simple_map_set_map_source(gmw->simple_map, ms);
 
@@ -140,12 +153,22 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
                    G_CALLBACK(gmw_simple_map_gesture_click_released),
                    gmw);
 
-  // grid
-  GtkWidget *grid = gtk_grid_new();
-  gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
-  gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
-  gtk_widget_set_vexpand(GTK_WIDGET(grid), true);
-  gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
+  // control frames
+  GtkWidget *frame_filter = gtk_frame_new("Filter settings");
+
+  GtkWidget *frame_generator = gtk_frame_new("Generator settings");
+  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_clear_all_points);
+
+  GtkWidget *frame_load_track = gtk_frame_new("Load track");
+  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_load_track);
+  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_save_trajectory);
+
+  // main grid
+  GtkWidget *grid_main = gtk_grid_new();
+  gtk_grid_set_column_spacing(GTK_GRID(grid_main), 10);
+  gtk_grid_set_row_spacing(GTK_GRID(grid_main), 10);
+  gtk_widget_set_vexpand(GTK_WIDGET(grid_main), true);
+  gtk_widget_set_hexpand(GTK_WIDGET(grid_main), true);
 
   for (size_t i = 0; i < MC_COUNT; ++i) {
     ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
@@ -158,10 +181,10 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
     gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
   }
 
-  gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), btn_load_track, 2, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(gmw->simple_map), 0, 1, 3, 2);
+  gtk_grid_attach(GTK_GRID(grid_main), GTK_WIDGET(gmw->simple_map), 0, 0, 3, 3);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_generator, 3, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_filter, 3, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_load_track, 3, 2, 1, 1);
 
   GtkWidget *wte[] = {
       btn_save_trajectory,
@@ -176,7 +199,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   gtk_widget_set_vexpand(GTK_WIDGET(gmw->simple_map), true);
 
   // set grid as child of main window
-  gtk_window_set_child(GTK_WINDOW(gmw->window), grid);
+  gtk_window_set_child(GTK_WINDOW(gmw->window), grid_main);
 }
 //////////////////////////////////////////////////////////////
 
@@ -228,9 +251,7 @@ static bool gps_record_handler(generator_main_window *gmw,
                                sd_record_hdr &hdr,
                                const char *line)
 {
-  UNUSED(gmw);
   gps_coordinate gps;
-
   bool parsed = sd_gps_deserialize_str(line, hdr, gps);
   if (!parsed)
     return false;
@@ -238,9 +259,9 @@ static bool gps_record_handler(generator_main_window *gmw,
   marker_color mc = MC_RED;
   if (hdr.type == SD_GPS_CORRECTED)
     mc = MC_GREEN;
-  if (hdr.type == SD_GPS_MEASURED)
+  else if (hdr.type == SD_GPS_MEASURED)
     mc = MC_BLUE;
-  if (hdr.type == SD_GPS_NOISED)
+  else if (hdr.type == SD_GPS_NOISED)
     mc = MC_RED;
 
   gmw_add_marker(gmw, mc, gps.location.latitude, gps.location.longitude);
@@ -248,9 +269,9 @@ static bool gps_record_handler(generator_main_window *gmw,
 };
 //////////////////////////////////////////////////////////////
 
-static void dlg_open_cb(GObject *source_object,
-                        GAsyncResult *res,
-                        gpointer data)
+static void dlg_load_track_cb(GObject *source_object,
+                              GAsyncResult *res,
+                              gpointer data)
 {
   GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
@@ -285,13 +306,13 @@ static void dlg_open_cb(GObject *source_object,
 
   while ((nread = getline(&line, &len, f_track)) != -1) {
     if (!get_sd_record_hdr(hdr, line)) {
-      std::cout << line << "\nis not a header\n";
+      std::cerr << line << "\nis not a header\n";
       break;
     }
 
     int record_type = line[0] - '0';
     if (record_type < 0 || record_type >= SD_UNKNOWN) {
-      std::cout << "unknown record type\n";
+      std::cerr << "unknown record type\n";
       continue;
     }
 
@@ -299,7 +320,7 @@ static void dlg_open_cb(GObject *source_object,
     if (handled)
       continue;  // do nothing
 
-    std::cout << "failed to handle record: " << line << std::endl;
+    std::cerr << "failed to handle record: " << line << std::endl;
   }
 
   free(line);
@@ -309,10 +330,14 @@ static void dlg_open_cb(GObject *source_object,
 
 void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud)
 {
-  (void)btn;
+  UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   GtkFileDialog *dlg = gtk_file_dialog_new();
-  gtk_file_dialog_open(dlg, GTK_WINDOW(gmw->window), NULL, dlg_open_cb, gmw);
+  gtk_file_dialog_open(dlg,
+                       GTK_WINDOW(gmw->window),
+                       NULL,
+                       dlg_load_track_cb,
+                       gmw);
   /* g_clear_object(&dlg); */
   g_object_unref(dlg);
 }
@@ -320,7 +345,7 @@ void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud)
 
 void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud)
 {
-  (void)btn;
+  UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
 
   for (int i = 0; i < MC_COUNT; ++i) {
@@ -331,9 +356,9 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud)
 }
 //////////////////////////////////////////////////////////////
 
-static void dlg_save_cb(GObject *source_object,
-                        GAsyncResult *res,
-                        gpointer data)
+static void dlg_save_trajectory_cb(GObject *source_object,
+                                   GAsyncResult *res,
+                                   gpointer data)
 {
   GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
@@ -360,13 +385,17 @@ static void dlg_save_cb(GObject *source_object,
 
 void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud)
 {
-  (void)btn;
+  UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   if (gmw->marker_layers[MC_RED].lst_geopoints.empty()) {
     return;  // do nothing
   }
   GtkFileDialog *dlg = gtk_file_dialog_new();
-  gtk_file_dialog_save(dlg, GTK_WINDOW(gmw->window), NULL, dlg_save_cb, gmw);
+  gtk_file_dialog_save(dlg,
+                       GTK_WINDOW(gmw->window),
+                       NULL,
+                       dlg_save_trajectory_cb,
+                       gmw);
   /* g_clear_object(&dlg); */
   g_object_unref(dlg);
 }
@@ -377,35 +406,19 @@ void gmw_add_marker(generator_main_window *gmw,
                     double latitude,
                     double longitude)
 {
-  map_marker_resource resources[] = {
-      {.buff = map_marker_green_buff,
-       .buff_len = map_marker_green_len,
-       .width = map_marker_green_width,
-       .heigth = map_marker_green_heigth},
-      {  .buff = map_marker_red_buff,
-       .buff_len = map_marker_red_len,
-       .width = map_marker_red_width,
-       .heigth = map_marker_red_heigth  },
-      { .buff = map_marker_blue_buff,
-       .buff_len = map_marker_blue_len,
-       .width = map_marker_blue_width,
-       .heigth = map_marker_blue_heigth }
+  static const char *css_classes[] = {
+      "green-shumate-marker",
+      "red-shumate-marker",
+      "blue-shumate-marker",
   };
-
   gmw->marker_layers[mc].lst_geopoints.push_back(geopoint(latitude, longitude));
-  GBytes *gbytes = g_bytes_new(resources[mc].buff, resources[mc].buff_len);
-
-  GdkTexture *texture = gdk_memory_texture_new(resources[mc].width,
-                                               resources[mc].heigth,
-                                               GDK_MEMORY_R8G8B8A8,
-                                               gbytes,
-                                               resources[mc].width * 4);
-
-  GtkWidget *img = gtk_image_new_from_paintable(GDK_PAINTABLE(texture));
-  ShumateMarker *marker = shumate_marker_new();
+  ShumateMarker *marker = shumate_point_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
-  shumate_marker_set_child(marker, img);
-  gtk_widget_set_size_request(GTK_WIDGET(marker), 48, 48);
+
+  const char *marker_classes[] = {css_classes[mc], NULL};
+  gtk_widget_set_css_classes(GTK_WIDGET(marker), marker_classes);
+  gtk_widget_set_size_request(GTK_WIDGET(marker), 18, 18);
+
   shumate_marker_layer_add_marker(gmw->marker_layers[mc].marker_layer, marker);
   shumate_path_layer_add_node(gmw->marker_layers[mc].path_layer,
                               SHUMATE_LOCATION(marker));

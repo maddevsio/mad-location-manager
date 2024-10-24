@@ -2,7 +2,6 @@
 #define SENSOR_DATA_H
 
 #include <cmath>
-#include <cstdint>
 
 #include "commons.h"
 /// accelerometer_t - raw accelerometer data (without g compensation)

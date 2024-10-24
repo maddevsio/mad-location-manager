@@ -24,7 +24,7 @@ endif()
 # These instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
-file(GLOB_RECURSE sources src/*.cpp inc/*.h resources/*.h resources/*.cpp)
+file(GLOB_RECURSE sources src/*.cpp inc/*.h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
 # You can use set(sources src/main.cpp) etc if you don't want to
 # use globbing to find files automatically.
@@ -46,14 +46,21 @@ link_directories(${SHUMATE_LIBRARY_DIRS})
 
 # mlm filter
 add_subdirectory(filter)
+include_directories(filter/inc)
+
 
 add_executable(mlm_visualizer ${sources})
-target_link_libraries(mlm_visualizer ${GTK_LIBRARIES})
-target_link_libraries(mlm_visualizer ${SHUMATE_LIBRARIES})
+target_link_libraries(mlm_visualizer 
+  ${GTK_LIBRARIES}
+  ${SHUMATE_LIBRARIES}
+  mlm_filter_lib
+)
 
 # This allows to include files relative to the root of the src directory with a <> pair
 # target_include_directories(mlm_visualizer PRIVATE inc resources)
-target_include_directories(mlm_visualizer PUBLIC inc resources)
+target_include_directories(mlm_visualizer PUBLIC 
+  ${PROJECT_SOURCE_DIR}/inc 
+  ${PROJECT_SOURCE_DIR}/filter/inc)
 # Just for mlm_visualizer add some compiler flags.
 
 set(warning_level -Wall -Wextra -pedantic)
@@ -63,7 +70,7 @@ target_compile_options(mlm_visualizer PUBLIC ${warning_level})
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
-file(COPY ${data} DESTINATION resources)
+# file(COPY ${data} DESTINATION resources)
 
 ###############################################################################
 ## testing ####################################################################
