@@ -83,6 +83,7 @@ void gmw_show(generator_main_window *gmw)
 
 void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 {
+  // register css styles (for markers)
   const gchar *css_data =
       ".red-shumate-marker {"
       "   background-color: red;"
@@ -142,6 +143,17 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
   shumate_viewport_set_zoom_level(vp, 16.0);
 
+  for (size_t i = 0; i < MC_COUNT; ++i) {
+    ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
+    ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
+
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(path_layer));
+    shumate_simple_map_add_overlay_layer(gmw->simple_map,
+                                         SHUMATE_LAYER(marker_layer));
+    gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
+  }
+
   ShumateMap *map = shumate_simple_map_get_map(gmw->simple_map);
   shumate_map_center_on(map, 36.5519514, 31.9801362);
 
@@ -157,11 +169,12 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   GtkWidget *frame_filter = gtk_frame_new("Filter settings");
 
   GtkWidget *frame_generator = gtk_frame_new("Generator settings");
+  // TODO add grid for buttons
+  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_save_trajectory);
   gtk_frame_set_child(GTK_FRAME(frame_generator), btn_clear_all_points);
 
   GtkWidget *frame_load_track = gtk_frame_new("Load track");
-  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_load_track);
-  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_save_trajectory);
+  gtk_frame_set_child(GTK_FRAME(frame_load_track), btn_load_track);
 
   // main grid
   GtkWidget *grid_main = gtk_grid_new();
@@ -170,26 +183,15 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   gtk_widget_set_vexpand(GTK_WIDGET(grid_main), true);
   gtk_widget_set_hexpand(GTK_WIDGET(grid_main), true);
 
-  for (size_t i = 0; i < MC_COUNT; ++i) {
-    ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
-    ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
-
-    shumate_simple_map_add_overlay_layer(gmw->simple_map,
-                                         SHUMATE_LAYER(path_layer));
-    shumate_simple_map_add_overlay_layer(gmw->simple_map,
-                                         SHUMATE_LAYER(marker_layer));
-    gmw->marker_layers.push_back(gmw_marker_layer(marker_layer, path_layer));
-  }
-
-  gtk_grid_attach(GTK_GRID(grid_main), GTK_WIDGET(gmw->simple_map), 0, 0, 3, 3);
-  gtk_grid_attach(GTK_GRID(grid_main), frame_generator, 3, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid_main), frame_filter, 3, 1, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid_main), frame_load_track, 3, 2, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_main), GTK_WIDGET(gmw->simple_map), 0, 0, 3, 5);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_generator, 3, 0, 1, 2);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_filter, 3, 2, 1, 2);
+  gtk_grid_attach(GTK_GRID(grid_main), frame_load_track, 3, 4, 1, 1);
 
   GtkWidget *wte[] = {
-      btn_save_trajectory,
-      btn_clear_all_points,
-      btn_load_track,
+      frame_generator,
+      frame_load_track,
+      frame_filter,
       GTK_WIDGET(gmw->simple_map),
       NULL,
   };
