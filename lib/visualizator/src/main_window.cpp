@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "gtk/gtk.h"
 #include "sensor_data.h"
 
 struct map_marker_resource {
@@ -81,6 +82,62 @@ void gmw_show(generator_main_window *gmw)
 }
 //////////////////////////////////////////////////////////////
 
+static GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
+{
+  GtkWidget *frame_filter = gtk_frame_new("Filter settings");
+  return frame_filter;
+}
+//////////////////////////////////////////////////////////////
+
+static GtkWidget *create_load_track_frame(generator_main_window *gmw)
+{
+  GtkWidget *btn_load_track = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_load_track), "Load");
+  g_signal_connect(btn_load_track,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_load_track_clicked),
+                   gmw);
+
+  GtkWidget *frame_load_track = gtk_frame_new("Load track");
+  gtk_frame_set_child(GTK_FRAME(frame_load_track), btn_load_track);
+  return frame_load_track;
+}
+//////////////////////////////////////////////////////////////
+
+static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
+{
+  GtkWidget *btn_save_trajectory = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_save_trajectory), "Save trajectory");
+  g_signal_connect(btn_save_trajectory,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_save_trajectory),
+                   gmw);
+
+  GtkWidget *btn_clear_all_points = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
+  g_signal_connect(btn_clear_all_points,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_clear_all_points_clicked),
+                   gmw);
+
+  GtkWidget *grid = gtk_grid_new();
+  gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
+  gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
+
+  gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+  gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
+
+  gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
+
+  GtkWidget *frame = gtk_frame_new("Generator settings");
+
+  gtk_frame_set_child(GTK_FRAME(frame), grid);
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
+  return frame;
+}
+//////////////////////////////////////////////////////////////
+
 void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 {
   // register css styles (for markers)
@@ -106,28 +163,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   gtk_window_set_title(GTK_WINDOW(gmw->window),
                        "MLM filter test and visualizer tool");
   gtk_window_set_default_size(GTK_WINDOW(gmw->window), 800, 600);
-
-  // buttons
-  GtkWidget *btn_save_trajectory = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_save_trajectory), "Save trajectory");
-  g_signal_connect(btn_save_trajectory,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_save_trajectory),
-                   gmw);
-
-  GtkWidget *btn_clear_all_points = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
-  g_signal_connect(btn_clear_all_points,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_clear_all_points_clicked),
-                   gmw);
-
-  GtkWidget *btn_load_track = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_load_track), "Load");
-  g_signal_connect(btn_load_track,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_load_track_clicked),
-                   gmw);
 
   // map
   printf("vector renderer supported : %d\n",
@@ -166,39 +201,22 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
                    gmw);
 
   // control frames
-  GtkWidget *frame_filter = gtk_frame_new("Filter settings");
-
-  GtkWidget *frame_generator = gtk_frame_new("Generator settings");
-  // TODO add grid for buttons
-  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_save_trajectory);
-  gtk_frame_set_child(GTK_FRAME(frame_generator), btn_clear_all_points);
-
-  GtkWidget *frame_load_track = gtk_frame_new("Load track");
-  gtk_frame_set_child(GTK_FRAME(frame_load_track), btn_load_track);
+  GtkWidget *frame_generator = create_generator_settings_frame(gmw);
+  GtkWidget *frame_filter = create_filter_settings_frame(gmw);
+  GtkWidget *frame_load_track = create_load_track_frame(gmw);
 
   // main grid
   GtkWidget *grid_main = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid_main), 10);
   gtk_grid_set_row_spacing(GTK_GRID(grid_main), 10);
-  gtk_widget_set_vexpand(GTK_WIDGET(grid_main), true);
-  gtk_widget_set_hexpand(GTK_WIDGET(grid_main), true);
+
+  gtk_grid_set_row_homogeneous(GTK_GRID(grid_main), true);
+  gtk_grid_set_column_homogeneous(GTK_GRID(grid_main), true);
 
   gtk_grid_attach(GTK_GRID(grid_main), GTK_WIDGET(gmw->simple_map), 0, 0, 3, 5);
   gtk_grid_attach(GTK_GRID(grid_main), frame_generator, 3, 0, 1, 2);
   gtk_grid_attach(GTK_GRID(grid_main), frame_filter, 3, 2, 1, 2);
   gtk_grid_attach(GTK_GRID(grid_main), frame_load_track, 3, 4, 1, 1);
-
-  GtkWidget *wte[] = {
-      frame_generator,
-      frame_load_track,
-      frame_filter,
-      GTK_WIDGET(gmw->simple_map),
-      NULL,
-  };
-  for (GtkWidget **pwte = wte; *pwte; ++pwte) {
-    gtk_widget_set_hexpand(*pwte, true);
-  }
-  gtk_widget_set_vexpand(GTK_WIDGET(gmw->simple_map), true);
 
   // set grid as child of main window
   gtk_window_set_child(GTK_WINDOW(gmw->window), grid_main);
