@@ -3,20 +3,6 @@
 
 #include <sensor_data.h>
 
-struct generator_options {
-  double acceleration_time;
-  double acc_measurement_period;
-  double gps_measurement_period;
-  double acc_noise;
-  double gps_noise;
-
-  generator_options()
-      : acceleration_time(1.0),
-        acc_measurement_period(1e-1),
-        gps_measurement_period(1.5),
-        acc_noise(0.0),
-        gps_noise(0.0) {};
-};
 
 /// movement_interval_t - interval of movement
 /// @azimuth - in degrees

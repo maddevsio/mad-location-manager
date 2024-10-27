@@ -1,21 +1,14 @@
 #include "main_window.h"
 
+#include <gtk/gtk.h>
+#include <sensor_data.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 
-#include <gtk/gtk.h>
-#include <sensor_data.h>
-
-struct map_marker_resource {
-  const unsigned char *buff;
-  const size_t buff_len;
-  const size_t width;
-  const size_t heigth;
-};
-
-//////////////////////////////////////////////////////////////
+#include "w_generator_settings.h"
 
 struct gmw_marker_layer {
   ShumateMarkerLayer *marker_layer;
@@ -94,18 +87,25 @@ static GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
 
 static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 {
-  GtkWidget *btn_load_track = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_load_track), "Load");
-  g_signal_connect(btn_load_track,
+  GtkWidget *btn_load = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_load), "Load");
+  g_signal_connect(btn_load,
                    "clicked",
                    G_CALLBACK(gmw_btn_load_track_clicked),
                    gmw);
 
-  GtkWidget *btn_clear_all_points = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
-  g_signal_connect(btn_clear_all_points,
+  GtkWidget *btn_clear = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_clear), "Clear");
+  g_signal_connect(btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_all_points_clicked),
+                   gmw);
+
+  GtkWidget *btn_save = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_save), "Save");
+  g_signal_connect(btn_save,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_save_trajectory),
                    gmw);
 
   GtkWidget *grid = gtk_grid_new();
@@ -115,10 +115,11 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
   gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
   gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
-  gtk_grid_attach(GTK_GRID(grid), btn_load_track, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 0, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_load, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_clear, 0, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_save, 0, 2, 1, 1);
 
-  GtkWidget *frame = gtk_frame_new("Load track");
+  GtkWidget *frame = gtk_frame_new("Current track");
   gtk_frame_set_child(GTK_FRAME(frame), grid);
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
   return frame;
@@ -127,35 +128,19 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 
 static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
 {
-  GtkWidget *btn_save_trajectory = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_save_trajectory), "Save trajectory");
-  g_signal_connect(btn_save_trajectory,
+  // todo move w_gs to gmw fields and free in destructor
+  w_generator_settings *w_gs = w_generator_settings_default();
+  g_signal_connect(w_gs->btn_generate,
                    "clicked",
                    G_CALLBACK(gmw_btn_save_trajectory),
                    gmw);
 
-  GtkWidget *btn_clear_all_points = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
-  g_signal_connect(btn_clear_all_points,
+  g_signal_connect(w_gs->btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_all_points_clicked),
                    gmw);
 
-  GtkWidget *grid = gtk_grid_new();
-  gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
-  gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
-
-  gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
-  gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
-
-  gtk_grid_attach(GTK_GRID(grid), btn_save_trajectory, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 1, 0, 1, 1);
-
-  GtkWidget *frame = gtk_frame_new("Generator settings");
-
-  gtk_frame_set_child(GTK_FRAME(frame), grid);
-  gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
-  return frame;
+  return w_gs->frame;
 }
 //////////////////////////////////////////////////////////////
 
@@ -385,7 +370,6 @@ void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud)
                        NULL,
                        dlg_load_track_cb,
                        gmw);
-  /* g_clear_object(&dlg); */
   g_object_unref(dlg);
 }
 //////////////////////////////////////////////////////////////
