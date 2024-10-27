@@ -11,11 +11,11 @@ w_generator_settings *w_generator_settings_default(void)
 }
 //////////////////////////////////////////////////////////////
 
-void wgs_btn_save_trajectory(GtkWidget *btn, gpointer ud)
+void wgs_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   w_generator_settings *wgs = reinterpret_cast<w_generator_settings *>(ud);
-  std::cout << "KOKOKO\n";
+  // we can do here validation
 }
 //////////////////////////////////////////////////////////////
 
@@ -28,8 +28,8 @@ static void insert_only_numbers_slot(GtkEditable *self,
   UNUSED(new_text);
   UNUSED(new_text_length);
   UNUSED(position);
-  UNUSED(user_data);  // todo use it
 
+  double *opt = reinterpret_cast<double *>(user_data);
   std::string full_text(gtk_editable_get_text(self));
   for (const char *nc = new_text; *nc; ++nc)
     full_text.push_back(*nc);
@@ -38,14 +38,15 @@ static void insert_only_numbers_slot(GtkEditable *self,
     return;  // do nothing
   }
 
-  std::cout << "full text: " << full_text << std::endl;
   try {
     size_t idx;
     double val = std::stod(full_text, &idx);
-    std::cout << val << " " << idx << std::endl;
     if (idx != full_text.size()) {
       g_signal_stop_emission_by_name(G_OBJECT(self), "insert-text");
+      // TODO some signalization
+      return;
     }
+    *opt = val;
   } catch (std::exception &exc) {
     std::cerr << exc.what() << std::endl;
     g_signal_stop_emission_by_name(G_OBJECT(self), "insert-text");
@@ -90,6 +91,13 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
                              "Acceleration noise",
                              "GPS noise",
                              nullptr};
+  double *lst_options_pointers[] = {&res->opts.acceleration_time,
+                                    &res->opts.acc_measurement_period,
+                                    &res->opts.gps_measurement_period,
+                                    &res->opts.acc_noise,
+                                    &res->opts.gps_noise,
+                                    nullptr};
+
   int r = 0;
   for (; widgets[r * 2]; ++r) {
     *widgets[r * 2] = gtk_label_new(lbl_names[r]);
@@ -102,7 +110,7 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
         gtk_editable_get_delegate(GTK_EDITABLE(*widgets[r * 2 + 1])),
         "insert-text",
         G_CALLBACK(insert_only_numbers_slot),
-        &res->opts);
+        lst_options_pointers[r]);
 
     gtk_grid_attach(GTK_GRID(res->grid), *widgets[r * 2], 0, r, 1, 1);
     gtk_grid_attach(GTK_GRID(res->grid), *widgets[r * 2 + 1], 1, r, 1, 1);
@@ -111,7 +119,7 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
   gtk_grid_attach(GTK_GRID(res->grid), res->btn_generate, 0, r, 1, 2);
   g_signal_connect(res->btn_generate,
                    "clicked",
-                   G_CALLBACK(wgs_btn_save_trajectory),
+                   G_CALLBACK(wgs_btn_generate_sensor_data),
                    res);
 
   gtk_grid_attach(GTK_GRID(res->grid), res->btn_clear, 1, r, 1, 2);

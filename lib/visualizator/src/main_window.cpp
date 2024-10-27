@@ -61,6 +61,7 @@ void gmw_free(generator_main_window *gmw)
 //////////////////////////////////////////////////////////////
 
 static void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud);
+static void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
@@ -132,7 +133,7 @@ static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
   w_generator_settings *w_gs = w_generator_settings_default();
   g_signal_connect(w_gs->btn_generate,
                    "clicked",
-                   G_CALLBACK(gmw_btn_save_trajectory),
+                   G_CALLBACK(gmw_btn_generate_sensor_data),
                    gmw);
 
   g_signal_connect(w_gs->btn_clear,
@@ -429,6 +430,18 @@ void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud)
                        gmw);
   /* g_clear_object(&dlg); */
   g_object_unref(dlg);
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
+{
+  UNUSED(btn);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  if (gmw->marker_layers[MC_RED].lst_geopoints.empty()) {
+    return;  // do nothing
+  }
+  // TODO generate data + update some model
+  std::cout << "gmw_btn_generate_sensor_data\n";
 }
 //////////////////////////////////////////////////////////////
 
