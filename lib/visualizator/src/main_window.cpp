@@ -5,8 +5,8 @@
 #include <iostream>
 #include <vector>
 
-#include "gtk/gtk.h"
-#include "sensor_data.h"
+#include <gtk/gtk.h>
+#include <sensor_data.h>
 
 struct map_marker_resource {
   const unsigned char *buff;
@@ -84,8 +84,11 @@ void gmw_show(generator_main_window *gmw)
 
 static GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
 {
-  GtkWidget *frame_filter = gtk_frame_new("Filter settings");
-  return frame_filter;
+  // todo implement
+  UNUSED(gmw);  // for now
+  GtkWidget *frame = gtk_frame_new("Filter settings");
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
+  return frame;
 }
 //////////////////////////////////////////////////////////////
 
@@ -98,9 +101,27 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
                    G_CALLBACK(gmw_btn_load_track_clicked),
                    gmw);
 
-  GtkWidget *frame_load_track = gtk_frame_new("Load track");
-  gtk_frame_set_child(GTK_FRAME(frame_load_track), btn_load_track);
-  return frame_load_track;
+  GtkWidget *btn_clear_all_points = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_clear_all_points), "Clear");
+  g_signal_connect(btn_clear_all_points,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_clear_all_points_clicked),
+                   gmw);
+
+  GtkWidget *grid = gtk_grid_new();
+  gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
+  gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
+
+  gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+  gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
+
+  gtk_grid_attach(GTK_GRID(grid), btn_load_track, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_clear_all_points, 0, 1, 1, 1);
+
+  GtkWidget *frame = gtk_frame_new("Load track");
+  gtk_frame_set_child(GTK_FRAME(frame), grid);
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
+  return frame;
 }
 //////////////////////////////////////////////////////////////
 
@@ -138,21 +159,29 @@ static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
 }
 //////////////////////////////////////////////////////////////
 
+// todo move somewhere
+static const gchar *marker_css_data =
+    ".red-shumate-marker {"
+    "   background-color: red;"
+    "}"
+    ".green-shumate-marker {"
+    "   background-color: green;"
+    "}"
+    ".blue-shumate-marker {"
+    "   background-color: blue;"
+    "}";
+static const char *marker_css_classes[] = {
+    "green-shumate-marker",
+    "red-shumate-marker",
+    "blue-shumate-marker",
+};
+//////////////////////////////////////////////////////////////
+
 void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 {
   // register css styles (for markers)
-  const gchar *css_data =
-      ".red-shumate-marker {"
-      "   background-color: red;"
-      "}"
-      ".green-shumate-marker {"
-      "   background-color: green;"
-      "}"
-      ".blue-shumate-marker {"
-      "   background-color: blue;"
-      "}";
   GtkCssProvider *css_provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_string(css_provider, css_data);
+  gtk_css_provider_load_from_string(css_provider, marker_css_data);
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                              GTK_STYLE_PROVIDER(css_provider),
                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
@@ -165,8 +194,6 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   gtk_window_set_default_size(GTK_WINDOW(gmw->window), 800, 600);
 
   // map
-  printf("vector renderer supported : %d\n",
-         shumate_vector_renderer_is_supported());
   gmw->simple_map = shumate_simple_map_new();
   gmw->map_source_registry = shumate_map_source_registry_new_with_defaults();
   ShumateMapSource *ms =
@@ -426,16 +453,11 @@ void gmw_add_marker(generator_main_window *gmw,
                     double latitude,
                     double longitude)
 {
-  static const char *css_classes[] = {
-      "green-shumate-marker",
-      "red-shumate-marker",
-      "blue-shumate-marker",
-  };
   gmw->marker_layers[mc].lst_geopoints.push_back(geopoint(latitude, longitude));
   ShumateMarker *marker = shumate_point_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
 
-  const char *marker_classes[] = {css_classes[mc], NULL};
+  const char *marker_classes[] = {marker_css_classes[mc], NULL};
   gtk_widget_set_css_classes(GTK_WIDGET(marker), marker_classes);
   gtk_widget_set_size_request(GTK_WIDGET(marker), 18, 18);
 

@@ -9,7 +9,7 @@ local function save_and_run_unit_tests()
   vim.cmd([[wa]])
   vim.cmd([[belowright split]])
   vim.cmd([[resize -4]])
-  vim.cmd([[terminal cmake -B build && cmake --build build -j 16 && ./build/unit_tests]])
+  vim.cmd([[terminal cmake -B build && cmake --build build -j 16 && ./build/filter/filter_unit_tests]])
 end
 
 local opts = { noremap = true, silent = true }
