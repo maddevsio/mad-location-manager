@@ -2,6 +2,7 @@
 
 #include <gtk/gtk.h>
 #include <sensor_data.h>
+#include <shumate/shumate.h>
 
 #include <fstream>
 #include <iomanip>
@@ -9,6 +10,14 @@
 #include <vector>
 
 #include "w_generator_settings.h"
+
+enum marker_type {
+  MT_GPS_MEASURED = 0,
+  MT_GPS_CORRECTED,
+  MT_GPS_NOISED,
+  MT_COUNT
+};
+//////////////////////////////////////////////////////////////
 
 struct gmw_marker_layer {
   ShumateMarkerLayer *marker_layer;
@@ -69,6 +78,12 @@ static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                                   double x,
                                                   double y,
                                                   gpointer user_data);
+
+static void gmw_add_marker(generator_main_window *gmw,
+                           marker_type mt,
+                           double latitude,
+                           double longitude);
+//////////////////////////////////////////////////////////////
 
 void gmw_show(generator_main_window *gmw)
 {
@@ -191,7 +206,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
   shumate_viewport_set_zoom_level(vp, 16.0);
 
-  for (size_t i = 0; i < MC_COUNT; ++i) {
+  for (size_t i = 0; i < MT_COUNT; ++i) {
     ShumateMarkerLayer *marker_layer = shumate_marker_layer_new(vp);
     ShumatePathLayer *path_layer = shumate_path_layer_new(vp);
 
@@ -259,7 +274,7 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                              y,
                                              &lat,
                                              &lng);
-  gmw_add_marker(gmw, MC_RED, lat, lng);
+  gmw_add_marker(gmw, MT_GPS_MEASURED, lat, lng);
 }
 //////////////////////////////////////////////////////////////
 
@@ -289,15 +304,15 @@ static bool gps_record_handler(generator_main_window *gmw,
   if (!parsed)
     return false;
 
-  marker_color mc = MC_RED;
+  marker_type mt = MT_GPS_MEASURED;
   if (hdr.type == SD_GPS_CORRECTED)
-    mc = MC_GREEN;
+    mt = MT_GPS_CORRECTED;
   else if (hdr.type == SD_GPS_MEASURED)
-    mc = MC_BLUE;
+    mt = MT_GPS_MEASURED;
   else if (hdr.type == SD_GPS_NOISED)
-    mc = MC_RED;
+    mt = MT_GPS_NOISED;
 
-  gmw_add_marker(gmw, mc, gps.location.latitude, gps.location.longitude);
+  gmw_add_marker(gmw, mt, gps.location.latitude, gps.location.longitude);
   return true;
 };
 //////////////////////////////////////////////////////////////
@@ -380,7 +395,7 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud)
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
 
-  for (int i = 0; i < MC_COUNT; ++i) {
+  for (int i = 0; i < MT_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->marker_layers[i].path_layer);
     shumate_marker_layer_remove_all(gmw->marker_layers[i].marker_layer);
     gmw->marker_layers[i].lst_geopoints.clear();
@@ -407,7 +422,7 @@ static void dlg_save_trajectory_cb(GObject *source_object,
     return;
   }
 
-  for (auto gp : gmw->marker_layers[MC_RED].lst_geopoints) {
+  for (auto gp : gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints) {
     of << std::setprecision(12) << gp.latitude << " , " << gp.longitude
        << std::endl;
   }
@@ -419,7 +434,7 @@ void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->marker_layers[MC_RED].lst_geopoints.empty()) {
+  if (gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints.empty()) {
     return;  // do nothing
   }
   GtkFileDialog *dlg = gtk_file_dialog_new();
@@ -437,7 +452,7 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->marker_layers[MC_RED].lst_geopoints.empty()) {
+  if (gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints.empty()) {
     return;  // do nothing
   }
   // TODO generate data + update some model
@@ -446,20 +461,20 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 //////////////////////////////////////////////////////////////
 
 void gmw_add_marker(generator_main_window *gmw,
-                    marker_color mc,
+                    marker_type mt,
                     double latitude,
                     double longitude)
 {
-  gmw->marker_layers[mc].lst_geopoints.push_back(geopoint(latitude, longitude));
+  gmw->marker_layers[mt].lst_geopoints.push_back(geopoint(latitude, longitude));
   ShumateMarker *marker = shumate_point_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
 
-  const char *marker_classes[] = {marker_css_classes[mc], NULL};
+  const char *marker_classes[] = {marker_css_classes[mt], NULL};
   gtk_widget_set_css_classes(GTK_WIDGET(marker), marker_classes);
   gtk_widget_set_size_request(GTK_WIDGET(marker), 18, 18);
 
-  shumate_marker_layer_add_marker(gmw->marker_layers[mc].marker_layer, marker);
-  shumate_path_layer_add_node(gmw->marker_layers[mc].path_layer,
+  shumate_marker_layer_add_marker(gmw->marker_layers[mt].marker_layer, marker);
+  shumate_path_layer_add_node(gmw->marker_layers[mt].path_layer,
                               SHUMATE_LOCATION(marker));
 }
 //////////////////////////////////////////////////////////////
