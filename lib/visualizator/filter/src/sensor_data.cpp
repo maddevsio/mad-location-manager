@@ -3,99 +3,136 @@
 #include <assert.h>
 #include <stdio.h>
 
-static const char *gps_format_out =
-    "%d: %.9lf , %.9lf , %.9lf , %.9lf , %.9lf , %.9lf";
-static const char *gps_format_in = "%d: %lf , %lf , %lf , %lf , %lf , %lf";
+#include <iostream>
+#include <sstream>
 
-static const char *acc_format_out = "%d: %.9lf , %.9lf , %.9lf , %.9lf";
-static const char *acc_format_in = "%d: %lf , %lf , %lf , %lf";
+static const char *HDR_END = ":::";
+static const int HDR_LEN = 3;
 
-size_t sd_gps_serialize_str(const gps_coordinate &gc,
-                            SD_RECORD_TYPE rc,
-                            double ts,
-                            char buff[],
-                            size_t len)
+static std::string sd_gps_serialize_str(const sd_record &rec);
+static std::string sd_acc_abs_serialize_str(const sd_record &rec);
+static std::string sd_hdr_serialize_str(const sd_record_hdr &hdr);
+
+static int sd_gps_deserialize_str(const std::string &str, sd_record &rec);
+static int sd_acc_abs_deserialize_str(const std::string &str, sd_record &rec);
+static int sd_hdr_deserialize_str(const std::string &str, sd_record_hdr &hdr);
+
+std::string sd_gps_serialize_str(const sd_record &rec)
 {
-  assert(rc == SD_GPS_CORRECTED || rc == SD_GPS_NOISED ||
-         rc == SD_GPS_MEASURED);
-
-  // "%d: %.9f , %.9f , %.9f , %.9f , %.9f , %9f";
-  return snprintf(buff,
-                  len,
-                  gps_format_out,
-                  rc,
-                  ts,
-                  gc.location.latitude,
-                  gc.location.longitude,
-                  gc.speed.value,
-                  gc.speed.azimuth,
-                  gc.speed.accuracy);
+  std::ostringstream out;
+  out << rec.data.gps.location.latitude << " "
+      << rec.data.gps.location.longitude << " " << rec.data.gps.speed.value
+      << " " << rec.data.gps.speed.azimuth << " "
+      << rec.data.gps.speed.accuracy;
+  return out.str();
 }
 //////////////////////////////////////////////////////////////
 
-size_t sd_acc_serialize_str(const abs_accelerometer &acc,
-                            SD_RECORD_TYPE rc,
-                            double ts,
-                            char buff[],
-                            size_t len)
+std::string sd_acc_abs_serialize_str(const sd_record &rec)
 {
-  assert(rc == SD_ACCELEROMETER_MEASURED || rc == SD_ACCELEROMETER_NOISED);
-
-  // "%d: %.9f , %.9f , %.9f , %.9f"
-  return snprintf(buff, len, acc_format_out, rc, ts, acc.x, acc.y, acc.z);
+  std::ostringstream out;
+  out << rec.data.acc.x << " " << rec.data.acc.y << " " << rec.data.acc.z;
+  return out.str();
 }
 //////////////////////////////////////////////////////////////
 
-bool sd_gps_deserialize_str(const char *line,
-                            sd_record_hdr &hdr,
-                            gps_coordinate &gc)
+int sd_gps_deserialize_str(const std::string &str, sd_record &rec)
 {
-  // "%d: %.9f , %.9f , %.9f , %.9f , %.9f , %9f";
-  int matched = sscanf(line,
+  const char *gps_format_in = "%lf %lf %lf %lf %lf";
+  int matched = sscanf(str.c_str(),
                        gps_format_in,
-                       &hdr.type,
-                       &hdr.timestamp,
-                       &gc.location.latitude,
-                       &gc.location.longitude,
-                       &gc.speed.value,
-                       &gc.speed.azimuth,
-                       &gc.speed.accuracy);
-  SD_RECORD_TYPE possible_types[] = {SD_GPS_MEASURED,
-                                     SD_GPS_NOISED,
-                                     SD_GPS_CORRECTED,
-                                     SD_UNKNOWN};
-  bool is_type_correct = false;
-  for (SD_RECORD_TYPE *ppt = possible_types;
-       !is_type_correct && *ppt != SD_UNKNOWN;
-       ++ppt) {
-    is_type_correct = hdr.type == *ppt;
-  }
-  return matched == 7 && is_type_correct;
+                       &rec.data.gps.location.latitude,
+                       &rec.data.gps.location.longitude,
+                       &rec.data.gps.speed.value,
+                       &rec.data.gps.speed.azimuth,
+                       &rec.data.gps.speed.accuracy);
+  return matched == 5 ? 0 : 1;
 }
 //////////////////////////////////////////////////////////////
 
-bool sd_acc_deserialize_str(const char *line,
-                            sd_record_hdr &hdr,
-                            abs_accelerometer &acc)
+int sd_acc_abs_deserialize_str(const std::string &str, sd_record &rec)
 {
-  // "%d: %.9f , %.9f , %.9f , %.9f"
-  int matched = sscanf(line,
+  const char *acc_format_in = "%lf %lf %lf";
+  int matched = sscanf(str.c_str(),
                        acc_format_in,
-                       &hdr.type,
-                       &hdr.timestamp,
-                       &acc.x,
-                       &acc.y,
-                       &acc.z);
+                       &rec.data.acc.x,
+                       &rec.data.acc.y,
+                       &rec.data.acc.z);
+  return matched == 3 ? 0 : 1;
+}
+//////////////////////////////////////////////////////////////
 
-  SD_RECORD_TYPE possible_types[] = {SD_ACCELEROMETER_NOISED,
-                                     SD_ACCELEROMETER_MEASURED,
-                                     SD_UNKNOWN};
-  bool is_type_correct = false;
-  for (SD_RECORD_TYPE *ppt = possible_types;
-       !is_type_correct && *ppt != SD_UNKNOWN;
-       ++ppt) {
-    is_type_correct = hdr.type == *ppt;
+std::string sd_hdr_serialize_str(const sd_record_hdr &hdr)
+{
+  std::ostringstream out;
+  out << hdr.type << " " << hdr.timestamp << HDR_END;
+  return out.str();
+}
+//////////////////////////////////////////////////////////////
+
+int sd_hdr_deserialize_str(const std::string &str, sd_record_hdr &hdr)
+{
+  const char *hdr_format_in = "%d %lf";
+  int matched = sscanf(str.c_str(), hdr_format_in, &hdr.type, &hdr.timestamp);
+  return matched == 2 ? 0 : 1;
+}
+//////////////////////////////////////////////////////////////
+
+// see sensor_data_type enum in sensor_data.h
+static std::string (*pf_serializers[])(const sd_record &) = {
+    sd_acc_abs_serialize_str,
+    sd_acc_abs_serialize_str,
+    sd_gps_serialize_str,
+    sd_gps_serialize_str,
+    sd_gps_serialize_str,
+};
+
+static int (*pf_deserializers[])(const std::string &, sd_record &) = {
+    sd_acc_abs_deserialize_str,
+    sd_acc_abs_deserialize_str,
+    sd_gps_deserialize_str,
+    sd_gps_deserialize_str,
+    sd_gps_deserialize_str,
+};
+//////////////////////////////////////////////////////////////
+
+std::string sdr_serialize_str(const sd_record &rec)
+{
+  std::string res = sd_hdr_serialize_str(rec.hdr);
+  res.append(pf_serializers[rec.hdr.type](rec));
+  return res;
+}
+//////////////////////////////////////////////////////////////
+
+int sdr_deserialize_str(const std::string &str, sd_record &rec)
+{
+  size_t hdr_end_idx = str.find(HDR_END);
+  if (hdr_end_idx == std::string::npos) {
+    std::cerr << "wrong header format\n";
+    return 1;
   }
-  return matched == 5 && is_type_correct;
+
+  sd_record_hdr hdr;
+  if (sd_hdr_deserialize_str(str, hdr)) {
+    std::cerr << "failed to deserialize hdr from: " << str << std::endl;
+    return 2;
+  }
+
+  rec.hdr = hdr;
+  const sensor_data_record_type supported_hdrs[] = {SD_ACC_ABS_MEASURED,
+                                                    SD_ACC_ABS_NOISED,
+                                                    SD_GPS_MEASURED,
+                                                    SD_GPS_CORRECTED,
+                                                    SD_GPS_NOISED,
+                                                    SD_UNKNOWN};
+  for (int i = 0; supported_hdrs[i] != SD_UNKNOWN; ++i) {
+    if (supported_hdrs[i] != hdr.type)
+      continue;
+    return pf_deserializers[hdr.type](str.substr(hdr_end_idx + HDR_LEN), rec);
+  }
+
+  std::cerr << "unsupported record type. failed to deserialize record from: "
+            << str << std::endl;
+  return 0;
 }
 //////////////////////////////////////////////////////////////

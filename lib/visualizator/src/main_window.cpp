@@ -131,8 +131,8 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
   gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
   gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
-  gtk_grid_attach(GTK_GRID(grid), btn_load, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), btn_clear, 0, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_clear, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_load, 0, 1, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), btn_save, 0, 2, 1, 1);
 
   GtkWidget *frame = gtk_frame_new("Current track");
@@ -149,11 +149,6 @@ static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
   g_signal_connect(w_gs->btn_generate,
                    "clicked",
                    G_CALLBACK(gmw_btn_generate_sensor_data),
-                   gmw);
-
-  g_signal_connect(w_gs->btn_clear,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_clear_all_points_clicked),
                    gmw);
 
   return w_gs->frame;
@@ -299,21 +294,22 @@ static bool gps_record_handler(generator_main_window *gmw,
                                sd_record_hdr &hdr,
                                const char *line)
 {
-  gps_coordinate gps;
-  bool parsed = sd_gps_deserialize_str(line, hdr, gps);
-  if (!parsed)
-    return false;
-
-  marker_type mt = MT_GPS_MEASURED;
-  if (hdr.type == SD_GPS_CORRECTED)
-    mt = MT_GPS_CORRECTED;
-  else if (hdr.type == SD_GPS_MEASURED)
-    mt = MT_GPS_MEASURED;
-  else if (hdr.type == SD_GPS_NOISED)
-    mt = MT_GPS_NOISED;
-
-  gmw_add_marker(gmw, mt, gps.location.latitude, gps.location.longitude);
-  return true;
+  return false;
+  /* gps_coordinate gps; */
+  /* bool parsed = sd_gps_deserialize_str(line, hdr, gps); */
+  /* if (!parsed) */
+  /*   return false; */
+  /*  */
+  /* marker_type mt = MT_GPS_MEASURED; */
+  /* if (hdr.type == SD_GPS_CORRECTED) */
+  /*   mt = MT_GPS_CORRECTED; */
+  /* else if (hdr.type == SD_GPS_MEASURED) */
+  /*   mt = MT_GPS_MEASURED; */
+  /* else if (hdr.type == SD_GPS_NOISED) */
+  /*   mt = MT_GPS_NOISED; */
+  /*  */
+  /* gmw_add_marker(gmw, mt, gps.location.latitude, gps.location.longitude); */
+  /* return true; */
 };
 //////////////////////////////////////////////////////////////
 
@@ -477,4 +473,4 @@ void gmw_add_marker(generator_main_window *gmw,
   shumate_path_layer_add_node(gmw->marker_layers[mt].path_layer,
                               SHUMATE_LOCATION(marker));
 }
-//////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////

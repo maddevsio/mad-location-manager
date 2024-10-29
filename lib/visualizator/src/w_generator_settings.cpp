@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "commons.h"
+#include "vis_commons.h"
 
 w_generator_settings *w_generator_settings_default(void)
 {
@@ -14,8 +14,10 @@ w_generator_settings *w_generator_settings_default(void)
 void wgs_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
-  w_generator_settings *wgs = reinterpret_cast<w_generator_settings *>(ud);
-  // we can do here validation
+  UNUSED(ud);
+  /* w_generator_settings *wgs = reinterpret_cast<w_generator_settings *>(ud);
+   */
+  // we can do here validation or anything else. something internal
 }
 //////////////////////////////////////////////////////////////
 
@@ -62,9 +64,6 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
   res->btn_generate = gtk_button_new();
   gtk_button_set_label(GTK_BUTTON(res->btn_generate), "Generate");
 
-  res->btn_clear = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(res->btn_clear), "Clear");
-
   res->grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(res->grid), 10);
   gtk_grid_set_row_spacing(GTK_GRID(res->grid), 10);
@@ -103,6 +102,10 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
     *widgets[r * 2] = gtk_label_new(lbl_names[r]);
     *widgets[r * 2 + 1] = gtk_entry_new();
 
+    gtk_editable_set_text(
+        GTK_EDITABLE(*widgets[r * 2 + 1]),
+        to_string_with_precision<double>(*lst_options_pointers[r], 2).c_str());
+
     gtk_entry_set_input_purpose(GTK_ENTRY(*widgets[r * 2 + 1]),
                                 GTK_INPUT_PURPOSE_NUMBER);
 
@@ -116,13 +119,11 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
     gtk_grid_attach(GTK_GRID(res->grid), *widgets[r * 2 + 1], 1, r, 1, 1);
   }
 
-  gtk_grid_attach(GTK_GRID(res->grid), res->btn_generate, 0, r, 1, 2);
+  gtk_grid_attach(GTK_GRID(res->grid), res->btn_generate, 0, r, 2, 2);
   g_signal_connect(res->btn_generate,
                    "clicked",
                    G_CALLBACK(wgs_btn_generate_sensor_data),
                    res);
-
-  gtk_grid_attach(GTK_GRID(res->grid), res->btn_clear, 1, r, 1, 2);
 
   res->frame = gtk_frame_new("Generator settings");
   gtk_frame_set_child(GTK_FRAME(res->frame), res->grid);

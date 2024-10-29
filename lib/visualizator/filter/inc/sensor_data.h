@@ -2,7 +2,7 @@
 #define SENSOR_DATA_H
 
 #include <cmath>
-#include <cstdint>
+#include <string>
 
 #include "commons.h"
 /// accelerometer_t - raw accelerometer data (without g compensation)
@@ -11,7 +11,7 @@
 /// @z - axis Z
 struct accelerometer {
   double x, y, z;
-  accelerometer() : x(0.0), y(0.0), z(0.0) {}
+  accelerometer() = default;  //: x(0.0), y(0.0), z(0.0) {}
   accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
@@ -22,7 +22,7 @@ struct accelerometer {
 struct gyroscope {
   double x, y, z;
 
-  gyroscope() : x(0.0), y(0.0), z(0.0) {}
+  gyroscope() = default;  // : x(0.0), y(0.0), z(0.0) {}
   gyroscope(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
@@ -33,7 +33,7 @@ struct gyroscope {
 struct magnetometer {
   double x, y, z;
 
-  magnetometer() : x(0.0), y(0.0), z(0.0) {}
+  magnetometer() = default;  // : x(0.0), y(0.0), z(0.0) {}
   magnetometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 //////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ struct magnetometer {
 struct abs_accelerometer {
   double x, y, z;
 
-  abs_accelerometer() : x(0.0), y(0.0), z(0.0) {}
+  abs_accelerometer() = default;  // : x(0.0), y(0.0), z(0.0) {}
   abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
   abs_accelerometer(double acc, double azimuth)
   {
@@ -77,7 +77,8 @@ struct geopoint {
   double altitude;
   double accuracy;
 
-  geopoint() : latitude(0.0), longitude(0.0), altitude(0.0), accuracy(0.0) {}
+  geopoint() = default;  // : latitude(0.0), longitude(0.0), altitude(0.0),
+                         // accuracy(0.0) {}
   geopoint(double latitude, double longitude, double altitude = 0.)
       : latitude(latitude), longitude(longitude), altitude(altitude)
   {
@@ -94,7 +95,7 @@ struct gps_speed {
   double value;
   double accuracy;
 
-  gps_speed() : azimuth(0.0), value(0.0), accuracy(0.0) {}
+  gps_speed() = default;  // : azimuth(0.0), value(0.0), accuracy(0.0) {}
   gps_speed(double azimuth, double value, double accuracy)
       : azimuth(azimuth), value(value), accuracy(accuracy)
   {
@@ -109,42 +110,35 @@ struct gps_coordinate {
   geopoint location;
   gps_speed speed;
 
-  gps_coordinate() : location(), speed() {}
+  gps_coordinate() = default;  //: location(), speed() {}
 };
 //////////////////////////////////////////////////////////////
 
-enum SD_RECORD_TYPE {
-  SD_ACCELEROMETER_MEASURED = 0,
-  SD_ACCELEROMETER_NOISED,
+enum sensor_data_record_type {
+  SD_ACC_ABS_MEASURED = 0,
+  SD_ACC_ABS_NOISED,
   SD_GPS_MEASURED,
   SD_GPS_CORRECTED,
   SD_GPS_NOISED,
+  // TODO add accelerometer/gyroscope/magnetometer too
   SD_UNKNOWN
 };
+
 /// sd_record_hdr - header for all sensor data output records
 struct sd_record_hdr {
-  SD_RECORD_TYPE type;
+  sensor_data_record_type type;
   double timestamp;
 };
 
-size_t sd_gps_serialize_str(const gps_coordinate &gc,
-                            SD_RECORD_TYPE rc,
-                            double ts,
-                            char buff[],
-                            size_t len);
+struct sd_record {
+  sd_record_hdr hdr;
+  union {
+    abs_accelerometer acc;
+    gps_coordinate gps;
+  } data;
+};
 
-size_t sd_acc_serialize_str(const abs_accelerometer &acc,
-                            SD_RECORD_TYPE rc,
-                            double ts,
-                            char buff[],
-                            size_t len);
-
-bool sd_gps_deserialize_str(const char *line,
-                            sd_record_hdr &hdr,
-                            gps_coordinate &gc);
-
-bool sd_acc_deserialize_str(const char *line,
-                            sd_record_hdr &hdr,
-                            abs_accelerometer &acc);
+std::string sdr_serialize_str(const sd_record &rec);
+int sdr_deserialize_str(const std::string &str, sd_record &rec);
 
 #endif  // SENSOR_DATA_H

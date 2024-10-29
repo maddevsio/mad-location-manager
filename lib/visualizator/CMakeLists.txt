@@ -53,7 +53,7 @@ add_executable(mlm_visualizer ${sources})
 target_link_libraries(mlm_visualizer 
   ${GTK_LIBRARIES}
   ${SHUMATE_LIBRARIES}
-  mlm_filter_lib
+  mlm_filter
 )
 
 # This allows to include files relative to the root of the src directory with a <> pair

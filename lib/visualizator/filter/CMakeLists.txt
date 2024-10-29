@@ -24,7 +24,6 @@ endif()
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`.
 file(GLOB_RECURSE sources_lib src/*.cpp inc/*h)
-file(GLOB_RECURSE sources_exe src/*.cpp exe/*.cpp inc/*.h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
 # You can use set(sources src/main.cpp) etc if you don't want to
 # use globbing to find files automatically.
@@ -53,18 +52,11 @@ endif()
 set(GEOGRAPHICLIB ${GEOGRAPHICLIB}/geographiclib)
 
 
-add_executable(mlm_filter ${sources_exe})
-add_library(mlm_filter_lib SHARED ${sources_lib})
+add_library(mlm_filter SHARED ${sources_lib})
 
 # This allows to include files relative to the root of the src directory with a <> pair
+target_include_directories(mlm_filter PUBLIC inc)
 target_include_directories(mlm_filter PRIVATE
-  inc
-  external/geographiclib/include
-  ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
-)
-
-target_include_directories(mlm_filter_lib PUBLIC inc)
-target_include_directories(mlm_filter_lib PRIVATE
   external/geographiclib/include
   ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
 )
@@ -83,18 +75,12 @@ target_link_libraries(mlm_filter
   PUBLIC GeographicLib
 )
 
-target_link_libraries(mlm_filter_lib 
-  PUBLIC Eigen3::Eigen
-  PUBLIC GeographicLib
-)
 # Just for mlm_filter add some compiler flags.
-
 set(warning_level -Wall -Wextra -pedantic)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 
-target_compile_options(mlm_filter PUBLIC ${warning_level})
-target_compile_options(mlm_filter_lib PUBLIC ${warning_level} -fPIC)
+target_compile_options(mlm_filter PUBLIC ${warning_level} -fPIC)
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
@@ -117,7 +103,7 @@ file(COPY inc DESTINATION inc)
 find_package(GTest)
 
 if(GTEST_FOUND)
-  add_executable(filter_unit_tests ${sources_test} ${sources_exe})
+  add_executable(filter_unit_tests ${sources_test})
   target_include_directories(filter_unit_tests PUBLIC inc)
 
   # This define is added to prevent collision with the main.
@@ -152,9 +138,6 @@ endif()
 # in the package.
 install(TARGETS mlm_filter DESTINATION mad_location_manager_destination)
 install(DIRECTORY resources DESTINATION mad_location_manager_destination)
-
-install(TARGETS mlm_filter_lib DESTINATION mad_location_manager_destination)
-install(DIRECTORY inc DESTINATION mad_location_manager_destination)
 
 # Now comes everything we need, to create a package
 # there are a lot more variables you can set, and some
