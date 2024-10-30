@@ -138,6 +138,12 @@ enum sensor_data_record_type {
 struct sd_record_hdr {
   sensor_data_record_type type;
   double timestamp;
+
+  sd_record_hdr() = default;
+  sd_record_hdr(sensor_data_record_type type, double ts)
+      : type(type), timestamp(ts)
+  {
+  }
 };
 
 struct sd_record {

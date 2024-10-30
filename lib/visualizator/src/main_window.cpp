@@ -5,16 +5,15 @@
 #include <shumate/shumate.h>
 
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
 #include "w_generator_settings.h"
 
 enum marker_type {
-  MT_GPS_MEASURED = 0,
-  MT_GPS_CORRECTED,
-  MT_GPS_NOISED,
+  MT_GPS_SET = 0,    // set by this tool OR received from GPS as is
+  MT_GPS_FILTERED,   // filtered by MLM
+  MT_GPS_GENERATED,  // generated (with noise etc.)
   MT_COUNT
 };
 //////////////////////////////////////////////////////////////
@@ -22,7 +21,7 @@ enum marker_type {
 struct gmw_marker_layer {
   ShumateMarkerLayer *marker_layer;
   ShumatePathLayer *path_layer;
-  std::vector<geopoint> lst_geopoints;
+  std::vector<sd_record> lst_sd_records;
 
   gmw_marker_layer() : marker_layer(nullptr), path_layer(nullptr) {}
   gmw_marker_layer(ShumateMarkerLayer *marker_layer,
@@ -69,8 +68,11 @@ void gmw_free(generator_main_window *gmw)
 }
 //////////////////////////////////////////////////////////////
 
-static void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud);
+static void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud);
+
 static void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud);
+static void gmw_btn_clear_generated_data(GtkWidget *btn, gpointer ud);
+
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
@@ -111,7 +113,7 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
                    gmw);
 
   GtkWidget *btn_clear = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_clear), "Clear");
+  gtk_button_set_label(GTK_BUTTON(btn_clear), "Clear ALL");
   g_signal_connect(btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_all_points_clicked),
@@ -119,10 +121,7 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 
   GtkWidget *btn_save = gtk_button_new();
   gtk_button_set_label(GTK_BUTTON(btn_save), "Save");
-  g_signal_connect(btn_save,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_save_trajectory),
-                   gmw);
+  g_signal_connect(btn_save, "clicked", G_CALLBACK(gmw_btn_save_tracks), gmw);
 
   GtkWidget *grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
@@ -144,11 +143,16 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 
 static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
 {
-  // todo move w_gs to gmw fields and free in destructor
+  // TODO move w_gs to gmw fields and free in destructor
   w_generator_settings *w_gs = w_generator_settings_default();
   g_signal_connect(w_gs->btn_generate,
                    "clicked",
                    G_CALLBACK(gmw_btn_generate_sensor_data),
+                   gmw);
+
+  g_signal_connect(w_gs->btn_clear,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_clear_generated_data),
                    gmw);
 
   return w_gs->frame;
@@ -258,7 +262,6 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
       GTK_EVENT_CONTROLLER(gesture));
   if (!(mt & GDK_CONTROL_MASK))
     return;  // add marker only with ctrl
-
   generator_main_window *gmw =
       reinterpret_cast<generator_main_window *>(user_data);
   ShumateViewport *vp = shumate_simple_map_get_viewport(gmw->simple_map);
@@ -269,7 +272,13 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                              y,
                                              &lat,
                                              &lng);
-  gmw_add_marker(gmw, MT_GPS_MEASURED, lat, lng);
+
+  sd_record rec;
+  rec.hdr = sd_record_hdr(SD_GPS_MEASURED, 0.);
+  rec.data.gps.location = geopoint(lat, lng);
+  rec.data.gps.speed = gps_speed(0., 0., 0.);
+  gmw->marker_layers[MT_GPS_SET].lst_sd_records.push_back(rec);
+  gmw_add_marker(gmw, MT_GPS_SET, lat, lng);
 }
 //////////////////////////////////////////////////////////////
 
@@ -394,14 +403,14 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud)
   for (int i = 0; i < MT_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->marker_layers[i].path_layer);
     shumate_marker_layer_remove_all(gmw->marker_layers[i].marker_layer);
-    gmw->marker_layers[i].lst_geopoints.clear();
+    gmw->marker_layers[i].lst_sd_records.clear();
   }
 }
 //////////////////////////////////////////////////////////////
 
-static void dlg_save_trajectory_cb(GObject *source_object,
-                                   GAsyncResult *res,
-                                   gpointer data)
+static void dlg_save_tracks_cb(GObject *source_object,
+                               GAsyncResult *res,
+                               gpointer data)
 {
   GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
@@ -418,26 +427,26 @@ static void dlg_save_trajectory_cb(GObject *source_object,
     return;
   }
 
-  for (auto gp : gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints) {
-    of << std::setprecision(12) << gp.latitude << " , " << gp.longitude
-       << std::endl;
+  for (auto rec : gmw->marker_layers[MT_GPS_SET].lst_sd_records) {
+    of << sdr_serialize_str(rec) << std::endl;
   }
   of.close();
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_save_trajectory(GtkWidget *btn, gpointer ud)
+void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints.empty()) {
+  if (gmw->marker_layers[MT_GPS_SET].lst_sd_records.empty()) {
     return;  // do nothing
   }
+
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_save(dlg,
                        GTK_WINDOW(gmw->window),
                        NULL,
-                       dlg_save_trajectory_cb,
+                       dlg_save_tracks_cb,
                        gmw);
   /* g_clear_object(&dlg); */
   g_object_unref(dlg);
@@ -448,11 +457,22 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->marker_layers[MT_GPS_MEASURED].lst_geopoints.empty()) {
+  if (gmw->marker_layers[MT_GPS_SET].lst_sd_records.empty()) {
     return;  // do nothing
   }
   // TODO generate data + update some model
   std::cout << "gmw_btn_generate_sensor_data\n";
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_btn_clear_generated_data(GtkWidget *btn, gpointer ud)
+{
+  UNUSED(btn);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  int li = MT_GPS_GENERATED;
+  shumate_path_layer_remove_all(gmw->marker_layers[li].path_layer);
+  shumate_marker_layer_remove_all(gmw->marker_layers[li].marker_layer);
+  gmw->marker_layers[li].lst_sd_records.clear();
 }
 //////////////////////////////////////////////////////////////
 
@@ -461,8 +481,6 @@ void gmw_add_marker(generator_main_window *gmw,
                     double latitude,
                     double longitude)
 {
-  gmw->marker_layers[mt].lst_geopoints.push_back(geopoint(latitude, longitude));
-
   ShumateMarker *marker = shumate_point_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
 

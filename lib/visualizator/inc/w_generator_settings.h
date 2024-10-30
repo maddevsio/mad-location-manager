@@ -34,6 +34,7 @@ struct w_generator_settings {
   GtkWidget *lbl_gps_noise;
   GtkWidget *tb_gps_noise;
   GtkWidget *btn_generate;
+  GtkWidget *btn_clear;
 };
 
 w_generator_settings *w_generator_settings_default(void);
