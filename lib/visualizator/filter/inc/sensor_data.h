@@ -125,11 +125,11 @@ struct gps_coordinate {
 //////////////////////////////////////////////////////////////
 
 enum sensor_data_record_type {
-  SD_ACC_ABS_MEASURED = 0,
-  SD_ACC_ABS_NOISED,
-  SD_GPS_MEASURED,
-  SD_GPS_CORRECTED,
-  SD_GPS_NOISED,
+  SD_ACC_ABS_SET = 0,
+  SD_ACC_ABS_GENERATED,
+  SD_GPS_SET,
+  SD_GPS_FILTERED,
+  SD_GPS_GENERATED,
   // TODO add accelerometer/gyroscope/magnetometer too
   SD_UNKNOWN
 };

@@ -274,52 +274,12 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
                                              &lng);
 
   sd_record rec;
-  rec.hdr = sd_record_hdr(SD_GPS_MEASURED, 0.);
+  rec.hdr = sd_record_hdr(SD_GPS_SET, 0.);
   rec.data.gps.location = geopoint(lat, lng);
   rec.data.gps.speed = gps_speed(0., 0., 0.);
   gmw->marker_layers[MT_GPS_SET].lst_sd_records.push_back(rec);
   gmw_add_marker(gmw, MT_GPS_SET, lat, lng);
 }
-//////////////////////////////////////////////////////////////
-
-static bool get_sd_record_hdr(sd_record_hdr &hdr, const char *line)
-{
-  return sscanf(line, "%d: %lf", &hdr.type, &hdr.timestamp) == 2;
-}
-//////////////////////////////////////////////////////////////
-
-static bool acc_record_handler(generator_main_window *gmw,
-                               sd_record_hdr &hdr,
-                               const char *line)
-{
-  UNUSED(gmw);
-  UNUSED(hdr);
-  UNUSED(line);
-  return true;
-};
-//////////////////////////////////////////////////////////////
-
-static bool gps_record_handler(generator_main_window *gmw,
-                               sd_record_hdr &hdr,
-                               const char *line)
-{
-  return false;
-  /* gps_coordinate gps; */
-  /* bool parsed = sd_gps_deserialize_str(line, hdr, gps); */
-  /* if (!parsed) */
-  /*   return false; */
-  /*  */
-  /* marker_type mt = MT_GPS_MEASURED; */
-  /* if (hdr.type == SD_GPS_CORRECTED) */
-  /*   mt = MT_GPS_CORRECTED; */
-  /* else if (hdr.type == SD_GPS_MEASURED) */
-  /*   mt = MT_GPS_MEASURED; */
-  /* else if (hdr.type == SD_GPS_NOISED) */
-  /*   mt = MT_GPS_NOISED; */
-  /*  */
-  /* gmw_add_marker(gmw, mt, gps.location.latitude, gps.location.longitude); */
-  /* return true; */
-};
 //////////////////////////////////////////////////////////////
 
 static void dlg_load_track_cb(GObject *source_object,
@@ -335,49 +295,35 @@ static void dlg_load_track_cb(GObject *source_object,
   }
 
   char *fpath = g_file_get_path(g_file);
-  FILE *f_track = fopen(fpath, "r");
-  if (!f_track) {
-    // todo log
+  std::ifstream fs_in(fpath, std::ios_base::in);
+  if (!fs_in.is_open()) {
+    std::cerr << "unable to open file " << fpath << std::endl;
     return;
   }
 
-  sd_record_hdr hdr;
-  char *line = NULL;
-  size_t len = 0;
-  ssize_t nread;
+  std::string line;
+  while (std::getline(fs_in, line)) {
+    sd_record rec;
+    sdr_deserialize_error derr = sdr_deserialize_str(line, rec);
 
-  // SEE SD_RECORD_TYPE enum
-  bool (*record_handlers[])(generator_main_window *,
-                            sd_record_hdr &,
-                            const char *){
-      acc_record_handler,
-      acc_record_handler,
-      gps_record_handler,
-      gps_record_handler,
-      gps_record_handler,
-  };
-
-  while ((nread = getline(&line, &len, f_track)) != -1) {
-    if (!get_sd_record_hdr(hdr, line)) {
-      std::cerr << line << "\nis not a header\n";
-      break;
-    }
-
-    int record_type = line[0] - '0';
-    if (record_type < 0 || record_type >= SD_UNKNOWN) {
-      std::cerr << "unknown record type\n";
+    if (derr != SDRDE_SUCCESS) {
+      std::cerr << derr << "->  failed to process line: " << line << std::endl;
       continue;
     }
 
-    bool handled = record_handlers[record_type](gmw, hdr, line);
-    if (handled)
-      continue;  // do nothing
-
-    std::cerr << "failed to handle record: " << line << std::endl;
+    // todo array of handlers
+    switch (rec.hdr.type) {
+      case SD_GPS_SET:
+        gmw->marker_layers[MT_GPS_SET].lst_sd_records.push_back(rec);
+        gmw_add_marker(gmw,
+                       MT_GPS_SET,
+                       rec.data.gps.location.latitude,
+                       rec.data.gps.location.longitude);
+        break;
+      default:
+        break;  // do nothing for now
+    }
   }
-
-  free(line);
-  fclose(f_track);
 }
 //////////////////////////////////////////////////////////////
 

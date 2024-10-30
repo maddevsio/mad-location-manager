@@ -3,11 +3,13 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
 static const char *HDR_END = ":::";
 static const int HDR_LEN = 3;
+static const int PRECISION = 12;
 
 static std::string sd_gps_serialize_str(const sd_record &rec);
 static std::string sd_acc_abs_serialize_str(const sd_record &rec);
@@ -23,7 +25,7 @@ static sdr_deserialize_error sd_hdr_deserialize_str(const std::string &str,
 std::string sd_gps_serialize_str(const sd_record &rec)
 {
   std::ostringstream out;
-  out << rec.data.gps.location.latitude << " "
+  out << std::setprecision(PRECISION) << rec.data.gps.location.latitude << " "
       << rec.data.gps.location.longitude << " "
       << rec.data.gps.location.altitude << " " << rec.data.gps.location.accuracy
       << " " << rec.data.gps.speed.azimuth << " " << rec.data.gps.speed.value
@@ -35,7 +37,17 @@ std::string sd_gps_serialize_str(const sd_record &rec)
 std::string sd_acc_abs_serialize_str(const sd_record &rec)
 {
   std::ostringstream out;
-  out << rec.data.acc.x << " " << rec.data.acc.y << " " << rec.data.acc.z;
+  out << std::setprecision(PRECISION) << rec.data.acc.x << " " << rec.data.acc.y
+      << " " << rec.data.acc.z;
+  return out.str();
+}
+//////////////////////////////////////////////////////////////
+
+std::string sd_hdr_serialize_str(const sd_record_hdr &hdr)
+{
+  std::ostringstream out;
+  out << std::setprecision(PRECISION) << hdr.type << " " << hdr.timestamp
+      << HDR_END;
   return out.str();
 }
 //////////////////////////////////////////////////////////////
@@ -67,14 +79,6 @@ sdr_deserialize_error sd_acc_abs_deserialize_str(const std::string &str,
                        &rec.data.acc.y,
                        &rec.data.acc.z);
   return matched == 3 ? SDRDE_SUCCESS : SDRDE_UNEXPECTED_FMT;
-}
-//////////////////////////////////////////////////////////////
-
-std::string sd_hdr_serialize_str(const sd_record_hdr &hdr)
-{
-  std::ostringstream out;
-  out << hdr.type << " " << hdr.timestamp << HDR_END;
-  return out.str();
 }
 //////////////////////////////////////////////////////////////
 
@@ -124,23 +128,22 @@ sdr_deserialize_error sdr_deserialize_str(const std::string &str,
     return SDRDE_WRONG_HDR_SEPARATOR;
   }
 
-  sd_record_hdr hdr;
-  if ((res = sd_hdr_deserialize_str(str, hdr))) {
+  if ((res = sd_hdr_deserialize_str(str, rec.hdr))) {
     std::cerr << "failed to deserialize hdr from: " << str << std::endl;
     return res;
   }
 
-  rec.hdr = hdr;
-  const sensor_data_record_type supported_hdrs[] = {SD_ACC_ABS_MEASURED,
-                                                    SD_ACC_ABS_NOISED,
-                                                    SD_GPS_MEASURED,
-                                                    SD_GPS_CORRECTED,
-                                                    SD_GPS_NOISED,
+  const sensor_data_record_type supported_hdrs[] = {SD_ACC_ABS_SET,
+                                                    SD_ACC_ABS_GENERATED,
+                                                    SD_GPS_SET,
+                                                    SD_GPS_FILTERED,
+                                                    SD_GPS_GENERATED,
                                                     SD_UNKNOWN};
   for (int i = 0; supported_hdrs[i] != SD_UNKNOWN; ++i) {
-    if (supported_hdrs[i] != hdr.type)
+    if (supported_hdrs[i] != rec.hdr.type)
       continue;
-    return pf_deserializers[hdr.type](str.substr(hdr_end_idx + HDR_LEN), rec);
+    return pf_deserializers[rec.hdr.type](str.substr(hdr_end_idx + HDR_LEN),
+                                          rec);
   }
 
   std::cerr << "unsupported record type. failed to deserialize record from: "
