@@ -26,12 +26,62 @@ TEST(sensor_data, test_deserialize_acc_abs)
 {
   std::string input = "0 4:::1.1 2.2 0";
   sd_record act;
-  int dr = sdr_deserialize_str(input, act);
-  ASSERT_EQ(dr, 0);
+  sdr_deserialize_error dr = sdr_deserialize_str(input, act);
+  ASSERT_EQ(dr, SDRDE_SUCCESS);
   ASSERT_EQ(act.hdr.type, SD_ACC_ABS_MEASURED);
   ASSERT_EQ(act.hdr.timestamp, 4.0);
   ASSERT_EQ(act.data.acc.x, 1.1);
   ASSERT_EQ(act.data.acc.y, 2.2);
   ASSERT_EQ(act.data.acc.z, 0.0);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_deserialize_acc_abs_wrong_hdr)
+{
+  std::string input = "0 4:1.1 2.2 0";
+  sd_record act;
+  sdr_deserialize_error dr = sdr_deserialize_str(input, act);
+  ASSERT_EQ(dr, SDRDE_WRONG_HDR_SEPARATOR);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_deserialize_acc_abs_wrong_fmt)
+{
+  std::string input = "0 4:::1.1 2";  // not enough fields
+  sd_record act;
+  sdr_deserialize_error dr = sdr_deserialize_str(input, act);
+  ASSERT_EQ(dr, SDRDE_UNEXPECTED_FMT);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_deserialize_record_unsupported_type)
+{
+  std::string input = "9 4:::1.1 2";  // not enough fields
+  sd_record act;
+  sdr_deserialize_error dr = sdr_deserialize_str(input, act);
+  ASSERT_EQ(dr, SDRDE_UNSUPPORTED);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_serialize_gps_record)
+{
+  sd_record sr;
+  sr.hdr.type = SD_GPS_MEASURED;
+  sr.hdr.timestamp = 9.3;
+  sr.data.gps.location = geopoint(1.1, 2.2, 3.3, 4.4);
+  sr.data.gps.speed = gps_speed(5.5, 6.6, 7.7);
+
+  std::string serialized = sdr_serialize_str(sr);
+  std::string expected = "2 9.3:::1.1 2.2 3.3 4.4 5.5 6.6 7.7";
+  EXPECT_EQ(serialized, expected);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_deserialize_gps_record)
+{
+  std::string input = "9 4:::1.1 2";  // not enough fields
+  sd_record act;
+  sdr_deserialize_error dr = sdr_deserialize_str(input, act);
+  ASSERT_EQ(dr, SDRDE_UNSUPPORTED);
 }
 //////////////////////////////////////////////////////////////

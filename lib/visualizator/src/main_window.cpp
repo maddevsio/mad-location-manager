@@ -462,6 +462,7 @@ void gmw_add_marker(generator_main_window *gmw,
                     double longitude)
 {
   gmw->marker_layers[mt].lst_geopoints.push_back(geopoint(latitude, longitude));
+
   ShumateMarker *marker = shumate_point_new();
   shumate_location_set_location(SHUMATE_LOCATION(marker), latitude, longitude);
 

@@ -43,7 +43,7 @@ struct magnetometer {
 /// vector
 /// @x - axis X (longitude)
 /// @y - axis Y (latitude)
-/// @z - axiz Z (aptitude) zero for now
+/// @z - axiz Z (altitude) zero for now
 struct abs_accelerometer {
   double x, y, z;
 
@@ -69,8 +69,11 @@ struct abs_accelerometer {
 //////////////////////////////////////////////////////////////
 
 /// geopoint - geopoint gps_coordinate
-/// @latitude - latitude (axis Y)
-/// @longitude - longitude (axis X)
+/// @latitude - latitude (axis Y) - 0 .. M_PI
+/// @longitude - longitude (axis X) - 0 .. 2 * M_PI
+/// @altitude - altitude (axis Z)
+/// @accuracy - the estimated horizontal accuracy radius in meters of this
+/// location
 struct geopoint {
   double latitude;   // 0 .. M_PI
   double longitude;  // 0 .. 2 * M_PI
@@ -79,8 +82,14 @@ struct geopoint {
 
   geopoint() = default;  // : latitude(0.0), longitude(0.0), altitude(0.0),
                          // accuracy(0.0) {}
-  geopoint(double latitude, double longitude, double altitude = 0.)
-      : latitude(latitude), longitude(longitude), altitude(altitude)
+  geopoint(double latitude,
+           double longitude,
+           double altitude = 0.,
+           double accuracy = 0.)
+      : latitude(latitude),
+        longitude(longitude),
+        altitude(altitude),
+        accuracy(accuracy)
   {
   }
 };
@@ -89,7 +98,8 @@ struct geopoint {
 /// gps_speed - speed received from GPS
 /// @azimuth - in degrees (HDOP in NMEA)
 /// @value - speed in m/s
-/// @accuracy - ???
+/// @accuracy - the estimated speed accuracy in meters per second of this
+/// location
 struct gps_speed {
   double azimuth;
   double value;
@@ -139,6 +149,15 @@ struct sd_record {
 };
 
 std::string sdr_serialize_str(const sd_record &rec);
-int sdr_deserialize_str(const std::string &str, sd_record &rec);
+
+enum sdr_deserialize_error {
+  SDRDE_SUCCESS = 0,
+  SDRDE_WRONG_HDR_SEPARATOR = 1,
+  SDRDE_UNEXPECTED_FMT = 2,
+  SDRDE_UNSUPPORTED = 3,
+  SDRDE_UNDEFINED
+};
+sdr_deserialize_error sdr_deserialize_str(const std::string &str,
+                                          sd_record &rec);
 
 #endif  // SENSOR_DATA_H
