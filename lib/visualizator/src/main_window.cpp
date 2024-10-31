@@ -381,8 +381,13 @@ static void dlg_save_tracks_cb(GObject *source_object,
     return;
   }
 
-  for (auto rec : gmw->marker_layers[MT_GPS_SET].lst_sd_records) {
-    of << sdr_serialize_str(rec) << std::endl;
+  // todo add filtered layer here later
+  marker_type export_layers[] = {MT_GPS_SET, MT_GPS_GENERATED, MT_COUNT};
+
+  for (int i = 0; export_layers[i] != MT_COUNT; ++i) {
+    for (auto rec : gmw->marker_layers[export_layers[i]].lst_sd_records) {
+      of << sdr_serialize_str(rec) << std::endl;
+    }
   }
   of.close();
 }
@@ -415,9 +420,6 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
     return;  // do nothing
   }
   generator_options go = gmw->w_gs->opts;
-  double no_acceleration_time =
-      go.gps_measurement_period - go.acceleration_time;
-
   const std::vector<sd_record> &src =
       gmw->marker_layers[MT_GPS_SET].lst_sd_records;
   std::vector<sd_record> &dst =
