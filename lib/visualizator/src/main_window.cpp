@@ -4,7 +4,6 @@
 #include <sensor_data.h>
 #include <shumate/shumate.h>
 
-#include <array>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -416,16 +415,19 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  if (gmw->marker_layers[MT_GPS_SET].lst_sd_records.empty()) {
-    return;  // do nothing
-  }
-  generator_options go = gmw->w_gs->opts;
   const std::vector<sd_record> &src =
       gmw->marker_layers[MT_GPS_SET].lst_sd_records;
   std::vector<sd_record> &dst =
       gmw->marker_layers[MT_GPS_GENERATED].lst_sd_records;
 
-  dst.push_back(src.front());
+  if (src.empty()) {
+    return;  // do nothing
+  }
+  generator_options go = gmw->w_gs->opts;
+
+  dst.push_back(
+      sd_record(sd_record_hdr(SD_GPS_GENERATED, 0.), src.front().data.gps));
+
   gmw_add_marker(gmw,
                  MT_GPS_GENERATED,
                  src.front().data.gps.location.latitude,
