@@ -463,6 +463,7 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
     cc = sd_gps_coordinate_in_interval(cc, acc_interval, go.acceleration_time);
     cc = sd_gps_coordinate_in_interval(cc, no_acc_interval, no_acc_time);
     cc.location = sd_noised_geopoint(cc.location, go.gps_noise);
+    ts += go.gps_measurement_period;
     dst.push_back(sd_record(sd_record_hdr(SD_GPS_GENERATED, ts), cc));
     gmw_add_marker(gmw,
                    MT_GPS_GENERATED,
