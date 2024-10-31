@@ -86,8 +86,7 @@ TEST(sd_generator, test_abs_acc_generation_1)
                                                            b,
                                                            acceleration_time,
                                                            interval_time,
-                                                           0.0
-                                                          );
+                                                           0.0);
   const movement_interval intervals[] = {
       {acc.azimuth(), acc.acceleration(),    acceleration_time},
       {acc.azimuth(),                0.0, no_acceleration_time},
@@ -116,8 +115,7 @@ TEST(sd_generator, test_abs_acc_generation_2)
                                                            b,
                                                            acceleration_time,
                                                            interval_time,
-                                                           0.0
-                                                           );
+                                                           0.0);
 
   const movement_interval intervals[] = {
       {acc.azimuth(), acc.acceleration(),    acceleration_time},
@@ -166,7 +164,25 @@ TEST(sd_generator, test_acc_generation_1D)
   double t1 = 5;
   double t2 = 2;
   double v0 = 0.;
-  double acc = acc_between_two_points(s, v0, t1, t2);
+  double acc = sd_acc_between_two_points(s, v0, t1, t2);
   ASSERT_NEAR(acc, 5.0, 1e-6);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sd_generator, test_noised_gps_eq_no_noise)
+{
+  geopoint expected(10.12345, 12.54321);
+  geopoint act = sd_noised_geopoint(expected, 0.);
+  ASSERT_NEAR(expected.latitude, act.latitude, 1e-8);
+  ASSERT_NEAR(expected.longitude, act.longitude, 1e-8);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sd_generator, test_noised_gps_not_eq_with_noise)
+{
+  geopoint expected(10.12345, 12.54321);
+  geopoint act = sd_noised_geopoint(expected, 15);
+  ASSERT_NE(expected.latitude, act.latitude);
+  ASSERT_NE(expected.longitude, act.longitude);
 }
 //////////////////////////////////////////////////////////////

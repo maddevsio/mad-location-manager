@@ -4,6 +4,8 @@
 
 #include <GeographicLib/Geodesic.hpp>
 #include <cassert>
+#include <cmath>
+#include <random>
 
 gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                                              const movement_interval &interval,
@@ -47,15 +49,22 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
 }
 //////////////////////////////////////////////////////////////
 
-double acc_between_two_points(double distance,
-                              double v0,
-                              double acceleration_time,
-                              double no_acceleration_time)
+double sd_acc_between_two_points(double distance,
+                                 double v0,
+                                 double acceleration_time,
+                                 double no_acceleration_time)
 {
   double s = distance;
   double t1 = acceleration_time;
   double t2 = no_acceleration_time;
-  double a = (s - v0 * (t1 + t2)) / ((0.5 * t1 + t2) * t1);
+  // s = s1 + s2
+  // s1 = v0*t1 + 0.5*a*t1^2
+  // v2 = v0+a*t1
+  // s2 = v2*t2
+  // s = v0*t1 + 0.5*a*t1^2 + (v0+a*t1)*t2
+  // s - v0*(t1+t2) = a * (0.5*t1^2 + t1*t2)
+  // a = (s - v0*(t1+t2)) / (0.5*t1^2 + t1*t2)
+  double a = (s - v0 * (t1 + t2)) / (0.5 * t1 * t1 + t1 * t2);
   return a;
 }
 //////////////////////////////////////////////////////////////
@@ -90,15 +99,47 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
   double sx = s_ab * cos(ab_az_rad);
   double sy = s_ab * sin(ab_az_rad);
 
-  double ax = acc_between_two_points(sx,
-                                     v0_x,
-                                     acceleration_time,
-                                     interval_time - acceleration_time);
-  double ay = acc_between_two_points(sy,
-                                     v0_y,
-                                     acceleration_time,
-                                     interval_time - acceleration_time);
+  double no_acc_time = interval_time - acceleration_time;
+  double ax =
+      sd_acc_between_two_points(sx, v0_x, acceleration_time, no_acc_time);
+  double ay =
+      sd_acc_between_two_points(sy, v0_y, acceleration_time, no_acc_time);
 
   return abs_accelerometer(ax, ay, 0.);
 }
 //////////////////////////////////////////////////////////////
+
+geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
+{
+  // Will be used to obtain a seed for the random number engine
+  std::random_device rd;
+  // Standard mersenne_twister_engine seeded with rd()
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> gps_dist(0.0, gps_noise);
+  static std::uniform_real_distribution<> az_dist(0.0, 360.0);
+  double gps_error = gps_dist(gen);
+  double az_rnd = az_dist(gen);
+
+  geopoint res;
+  const GeographicLib::Geodesic &geod = GeographicLib::Geodesic::WGS84();
+  geod.Direct(src.latitude,
+              src.longitude,
+              az_rnd,
+              gps_error,
+              res.latitude,
+              res.longitude);
+
+  return res;
+}
+//////////////////////////////////////////////////////////////
+
+abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
+{
+  // Will be used to obtain a seed for the random number engine
+  std::random_device rd;
+  // Standard mersenne_twister_engine seeded with rd()
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> gps_dist(-acc_noise / 2.0, acc_noise / 2.0);
+  abs_accelerometer nacc(acc.x + gps_dist(gen), acc.y + gps_dist(gen), acc.z);
+  return nacc;
+}

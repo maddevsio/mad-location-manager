@@ -17,14 +17,11 @@ static void insert_only_numbers_slot(GtkEditable *self,
                                      gint *position,
                                      gpointer user_data)
 {
-  UNUSED(new_text);
-  UNUSED(new_text_length);
   UNUSED(position);
-
   double *opt = reinterpret_cast<double *>(user_data);
   std::string full_text(gtk_editable_get_text(self));
-  for (const char *nc = new_text; *nc; ++nc)
-    full_text.push_back(*nc);
+  for (int i = 0; i < new_text_length; ++i)
+    full_text.push_back(new_text[i]);
 
   if (full_text.empty()) {
     return;  // do nothing

@@ -4,10 +4,12 @@
 #include <sensor_data.h>
 #include <shumate/shumate.h>
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+#include "sd_generator.h"
 #include "w_generator_settings.h"
 
 enum marker_type {
@@ -36,6 +38,7 @@ struct generator_main_window {
   GtkWidget *window;
   ShumateSimpleMap *simple_map;
   ShumateMapSourceRegistry *map_source_registry;
+  w_generator_settings *w_gs;
   std::vector<gmw_marker_layer> marker_layers;
 
   generator_main_window();
@@ -44,7 +47,10 @@ struct generator_main_window {
 //////////////////////////////////////////////////////////////
 
 generator_main_window::generator_main_window()
-    : window(nullptr), simple_map(nullptr), map_source_registry(nullptr)
+    : window(nullptr),
+      simple_map(nullptr),
+      map_source_registry(nullptr),
+      w_gs(nullptr)
 {
 }
 //////////////////////////////////////////////////////////////
@@ -53,6 +59,8 @@ generator_main_window::~generator_main_window()
 {
   /* g_clear_object(&map_source_registry); */
   g_object_unref(map_source_registry);
+  if (w_gs)
+    delete w_gs;
 }
 //////////////////////////////////////////////////////////////
 
@@ -70,6 +78,7 @@ void gmw_free(generator_main_window *gmw)
 
 static void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud);
 
+/// gmw_btn_generate_sensor_data - generates sensor data and GPS data with noise
 static void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud);
 static void gmw_btn_clear_generated_data(GtkWidget *btn, gpointer ud);
 
@@ -143,19 +152,18 @@ static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 
 static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
 {
-  // TODO move w_gs to gmw fields and free in destructor
-  w_generator_settings *w_gs = w_generator_settings_default();
-  g_signal_connect(w_gs->btn_generate,
+  gmw->w_gs = w_generator_settings_default();
+  g_signal_connect(gmw->w_gs->btn_generate,
                    "clicked",
                    G_CALLBACK(gmw_btn_generate_sensor_data),
                    gmw);
 
-  g_signal_connect(w_gs->btn_clear,
+  g_signal_connect(gmw->w_gs->btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_generated_data),
                    gmw);
 
-  return w_gs->frame;
+  return gmw->w_gs->frame;
 }
 //////////////////////////////////////////////////////////////
 
@@ -406,8 +414,61 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
   if (gmw->marker_layers[MT_GPS_SET].lst_sd_records.empty()) {
     return;  // do nothing
   }
-  // TODO generate data + update some model
-  std::cout << "gmw_btn_generate_sensor_data\n";
+  generator_options go = gmw->w_gs->opts;
+  double no_acceleration_time =
+      go.gps_measurement_period - go.acceleration_time;
+
+  const std::vector<sd_record> &src =
+      gmw->marker_layers[MT_GPS_SET].lst_sd_records;
+  std::vector<sd_record> &dst =
+      gmw->marker_layers[MT_GPS_GENERATED].lst_sd_records;
+
+  dst.push_back(src.front());
+  gmw_add_marker(gmw,
+                 MT_GPS_GENERATED,
+                 src.front().data.gps.location.latitude,
+                 src.front().data.gps.location.longitude);
+
+  double ts = 0.;
+  for (size_t i = 1; i < src.size(); ++i) {
+    const sd_record &prev_rec = src[i - 1];
+    const sd_record &curr_rec = src[i];
+
+    for (double ats = 0.; ats < go.gps_measurement_period;
+         ats += go.acc_measurement_period) {
+      abs_accelerometer acc =
+          sd_abs_acc_between_two_geopoints(prev_rec.data.gps,
+                                           curr_rec.data.gps,
+                                           go.acceleration_time,
+                                           go.gps_measurement_period,
+                                           ats);
+      acc = sd_noised_acc(acc, go.acc_noise);
+      dst.push_back(
+          sd_record(sd_record_hdr(SD_ACC_ABS_GENERATED, ts + ats), acc));
+    }  // finished generating accelerometer data
+
+    // need to generate ideal coordinate and then noise it
+    gps_coordinate cc = prev_rec.data.gps;
+    abs_accelerometer acc =
+        sd_abs_acc_between_two_geopoints(prev_rec.data.gps,
+                                         curr_rec.data.gps,
+                                         go.acceleration_time,
+                                         go.gps_measurement_period,
+                                         0.);
+    movement_interval acc_interval(acc.azimuth(),
+                                   acc.acceleration(),
+                                   go.acceleration_time);
+    double no_acc_time = go.gps_measurement_period - go.acceleration_time;
+    movement_interval no_acc_interval(0., 0., no_acc_time);
+    cc = sd_gps_coordinate_in_interval(cc, acc_interval, go.acceleration_time);
+    cc = sd_gps_coordinate_in_interval(cc, no_acc_interval, no_acc_time);
+    cc.location = sd_noised_geopoint(cc.location, go.gps_noise);
+    dst.push_back(sd_record(sd_record_hdr(SD_GPS_GENERATED, ts), cc));
+    gmw_add_marker(gmw,
+                   MT_GPS_GENERATED,
+                   cc.location.latitude,
+                   cc.location.longitude);
+  }
 }
 //////////////////////////////////////////////////////////////
 

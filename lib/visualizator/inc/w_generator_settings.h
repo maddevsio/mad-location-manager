@@ -3,6 +3,13 @@
 
 #include <gtk/gtk.h>
 
+/// generator_options stores different options for ideal/noised data generation
+/// @acceleration_time - how much time point has acceleration between two points
+/// @acc_measurement_period - data from accelerometer comes every
+/// acc_measurement_period seconds
+/// @gps_measurement_period - data comes every gps_measurement_period seconds
+/// @acc_noise - accelerometer error (in meters/s^2)
+/// @gps_nois - gps error (in meters)
 struct generator_options {
   double acceleration_time;
   double acc_measurement_period;

@@ -1,8 +1,7 @@
 #ifndef SD_GENERATOR_H
 #define SD_GENERATOR_H
 
-#include <sensor_data.h>
-
+#include "sensor_data.h"
 
 /// movement_interval_t - interval of movement
 /// @azimuth - in degrees
@@ -31,9 +30,11 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    double interval_time,
                                                    double time_of_interest);
 
-double acc_between_two_points(double distance,
-                              double v0,
-                              double acceleration_time,
-                              double no_acceleration_time);
+double sd_acc_between_two_points(double distance,
+                                 double v0,
+                                 double acceleration_time,
+                                 double no_acceleration_time);
 
+geopoint sd_noised_geopoint(const geopoint &src, double gps_noise);
+abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise);
 #endif

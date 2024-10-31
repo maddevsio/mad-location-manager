@@ -152,6 +152,16 @@ struct sd_record {
     abs_accelerometer acc;
     gps_coordinate gps;
   } data;
+
+  sd_record() = default;
+  sd_record(sd_record_hdr hdr, abs_accelerometer acc) : hdr(hdr)
+  {
+    data.acc = acc;
+  }
+  sd_record(sd_record_hdr hdr, gps_coordinate gps) : hdr(hdr)
+  {
+    data.gps = gps;
+  }
 };
 
 std::string sdr_serialize_str(const sd_record &rec);

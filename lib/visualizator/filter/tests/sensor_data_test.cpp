@@ -4,12 +4,13 @@
 
 TEST(sensor_data, test_serialize_acc_abs)
 {
-  sd_record sr;
-  sr.hdr.type = SD_ACC_ABS_SET;
-  sr.hdr.timestamp = 4.0;
-  sr.data.acc.x = 1.1;
-  sr.data.acc.y = 2.2;
-  sr.data.acc.z = 0.0;
+  sd_record sr(sd_record_hdr(SD_ACC_ABS_SET, 4.0),
+               abs_accelerometer(1.1, 2.2, 0.0));
+  /* sr.hdr.type = SD_ACC_ABS_SET; */
+  /* sr.hdr.timestamp = 4.0; */
+  /* sr.data.acc.x = 1.1; */
+  /* sr.data.acc.y = 2.2; */
+  /* sr.data.acc.z = 0.0; */
 
   std::string serialized = sdr_serialize_str(sr);
   std::string expected = "0 4:::1.1 2.2 0";
