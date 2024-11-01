@@ -6,12 +6,6 @@ TEST(sensor_data, test_serialize_acc_abs)
 {
   sd_record sr(sd_record_hdr(SD_ACC_ABS_SET, 4.0),
                abs_accelerometer(1.1, 2.2, 0.0));
-  /* sr.hdr.type = SD_ACC_ABS_SET; */
-  /* sr.hdr.timestamp = 4.0; */
-  /* sr.data.acc.x = 1.1; */
-  /* sr.data.acc.y = 2.2; */
-  /* sr.data.acc.z = 0.0; */
-
   std::string serialized = sdr_serialize_str(sr);
   std::string expected = "0 4:::1.1 2.2 0";
   EXPECT_EQ(serialized, expected);
@@ -20,6 +14,21 @@ TEST(sensor_data, test_serialize_acc_abs)
   serialized = sdr_serialize_str(sr);
   expected = "1 4:::1.1 2.2 0";
   EXPECT_EQ(serialized, expected);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sensor_data, test_serialize_acc_abs_small_values)
+{
+  sd_record sr(sd_record_hdr(SD_ACC_ABS_SET, 4.0),
+               abs_accelerometer(1e-8, 2e-15, 0.0));
+  std::string serialized = sdr_serialize_str(sr);
+  std::string expected = "0 4:::1e-08 2e-15 0";
+  EXPECT_EQ(serialized, expected);
+
+  sd_record deserialized ;
+  sdr_deserialize_error err = sdr_deserialize_str(expected, deserialized);
+  ASSERT_EQ(SDRDE_SUCCESS, err);
+  ASSERT_NEAR(sr.data.acc.x, deserialized.data.acc.x, 1e-10);
 }
 //////////////////////////////////////////////////////////////
 

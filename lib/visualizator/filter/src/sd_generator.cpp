@@ -115,8 +115,8 @@ geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
   std::random_device rd;
   // Standard mersenne_twister_engine seeded with rd()
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> gps_dist(0.0, gps_noise);
-  static std::uniform_real_distribution<> az_dist(0.0, 360.0);
+  std::uniform_real_distribution<> gps_dist(-gps_noise / 2.0, gps_noise / 2.0);
+  static std::uniform_real_distribution<double> az_dist(-180.0, 180.0);
   double gps_error = gps_dist(gen);
   double az_rnd = az_dist(gen);
 
@@ -135,11 +135,10 @@ geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
 
 abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
 {
-  // Will be used to obtain a seed for the random number engine
   std::random_device rd;
-  // Standard mersenne_twister_engine seeded with rd()
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> gps_dist(-acc_noise / 2.0, acc_noise / 2.0);
+  std::uniform_real_distribution<double> gps_dist(-acc_noise / 2.0,
+                                                  acc_noise / 2.0);
   abs_accelerometer nacc(acc.x + gps_dist(gen), acc.y + gps_dist(gen), acc.z);
   return nacc;
 }

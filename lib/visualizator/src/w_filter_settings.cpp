@@ -1,18 +1,8 @@
-#include "w_generator_settings.h"
+#include "w_filter_settings.h"
 
 #include <iostream>
 
 #include "vis_commons.h"
-
-static w_generator_settings *w_generator_settings_new(
-    const generator_options *opts);
-
-w_generator_settings *w_generator_settings_default(void)
-{
-  generator_options default_opts;
-  return w_generator_settings_new(&default_opts);
-}
-//////////////////////////////////////////////////////////////
 
 static void insert_only_numbers_slot(GtkEditable *self,
                                      gchar *new_text,
@@ -46,10 +36,9 @@ static void insert_only_numbers_slot(GtkEditable *self,
 }
 //////////////////////////////////////////////////////////////
 
-w_generator_settings *w_generator_settings_new(const generator_options *opts)
+w_filter_settings *w_filter_settings_default()
 {
-  w_generator_settings *res = new w_generator_settings();
-  res->opts = *opts;
+  w_filter_settings *res = new w_filter_settings();
 
   res->btn_generate = gtk_button_new();
   gtk_button_set_label(GTK_BUTTON(res->btn_generate), "Generate");
@@ -64,33 +53,13 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
   /* gtk_grid_set_row_homogeneous(GTK_GRID(grid), true); */
   gtk_grid_set_column_homogeneous(GTK_GRID(res->grid), true);
 
-  GtkWidget **widgets[] = {&res->lbl_acc_time,
-                           &res->tb_acc_time,
-                           &res->lbl_acc_measurement_period,
-                           &res->tb_acc_measurement_period,
-                           &res->lbl_gps_measurement_period,
-                           &res->tb_gps_measurement_period,
-                           &res->lbl_acc_noise,
-                           &res->tb_acc_noise,
-                           &res->lbl_gps_location_noise,
-                           &res->tb_gps_location_noise,
-                           &res->lbl_gps_speed_noise,
-                           &res->tb_gps_speed_noise,
+  GtkWidget **widgets[] = {&res->lbl_dummy,
+                           &res->tb_dummy,
                            nullptr,
                            nullptr};
-  const char *lbl_names[] = {"Acceleration time",
-                             "Acceleration measurement period",
-                             "GPS measurement period",
-                             "Acceleration noise",
-                             "GPS location noise",
-                             "GPS speed noise",
+  const char *lbl_names[] = {"DUMMY setting",
                              nullptr};
-  double *lst_options_pointers[] = {&res->opts.acceleration_time,
-                                    &res->opts.acc_measurement_period,
-                                    &res->opts.gps_measurement_period,
-                                    &res->opts.acc_noise,
-                                    &res->opts.gps_location_noise,
-                                    &res->opts.gps_speed_noise,
+  double *lst_options_pointers[] = {&res->opts.dummy,
                                     nullptr};
 
   int r = 0;
@@ -118,7 +87,7 @@ w_generator_settings *w_generator_settings_new(const generator_options *opts)
   gtk_grid_attach(GTK_GRID(res->grid), res->btn_generate, 0, r, 1, 2);
   gtk_grid_attach(GTK_GRID(res->grid), res->btn_clear, 1, r, 1, 2);
 
-  res->frame = gtk_frame_new("Generator settings");
+  res->frame = gtk_frame_new("MLM Filter");
   gtk_frame_set_child(GTK_FRAME(res->frame), res->grid);
   gtk_frame_set_label_align(GTK_FRAME(res->frame), 0.5);
   return res;

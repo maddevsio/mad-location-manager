@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "sd_generator.h"
+#include "w_filter_settings.h"
 #include "w_generator_settings.h"
 
 enum marker_type {
@@ -38,6 +39,7 @@ struct generator_main_window {
   ShumateSimpleMap *simple_map;
   ShumateMapSourceRegistry *map_source_registry;
   w_generator_settings *w_gs;
+  w_filter_settings *w_fs;
   std::vector<gmw_marker_layer> marker_layers;
 
   generator_main_window();
@@ -49,7 +51,8 @@ generator_main_window::generator_main_window()
     : window(nullptr),
       simple_map(nullptr),
       map_source_registry(nullptr),
-      w_gs(nullptr)
+      w_gs(nullptr),
+      w_fs(nullptr)
 {
 }
 //////////////////////////////////////////////////////////////
@@ -60,6 +63,8 @@ generator_main_window::~generator_main_window()
   g_object_unref(map_source_registry);
   if (w_gs)
     delete w_gs;
+  if (w_fs)
+    delete w_fs;
 }
 //////////////////////////////////////////////////////////////
 
@@ -75,11 +80,15 @@ void gmw_free(generator_main_window *gmw)
 }
 //////////////////////////////////////////////////////////////
 
-static void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud);
+static void gmw_btn_save_tracks_clicked(GtkWidget *btn, gpointer ud);
 
 /// gmw_btn_generate_sensor_data - generates sensor data and GPS data with noise
-static void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud);
-static void gmw_btn_clear_generated_data(GtkWidget *btn, gpointer ud);
+static void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud);
+static void gmw_btn_clear_generated_data_clicked(GtkWidget *btn, gpointer ud);
+
+/// gmw_btn_filter_data_clicked
+static void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud);
+static void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud);
 
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
 static void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud);
@@ -103,33 +112,42 @@ void gmw_show(generator_main_window *gmw)
 
 static GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
 {
-  // todo implement
-  UNUSED(gmw);  // for now
-  GtkWidget *frame = gtk_frame_new("Filter settings");
-  gtk_frame_set_label_align(GTK_FRAME(frame), 0.5);
-  return frame;
+  gmw->w_fs = w_filter_settings_default();
+  g_signal_connect(gmw->w_gs->btn_generate,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_filter_sensor_data_clicked),
+                   gmw);
+
+  g_signal_connect(gmw->w_gs->btn_clear,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_clear_filtered_data_cliecked),
+                   gmw);
+
+  return gmw->w_fs->frame;
 }
 //////////////////////////////////////////////////////////////
 
 static GtkWidget *create_load_track_frame(generator_main_window *gmw)
 {
-  GtkWidget *btn_load = gtk_button_new();
-  gtk_button_set_label(GTK_BUTTON(btn_load), "Load");
-  g_signal_connect(btn_load,
-                   "clicked",
-                   G_CALLBACK(gmw_btn_load_track_clicked),
-                   gmw);
-
   GtkWidget *btn_clear = gtk_button_new();
+  GtkWidget *btn_load = gtk_button_new();
+  GtkWidget *btn_save = gtk_button_new();
+
   gtk_button_set_label(GTK_BUTTON(btn_clear), "Clear ALL");
   g_signal_connect(btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_all_points_clicked),
                    gmw);
-
-  GtkWidget *btn_save = gtk_button_new();
+  gtk_button_set_label(GTK_BUTTON(btn_load), "Load");
+  g_signal_connect(btn_load,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_load_track_clicked),
+                   gmw);
   gtk_button_set_label(GTK_BUTTON(btn_save), "Save");
-  g_signal_connect(btn_save, "clicked", G_CALLBACK(gmw_btn_save_tracks), gmw);
+  g_signal_connect(btn_save,
+                   "clicked",
+                   G_CALLBACK(gmw_btn_save_tracks_clicked),
+                   gmw);
 
   GtkWidget *grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
@@ -154,12 +172,12 @@ static GtkWidget *create_generator_settings_frame(generator_main_window *gmw)
   gmw->w_gs = w_generator_settings_default();
   g_signal_connect(gmw->w_gs->btn_generate,
                    "clicked",
-                   G_CALLBACK(gmw_btn_generate_sensor_data),
+                   G_CALLBACK(gmw_btn_generate_sensor_data_clicked),
                    gmw);
 
   g_signal_connect(gmw->w_gs->btn_clear,
                    "clicked",
-                   G_CALLBACK(gmw_btn_clear_generated_data),
+                   G_CALLBACK(gmw_btn_clear_generated_data_clicked),
                    gmw);
 
   return gmw->w_gs->frame;
@@ -392,7 +410,7 @@ static void dlg_save_tracks_cb(GObject *source_object,
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud)
+void gmw_btn_save_tracks_clicked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
@@ -411,7 +429,7 @@ void gmw_btn_save_tracks(GtkWidget *btn, gpointer ud)
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
+void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
@@ -466,7 +484,7 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
     movement_interval no_acc_interval(0., 0., no_acc_time);
     cc = sd_gps_coordinate_in_interval(cc, acc_interval, go.acceleration_time);
     cc = sd_gps_coordinate_in_interval(cc, no_acc_interval, no_acc_time);
-    cc.location = sd_noised_geopoint(cc.location, go.gps_noise);
+    cc.location = sd_noised_geopoint(cc.location, go.gps_location_noise);
     ts += go.gps_measurement_period;
     dst.push_back(sd_record(sd_record_hdr(SD_GPS_GENERATED, ts), cc));
     gmw_add_marker(gmw,
@@ -477,11 +495,39 @@ void gmw_btn_generate_sensor_data(GtkWidget *btn, gpointer ud)
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_clear_generated_data(GtkWidget *btn, gpointer ud)
+void gmw_btn_clear_generated_data_clicked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   int li = MT_GPS_GENERATED;
+  shumate_path_layer_remove_all(gmw->marker_layers[li].path_layer);
+  shumate_marker_layer_remove_all(gmw->marker_layers[li].marker_layer);
+  gmw->marker_layers[li].lst_sd_records.clear();
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
+{
+  UNUSED(btn);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  const std::vector<sd_record> &src =
+      gmw->marker_layers[MT_GPS_GENERATED].lst_sd_records;
+  std::vector<sd_record> &dst =
+      gmw->marker_layers[MT_GPS_FILTERED].lst_sd_records;
+
+  if (src.empty()) {
+    return;  // do nothing
+  }
+
+  std::cout << "AZAZA MLM FILTER\n";
+}
+//////////////////////////////////////////////////////////////
+
+void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud)
+{
+  UNUSED(btn);
+  generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
+  int li = MT_GPS_FILTERED;
   shumate_path_layer_remove_all(gmw->marker_layers[li].path_layer);
   shumate_marker_layer_remove_all(gmw->marker_layers[li].marker_layer);
   gmw->marker_layers[li].lst_sd_records.clear();
