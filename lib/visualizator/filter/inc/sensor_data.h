@@ -101,13 +101,13 @@ struct geopoint {
 /// @error - the estimated speed error in meters per second of this
 /// location
 struct gps_speed {
-  double cartezian_angle;
+  double azimuth;
   double value;
   double error;
 
   gps_speed() = default;  // : azimuth(0.0), value(0.0), accuracy(0.0) {}
-  gps_speed(double cartezian_angle, double value, double error)
-      : cartezian_angle(cartezian_angle), value(value), error(error)
+  gps_speed(double azimuth, double value, double error)
+      : azimuth(azimuth), value(value), error(error)
   {
   }
 };

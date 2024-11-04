@@ -144,7 +144,7 @@ TEST(sd_generator, test_abs_acc_generation_no_movement)
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
   const movement_interval intervals[] = {
       {acc.cartezian_angle(), acc.acceleration(),  5.0},
-      {acc.cartezian_angle(),                0.0, 10.0},
+      {                   0.,                0.0, 10.0},
       {                   0.,                 0.,  -1.},
   };
 
@@ -152,8 +152,8 @@ TEST(sd_generator, test_abs_acc_generation_no_movement)
     c = sd_gps_coordinate_in_interval(c, *i, i->duration);
   }
 
-  ASSERT_NEAR(c.location.longitude, b.location.longitude, 1e-6);
-  ASSERT_NEAR(c.location.latitude, b.location.latitude, 1e-6);
+  ASSERT_NEAR(c.location.longitude, b.location.longitude, 1e-8);
+  ASSERT_NEAR(c.location.latitude, b.location.latitude, 1e-8);
   ASSERT_NEAR(acc.acceleration(), 0.0, 1e-9);
   ASSERT_NEAR(c.speed.value, 0.0, 1e-9);
 }
@@ -167,6 +167,17 @@ TEST(sd_generator, test_acc_generation_1D)
   double v0 = 0.;
   double acc = sd_acc_between_two_points(s, v0, t1, t2);
   ASSERT_NEAR(acc, 5.0, 1e-6);
+}
+//////////////////////////////////////////////////////////////
+
+TEST(sd_generator, test_acc_generation_1D_start_speed)
+{
+  double s = 112.5;
+  double t1 = 5;
+  double t2 = 2;
+  double v0 = -10.;
+  double acc = sd_acc_between_two_points(s, v0, t1, t2);
+  ASSERT_NEAR(acc, 182.5 / 22.5, 1e-6);
 }
 //////////////////////////////////////////////////////////////
 
@@ -191,11 +202,24 @@ TEST(sd_generator, test_noised_gps_not_eq_with_noise)
 TEST(sd_generator, test_acceleration_axis)
 {
   geopoint a(45.0, 45.0);
-  geopoint b(42.9, 45.0);
-  GeographicLib::LocalCartesian m_lc;
-  double x, y, z;
-  m_lc.Reset(a.latitude, a.longitude);
-  m_lc.Forward(b.latitude, b.longitude, 0, x, y, z);
-  std::cerr << "\nagaga\n";
-  std::cerr << x << " " << y << " " << z << std::endl;
+  geopoint b(44.999, 45.0);
+  geopoint c(44.999, 44.999);
+
+  gps_coordinate aa, bb, cc;
+  aa.location = a;
+  bb.location = b;
+  cc.location = c;
+
+  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(aa, bb, 1.0, 2.0, 0.8);
+  bb = sd_gps_coordinate_in_interval(
+      aa,
+      movement_interval(acc.cartezian_angle(), acc.acceleration(), 1.0),
+      1.0);
+  std::cerr << "bb: " << bb.speed.azimuth << " :: " << bb.speed.value << std::endl;
+
+  bb = sd_gps_coordinate_in_interval(
+      bb,
+      movement_interval(0., 0., 1.0),
+      1.0);
+  std::cerr << "bb: " << bb.speed.azimuth << " :: " << bb.speed.value << std::endl;
 }

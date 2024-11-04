@@ -8,6 +8,7 @@
 #include <random>
 
 #include "GeographicLib/LocalCartesian.hpp"
+#include "commons.h"
 
 gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                                              const movement_interval &interval,
@@ -26,7 +27,8 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
   double ax = interval.acceleration * cos(iaz_rad);
   double ay = interval.acceleration * sin(iaz_rad);
 
-  double ssaz_rad = degree_to_rad(start.speed.cartezian_angle);
+  double ssaz_rad = degree_to_rad(start.speed.azimuth);
+  ssaz_rad = azimuth_to_cartezian_rad(ssaz_rad);
   double v0_x = start.speed.value * cos(ssaz_rad);
   double v0_y = start.speed.value * sin(ssaz_rad);
 
@@ -37,7 +39,8 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
   double vx = v0_x + ax * t;
   double vy = v0_y + ay * t;
   double v = sqrt(vx * vx + vy * vy);
-  double v_az_rad = atan2(vy, vx);
+  double v_cart_rad = atan2(vy, vx);
+  double v_az_rad = cartezian_to_azimuth_rad(v_cart_rad);
   double v_az_degrees = rad_to_degree(v_az_rad);
 
   gps_coordinate res;
@@ -48,8 +51,7 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                res.location.longitude,
                res.location.altitude);
   // TODO check the error of speed
-  res.speed = gps_speed(v_az_degrees, v, 0.);
-
+  res.speed = gps_speed(v_az_degrees, v, 1e-6);
   return res;
 }
 //////////////////////////////////////////////////////////////
@@ -86,8 +88,7 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
     return abs_accelerometer(0., 0., 0.);
   }
 
-  // questionable!!!!!
-  double a_az_rad = degree_to_rad(a.speed.cartezian_angle);
+  double a_az_rad = degree_to_rad(a.speed.azimuth);
   a_az_rad = azimuth_to_cartezian_rad(a_az_rad);
   double v0_x = a.speed.value * cos(a_az_rad);
   double v0_y = a.speed.value * sin(a_az_rad);
@@ -139,6 +140,9 @@ geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
 
 abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
 {
+  if (acc_noise <= 1e-6) {
+    return abs_accelerometer(acc.x, acc.y, acc.z);
+  }
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<double> gps_dist(-acc_noise / 2.0,

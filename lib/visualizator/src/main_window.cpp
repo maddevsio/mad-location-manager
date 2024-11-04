@@ -457,7 +457,7 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 
   double ts = 0.;
   for (size_t i = 1; i < src.size(); ++i) {
-    const sd_record &prev_rec = src[i - 1];
+    const sd_record &prev_rec = dst.back();  // WARNING! but should work fine
     const sd_record &curr_rec = src[i];
 
     for (double ats = 0.; ats < go.gps_measurement_period;
@@ -468,6 +468,7 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
                                            go.acceleration_time,
                                            go.gps_measurement_period,
                                            ats);
+
       acc = sd_noised_acc(acc, go.acc_noise);
       dst.push_back(
           sd_record(sd_record_hdr(SD_ACC_ABS_GENERATED, ts + ats), acc));
@@ -552,10 +553,8 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
         // do nothing
         break;
       }
-    }
-  }
-
-  /* std::cout << "AZAZA MLM FILTER\n"; */
+    }  // switch (rec.hdr.type)
+  }  // for (sd_record &rec : src)
 }
 //////////////////////////////////////////////////////////////
 

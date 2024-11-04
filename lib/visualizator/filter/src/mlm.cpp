@@ -21,7 +21,7 @@ void MLM::process_gps_data(const gps_coordinate &gps,
                            double vel_deviation)
 {
   double x, y, z;
-  double az_rad = degree_to_rad(gps.speed.cartezian_angle);
+  double az_rad = degree_to_rad(gps.speed.azimuth);
   az_rad = azimuth_to_cartezian_rad(az_rad);
   double speed_x = gps.speed.value * cos(az_rad);
   double speed_y = gps.speed.value * sin(az_rad);
@@ -58,6 +58,11 @@ gps_coordinate MLM::predicted_coordinate() const
                res.location.longitude,
                res.location.altitude);
 
+  double vx = m_fk.current_state().x_vel;
+  double vy = m_fk.current_state().y_vel;
+  res.speed.azimuth =
+      rad_to_degree(atan2(vy, vx));  // todo convert into azimuth
+  res.speed.value = std::sqrt(vx * vx + vy * vy);
   return res;
 }
 //////////////////////////////////////////////////////////////

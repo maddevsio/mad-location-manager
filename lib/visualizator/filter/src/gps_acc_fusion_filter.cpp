@@ -45,16 +45,12 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
 
 void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
 {
-  // ms to sec. cause we use m/sec, m/sec^2 etc.
   double dt_sec = time_sec - m_last_predict_sec;
-
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
-
   ++m_predicts_count;
   rebuild_Q(m_acc_deviation);
-
   m_last_predict_sec = time_sec;
   estimate();
 
@@ -109,7 +105,7 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 
 void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
 {
-  // todo dependence on time instead of count (somehow). 
+  // todo dependence on time instead of count (somehow).
   double vel_dev = acc_deviation * m_predicts_count;
   double pos_dev = vel_dev * m_predicts_count;
 
