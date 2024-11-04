@@ -38,6 +38,13 @@ class KalmanFilter
   static const size_t _measure_dim = measure_dim;
   static const size_t _control_dim = control_dim;
 
+ private:
+  bool is_matrix_invertible(const Eigen::MatrixXd& mtx)
+  {
+    Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp(mtx);
+    return lu_decomp.isInvertible();
+  }
+
  protected:
   KalmanFilter() : I(Matrix<double, state_dim, state_dim>::Identity()) {}
   //////////////////////////////////////////////////////////////
@@ -52,13 +59,17 @@ class KalmanFilter
   }
 
   // update
-  void correct()
+  bool correct()
   {
     // Yk = Zk - Hk*Xk|k-1
     Yk = Zk - H * Xk_km1;
     // Sk = Rk + Hk*Pk|k-1*Hk(t)
     Sk = R + H * Pk_km1 * H.transpose();
     // Kk = Pk|k-1*Hk(t)*Sk(inv)
+    if (!is_matrix_invertible(Sk)) {
+      std::cerr << "MATRIX IS NOT INVERTIBLE\n" << Sk << std::endl;
+      return false;  // superquestionable. maybe we need to throw exception
+    }
     K = Pk_km1 * H.transpose() * Sk.inverse();
     // xk|k = xk|k-1 + Kk*Yk
     Xk_k = Xk_km1 + K * Yk;
@@ -66,6 +77,7 @@ class KalmanFilter
     Pk_k = (I - K * H) * Pk_km1;
     // Yk|k = Zk - Hk*Xk|k
     Yk_k = Zk - H * Xk_k;
+    return true;
   }
 };
 //////////////////////////////////////////////////////////////

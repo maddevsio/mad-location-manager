@@ -22,11 +22,11 @@ struct generator_options {
 
   generator_options()
       : acceleration_time(1.0),
-        acc_measurement_period(1e-2),
-        gps_measurement_period(1.5),
-        acc_noise(0.0),
-        gps_location_noise(0.0),
-        gps_speed_noise(0.0) {};
+        acc_measurement_period(1e-1),
+        gps_measurement_period(10.0),
+        acc_noise(1e-6),
+        gps_location_noise(1e-6),
+        gps_speed_noise(1e-6) {};
 };
 //////////////////////////////////////////////////////////////
 

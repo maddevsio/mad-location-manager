@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GeographicLib/LocalCartesian.hpp"
 #include "sensor_data.h"
 
 TEST(sd_generator, test_go_to_point_and_back)
@@ -26,7 +27,7 @@ TEST(sd_generator, test_go_to_point_and_back)
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
     double end_time = start_time + i->duration;
-    abs_accelerometer acc(i->acceleration, i->azimuth);
+    abs_accelerometer acc(i->acceleration, i->cartezian_angle);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
@@ -60,7 +61,7 @@ TEST(sd_generator, test_speed_generation)
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
     double end_time = start_time + i->duration;
-    abs_accelerometer acc(i->acceleration, i->azimuth);
+    abs_accelerometer acc(i->acceleration, i->cartezian_angle);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
@@ -88,9 +89,9 @@ TEST(sd_generator, test_abs_acc_generation_1)
                                                            interval_time,
                                                            0.0);
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(),    acceleration_time},
-      {acc.azimuth(),                0.0, no_acceleration_time},
-      {           0.,                 0.,                  -1.},
+      {acc.cartezian_angle(), acc.acceleration(),    acceleration_time},
+      {                   0.,                0.0, no_acceleration_time},
+      {                   0.,                 0.,                  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -118,9 +119,9 @@ TEST(sd_generator, test_abs_acc_generation_2)
                                                            0.0);
 
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(),    acceleration_time},
-      {           0.,                0.0, no_acceleration_time},
-      {           0.,                 0.,                  -1.},
+      {acc.cartezian_angle(), acc.acceleration(),    acceleration_time},
+      {                   0.,                0.0, no_acceleration_time},
+      {                   0.,                 0.,                  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -142,9 +143,9 @@ TEST(sd_generator, test_abs_acc_generation_no_movement)
   abs_accelerometer acc =
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
   const movement_interval intervals[] = {
-      {acc.azimuth(), acc.acceleration(),  5.0},
-      {acc.azimuth(),                0.0, 10.0},
-      {           0.,                 0.,  -1.},
+      {acc.cartezian_angle(), acc.acceleration(),  5.0},
+      {acc.cartezian_angle(),                0.0, 10.0},
+      {                   0.,                 0.,  -1.},
   };
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
@@ -186,3 +187,15 @@ TEST(sd_generator, test_noised_gps_not_eq_with_noise)
   ASSERT_NE(expected.longitude, act.longitude);
 }
 //////////////////////////////////////////////////////////////
+
+TEST(sd_generator, test_acceleration_axis)
+{
+  geopoint a(45.0, 45.0);
+  geopoint b(42.9, 45.0);
+  GeographicLib::LocalCartesian m_lc;
+  double x, y, z;
+  m_lc.Reset(a.latitude, a.longitude);
+  m_lc.Forward(b.latitude, b.longitude, 0, x, y, z);
+  std::cerr << "\nagaga\n";
+  std::cerr << x << " " << y << " " << z << std::endl;
+}

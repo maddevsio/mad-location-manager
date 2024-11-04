@@ -21,7 +21,8 @@ void MLM::process_gps_data(const gps_coordinate &gps,
                            double vel_deviation)
 {
   double x, y, z;
-  double az_rad = degree_to_rad(gps.speed.azimuth);
+  double az_rad = degree_to_rad(gps.speed.cartezian_angle);
+  az_rad = azimuth_to_cartezian_rad(az_rad);
   double speed_x = gps.speed.value * cos(az_rad);
   double speed_y = gps.speed.value * sin(az_rad);
 
@@ -29,11 +30,10 @@ void MLM::process_gps_data(const gps_coordinate &gps,
     // 1e-3g for smarphones
     // TODO FIND BEST VALUE HERE
     // and move to fields :)
-    const double accelerometer_deviation = 1e-3;
+    const double accelerometer_deviation = 1e-6;
     m_got_start_point = true;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
-
     m_fk.reset(x, y, speed_x, speed_y, accelerometer_deviation, pos_deviation);
     return;
   }
@@ -47,9 +47,13 @@ void MLM::process_gps_data(const gps_coordinate &gps,
 gps_coordinate MLM::predicted_coordinate() const
 {
   gps_coordinate res;
-  m_lc.Reverse(m_fk.current_state().x,
-               m_fk.current_state().y,
-               0.,
+  double x, y, z;
+  x = m_fk.current_state().x;
+  y = m_fk.current_state().y;
+  z = 0.;
+  m_lc.Reverse(x,
+               y,
+               z,
                res.location.latitude,
                res.location.longitude,
                res.location.altitude);

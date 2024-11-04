@@ -27,9 +27,9 @@ std::string sd_gps_serialize_str(const sd_record &rec)
   std::ostringstream out;
   out << std::setprecision(PRECISION) << rec.data.gps.location.latitude << " "
       << rec.data.gps.location.longitude << " "
-      << rec.data.gps.location.altitude << " " << rec.data.gps.location.accuracy
-      << " " << rec.data.gps.speed.azimuth << " " << rec.data.gps.speed.value
-      << " " << rec.data.gps.speed.accuracy;
+      << rec.data.gps.location.altitude << " " << rec.data.gps.location.error
+      << " " << rec.data.gps.speed.cartezian_angle << " " << rec.data.gps.speed.value
+      << " " << rec.data.gps.speed.error;
   return out.str();
 }
 //////////////////////////////////////////////////////////////
@@ -61,10 +61,10 @@ sdr_deserialize_error sd_gps_deserialize_str(const std::string &str,
                        &rec.data.gps.location.latitude,
                        &rec.data.gps.location.longitude,
                        &rec.data.gps.location.altitude,
-                       &rec.data.gps.location.accuracy,
+                       &rec.data.gps.location.error,
                        &rec.data.gps.speed.value,
-                       &rec.data.gps.speed.azimuth,
-                       &rec.data.gps.speed.accuracy);
+                       &rec.data.gps.speed.cartezian_angle,
+                       &rec.data.gps.speed.error);
   return matched == 7 ? SDRDE_SUCCESS : SDRDE_UNEXPECTED_FMT;
 }
 //////////////////////////////////////////////////////////////

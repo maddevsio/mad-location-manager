@@ -8,14 +8,15 @@
 #include <iostream>
 #include <vector>
 
+#include "mlm.h"
 #include "sd_generator.h"
 #include "w_filter_settings.h"
 #include "w_generator_settings.h"
 
 enum marker_type {
   MT_GPS_SET = 0,    // set by this tool OR received from GPS as is
-  MT_GPS_FILTERED,   // filtered by MLM
   MT_GPS_GENERATED,  // generated (with noise etc.)
+  MT_GPS_FILTERED,   // filtered by MLM
   MT_COUNT
 };
 //////////////////////////////////////////////////////////////
@@ -113,12 +114,12 @@ void gmw_show(generator_main_window *gmw)
 static GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
 {
   gmw->w_fs = w_filter_settings_default();
-  g_signal_connect(gmw->w_gs->btn_generate,
+  g_signal_connect(gmw->w_fs->btn_generate,
                    "clicked",
                    G_CALLBACK(gmw_btn_filter_sensor_data_clicked),
                    gmw);
 
-  g_signal_connect(gmw->w_gs->btn_clear,
+  g_signal_connect(gmw->w_fs->btn_clear,
                    "clicked",
                    G_CALLBACK(gmw_btn_clear_filtered_data_cliecked),
                    gmw);
@@ -200,6 +201,7 @@ static const char *marker_css_classes[] = {
     "red-shumate-marker",
     "blue-shumate-marker",
 };
+static const int marker_sizes[] = {24, 16, 20};
 //////////////////////////////////////////////////////////////
 
 void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
@@ -338,18 +340,20 @@ static void dlg_load_track_cb(GObject *source_object,
 
     // todo array of handlers
     switch (rec.hdr.type) {
-      case SD_GPS_SET:
+      case SD_GPS_SET: {
         gmw->marker_layers[MT_GPS_SET].lst_sd_records.push_back(rec);
         gmw_add_marker(gmw,
                        MT_GPS_SET,
                        rec.data.gps.location.latitude,
                        rec.data.gps.location.longitude);
         break;
-      default:
+      }
+      default: {
         break;  // do nothing for now
-    }
-  }
-}
+      }
+    }  // switch
+  }  // while (getline())
+}  // dlg_load_track_cb
 //////////////////////////////////////////////////////////////
 
 void gmw_btn_load_track_clicked(GtkWidget *btn, gpointer ud)
@@ -477,11 +481,13 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
                                          go.acceleration_time,
                                          go.gps_measurement_period,
                                          0.);
-    movement_interval acc_interval(acc.azimuth(),
+
+    double no_acc_time = go.gps_measurement_period - go.acceleration_time;
+    movement_interval acc_interval(acc.cartezian_angle(),
                                    acc.acceleration(),
                                    go.acceleration_time);
-    double no_acc_time = go.gps_measurement_period - go.acceleration_time;
     movement_interval no_acc_interval(0., 0., no_acc_time);
+
     cc = sd_gps_coordinate_in_interval(cc, acc_interval, go.acceleration_time);
     cc = sd_gps_coordinate_in_interval(cc, no_acc_interval, no_acc_time);
     cc.location = sd_noised_geopoint(cc.location, go.gps_location_noise);
@@ -519,7 +525,37 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
     return;  // do nothing
   }
 
-  std::cout << "AZAZA MLM FILTER\n";
+  MLM mlm;
+  for (const sd_record &rec : src) {
+    switch (rec.hdr.type) {
+      case SD_ACC_ABS_GENERATED: {
+        mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
+        gps_coordinate pc = mlm.predicted_coordinate();
+        gmw_add_marker(gmw,
+                       MT_GPS_FILTERED,
+                       pc.location.latitude,
+                       pc.location.longitude);
+        break;
+      }
+      case SD_GPS_GENERATED: {
+        mlm.process_gps_data(rec.data.gps,
+                             rec.data.gps.location.error,
+                             1e-6);  // small artifitial noise
+        /* gps_coordinate pc = mlm.predicted_coordinate(); */
+        /* gmw_add_marker(gmw, */
+        /*                MT_GPS_FILTERED, */
+        /*                pc.location.latitude, */
+        /*                pc.location.longitude); */
+        break;
+      }
+      default: {
+        // do nothing
+        break;
+      }
+    }
+  }
+
+  /* std::cout << "AZAZA MLM FILTER\n"; */
 }
 //////////////////////////////////////////////////////////////
 
@@ -544,7 +580,8 @@ void gmw_add_marker(generator_main_window *gmw,
 
   const char *marker_classes[] = {marker_css_classes[mt], NULL};
   gtk_widget_set_css_classes(GTK_WIDGET(marker), marker_classes);
-  gtk_widget_set_size_request(GTK_WIDGET(marker), 18, 18);
+  int ms = marker_sizes[mt];
+  gtk_widget_set_size_request(GTK_WIDGET(marker), ms, ms);
 
   shumate_marker_layer_add_marker(gmw->marker_layers[mt].marker_layer, marker);
   shumate_path_layer_add_node(gmw->marker_layers[mt].path_layer,

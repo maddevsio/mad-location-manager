@@ -57,7 +57,7 @@ struct abs_accelerometer {
     z = 0.0;  // for now
   }
 
-  double azimuth(void) const
+  double cartezian_angle(void) const
   {
     return rad_to_degree(atan2(y, x));
   }
@@ -72,24 +72,24 @@ struct abs_accelerometer {
 /// @latitude - latitude (axis Y) - 0 .. M_PI
 /// @longitude - longitude (axis X) - 0 .. 2 * M_PI
 /// @altitude - altitude (axis Z)
-/// @accuracy - the estimated horizontal accuracy radius in meters of this
+/// @error - error in meters (distance from real point)
 /// location
 struct geopoint {
   double latitude;   // 0 .. M_PI
   double longitude;  // 0 .. 2 * M_PI
   double altitude;
-  double accuracy;
+  double error;
 
   geopoint() = default;  // : latitude(0.0), longitude(0.0), altitude(0.0),
                          // accuracy(0.0) {}
   geopoint(double latitude,
            double longitude,
            double altitude = 0.,
-           double accuracy = 0.)
+           double error = 1e-6)
       : latitude(latitude),
         longitude(longitude),
         altitude(altitude),
-        accuracy(accuracy)
+        error(error)
   {
   }
 };
@@ -98,16 +98,16 @@ struct geopoint {
 /// gps_speed - speed received from GPS
 /// @azimuth - in degrees (HDOP in NMEA)
 /// @value - speed in m/s
-/// @accuracy - the estimated speed accuracy in meters per second of this
+/// @error - the estimated speed error in meters per second of this
 /// location
 struct gps_speed {
-  double azimuth;
+  double cartezian_angle;
   double value;
-  double accuracy;
+  double error;
 
   gps_speed() = default;  // : azimuth(0.0), value(0.0), accuracy(0.0) {}
-  gps_speed(double azimuth, double value, double accuracy)
-      : azimuth(azimuth), value(value), accuracy(accuracy)
+  gps_speed(double cartezian_angle, double value, double error)
+      : cartezian_angle(cartezian_angle), value(value), error(error)
   {
   }
 };
