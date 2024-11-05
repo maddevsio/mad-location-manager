@@ -27,10 +27,7 @@ void MLM::process_gps_data(const gps_coordinate &gps,
   double speed_y = gps.speed.value * sin(az_rad);
 
   if (!m_got_start_point) {
-    // 1e-3g for smarphones
-    // TODO FIND BEST VALUE HERE
-    // and move to fields :)
-    const double accelerometer_deviation = 1e-6;
+    const double accelerometer_deviation = 1e-3; // TODO get from arguments
     m_got_start_point = true;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
