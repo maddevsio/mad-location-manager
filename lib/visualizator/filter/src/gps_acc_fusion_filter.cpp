@@ -103,6 +103,7 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 }
 //////////////////////////////////////////////////////////////
 
+// sigma_acc^2 * B*B.transposed()??
 void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
 {
   // todo dependence on time instead of count (somehow).
