@@ -254,6 +254,7 @@ void gmw_chk_layer_filtered_acc_toggled(GtkCheckButton *self,
 
 GtkWidget *create_layers_visibility_frame(generator_main_window *gmw)
 {
+  // todo add labels with distances
   GtkWidget *chk_set = gtk_check_button_new_with_label("Set manually");
   GtkWidget *chk_generated = gtk_check_button_new_with_label("Generated");
   GtkWidget *chk_filtered_gps = gtk_check_button_new_with_label("Filtered GPS");
@@ -666,10 +667,13 @@ void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
-  int li = MT_GPS_FILTERED_PREDICTED;
-  shumate_path_layer_remove_all(gmw->layers[li].path_layer);
-  shumate_marker_layer_remove_all(gmw->layers[li].marker_layer);
-  gmw->layers[li].lst_sd_records.clear();
+  marker_type lis[] = {MT_GPS_FILTERED_PREDICTED, MT_GPS_FILTERED_UPDATED};
+  for (int i = 0; i < 2; ++i) {
+    int li = lis[i];
+    shumate_path_layer_remove_all(gmw->layers[li].path_layer);
+    shumate_marker_layer_remove_all(gmw->layers[li].marker_layer);
+    gmw->layers[li].lst_sd_records.clear();
+  }
 }
 //////////////////////////////////////////////////////////////
 

@@ -65,16 +65,21 @@ class KalmanFilter
     Yk = Zk - H * Xk_km1;
     // Sk = Rk + Hk*Pk|k-1*Hk(t)
     Sk = R + H * Pk_km1 * H.transpose();
-    // Kk = Pk|k-1*Hk(t)*Sk(inv)
+
     if (!is_matrix_invertible(Sk)) {
       std::cerr << "MATRIX IS NOT INVERTIBLE\n" << Sk << std::endl;
-      return false;  // superquestionable. maybe we need to throw exception
+      return false;  // superquestionable. maybe we need to throw an exception
     }
+
+    // Kk = Pk|k-1*Hk(t)*Sk(inv)
     K = Pk_km1 * H.transpose() * Sk.inverse();
     // xk|k = xk|k-1 + Kk*Yk
     Xk_k = Xk_km1 + K * Yk;
-    // Pk|k = (I - Kk*Hk) * Pk|k-1
-    Pk_k = (I - K * H) * Pk_km1;
+
+    // Pk|k = (I - Kk*Hk) * Pk|k-1 * (I - Kk*Hk).t() + (K * R * K.t())
+    Pk_k = (I - K * H) * Pk_km1 * (I - K * H).transpose() +
+           (K * R * K.transpose());
+
     // Yk|k = Zk - Hk*Xk|k
     Yk_k = Zk - H * Xk_k;
     return true;

@@ -119,7 +119,7 @@ geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
   std::random_device rd;
   // Standard mersenne_twister_engine seeded with rd()
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> gps_dist(-gps_noise / 2.0, gps_noise / 2.0);
+  std::uniform_real_distribution<> gps_dist(0., gps_noise);
   static std::uniform_real_distribution<double> az_dist(-180.0, 180.0);
   double gps_error = gps_dist(gen);
   double az_rnd = az_dist(gen);

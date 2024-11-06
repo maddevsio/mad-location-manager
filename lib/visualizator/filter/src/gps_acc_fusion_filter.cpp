@@ -1,21 +1,6 @@
 #include "gps_acc_fusion_filter.h"
 
-#include <assert.h>
-#include <stdlib.h>
-
-#include <iostream>
-
-std::ostream& operator<<(std::ostream& os, const FusionFilterState& obj)
-{
-  os << "x: " << obj.x << "; y: " << obj.y << "\n";
-  os << "x_vel: " << obj.x_vel;
-  os << "; y_vel: " << obj.y_vel << std::endl;
-  return os;
-}
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-
-GPSAccFusionFilter::GPSAccFusionFilter() : m_predicts_count(0)
+GPSAccFusionFilter::GPSAccFusionFilter()
 {
   H = Matrix<double, _measure_dim, _state_dim>::Identity();
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
@@ -38,7 +23,7 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
 {
   Xk_k << x, y, x_vel, y_vel;
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
-  Pk_k *= pos_deviation;
+  Pk_k *= pos_deviation * 2;  // 2sigma ~ 66.6%
   m_acc_deviation = acc_deviation;
 };
 //////////////////////////////////////////////////////////////
@@ -49,10 +34,11 @@ void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
-  ++m_predicts_count;
+
   rebuild_Q(m_acc_deviation);
-  m_last_predict_sec = time_sec;
   estimate();
+
+  m_last_predict_sec = time_sec;
 
   // this copy is not necessary. it's supposed
   // to provide current state on each step
@@ -66,7 +52,6 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double vel_deviation)
 {
   rebuild_R(pos_deviation, vel_deviation);
-  m_predicts_count = 0;
   Zk << state.x, state.y, state.x_vel, state.y_vel;
   bool corrected = correct();
   // todo check corrected. if not - throw error
@@ -103,23 +88,25 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 }
 //////////////////////////////////////////////////////////////
 
-// sigma_acc^2 * B*B.transposed()??
 void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
 {
-  // todo dependence on time instead of count (somehow).
-  double vel_dev = acc_deviation * m_predicts_count;
-  double pos_dev = vel_dev * m_predicts_count;
+  /* double vel_dev = acc_deviation * m_predicts_count; */
+  /* double pos_dev = vel_dev * m_predicts_count; */
+  /*  */
+  /* double cov_dev = vel_dev * pos_dev; */
+  /* double pos_dev_2 = pos_dev * pos_dev; */
+  /* double vel_dev_2 = vel_dev * vel_dev; */
+  /*  */
+  /* // clang-format off */
+  /* Q <<  pos_dev_2,  0.0,        cov_dev,    0.0,  */
+  /*       0.0,        pos_dev_2,  0.0,        cov_dev,  */
+  /*       cov_dev,    0.0,        vel_dev_2,  0.0,  */
+  /*       0.0,        cov_dev,    0.0,        vel_dev_2; */
+  /* // clang-format on */
 
-  double cov_dev = vel_dev * pos_dev;
-  double pos_dev_2 = pos_dev * pos_dev;
-  double vel_dev_2 = vel_dev * vel_dev;
-
-  // clang-format off
-  Q <<  pos_dev_2,  0.0,        cov_dev,    0.0, 
-        0.0,        pos_dev_2,  0.0,        cov_dev, 
-        cov_dev,    0.0,        vel_dev_2,  0.0, 
-        0.0,        cov_dev,    0.0,        vel_dev_2;
-  // clang-format on
+  // values here are too small because of dt
+  Q = B * B.transpose();
+  Q *= acc_deviation;
 }
 //////////////////////////////////////////////////////////////
 
