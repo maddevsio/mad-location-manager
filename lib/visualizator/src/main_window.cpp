@@ -629,35 +629,33 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   if (src.empty()) {
     return;  // do nothing
   }
-  // TODO move generated data into dst. connect with model. then update UI
+  // TODO move generated data into dst.
 
-  MLM mlm;
+  MLM mlm(gmw->w_fs->opts.acc_sigma_2,
+          gmw->w_fs->opts.loc_sigma_2,
+          gmw->w_fs->opts.vel_sigma_2);
+  gps_coordinate pc;
   for (const sd_record &rec : src) {
+    // todo change switch to something
     switch (rec.hdr.type) {
-      case SD_ACC_ABS_GENERATED: {
+      case SD_ACC_ABS_GENERATED:
         mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
-        gps_coordinate pc = mlm.predicted_coordinate();
+        pc = mlm.predicted_coordinate();
         gmw_add_marker(gmw,
                        MT_GPS_FILTERED_PREDICTED,
                        pc.location.latitude,
                        pc.location.longitude);
         break;
-      }
-      case SD_GPS_GENERATED: {
-        mlm.process_gps_data(rec.data.gps,
-                             rec.data.gps.location.error,
-                             1e-3);  // small artifitial noise
-        gps_coordinate pc = mlm.predicted_coordinate();
+      case SD_GPS_GENERATED:
+        mlm.process_gps_data(rec.data.gps);
+        pc = mlm.predicted_coordinate();
         gmw_add_marker(gmw,
                        MT_GPS_FILTERED_UPDATED,
                        pc.location.latitude,
                        pc.location.longitude);
         break;
-      }
-      default: {
-        // do nothing
+      default:
         break;
-      }
     }  // switch (rec.hdr.type)
   }  // for (sd_record &rec : src)
 }

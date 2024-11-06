@@ -53,13 +53,21 @@ w_filter_settings *w_filter_settings_default()
   /* gtk_grid_set_row_homogeneous(GTK_GRID(grid), true); */
   gtk_grid_set_column_homogeneous(GTK_GRID(res->grid), true);
 
-  GtkWidget **widgets[] = {&res->lbl_dummy,
-                           &res->tb_dummy,
+  GtkWidget **widgets[] = {&res->lbl_acc_sigma_2,
+                           &res->tb_acc_sigma_2,
+                           &res->lbl_loc_sigma_2,
+                           &res->tb_loc_sigma_2,
+                           &res->lbl_vel_sigma_2,
+                           &res->tb_vel_sigma_2,
                            nullptr,
                            nullptr};
-  const char *lbl_names[] = {"DUMMY setting",
+  const char *lbl_names[] = {"Acc sigma^2",
+                             "Location sigma^2",
+                             "Velocity sigma^2",
                              nullptr};
-  double *lst_options_pointers[] = {&res->opts.dummy,
+  double *lst_options_pointers[] = {&res->opts.acc_sigma_2,
+                                    &res->opts.loc_sigma_2,
+                                    &res->opts.vel_sigma_2,
                                     nullptr};
 
   int r = 0;

@@ -6,8 +6,10 @@
 /// filter_options stores different options for ideal/noised data generation
 /// @acceleration_time - how much time point has acceleration between two points
 struct filter_options {
-  double dummy;
-  filter_options() : dummy(0.0) {};
+  double acc_sigma_2;
+  double loc_sigma_2;
+  double vel_sigma_2;
+  filter_options() : acc_sigma_2(1e-3), loc_sigma_2(15.0), vel_sigma_2(0.1) {};
 };
 //////////////////////////////////////////////////////////////
 
@@ -16,8 +18,14 @@ struct w_filter_settings {
   GtkWidget *frame;
   GtkWidget *grid;
 
-  GtkWidget *lbl_dummy;
-  GtkWidget *tb_dummy;
+  GtkWidget *lbl_acc_sigma_2;
+  GtkWidget *tb_acc_sigma_2;
+
+  GtkWidget *lbl_loc_sigma_2;
+  GtkWidget *tb_loc_sigma_2;
+
+  GtkWidget *lbl_vel_sigma_2;
+  GtkWidget *tb_vel_sigma_2;
 
   GtkWidget *btn_generate;
   GtkWidget *btn_clear;

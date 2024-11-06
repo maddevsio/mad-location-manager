@@ -31,6 +31,11 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
 void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
 {
   double dt_sec = time_sec - m_last_predict_sec;
+  // probably unnecessary
+  if (fabs(dt_sec) < 1e-9) {
+    return;  // do nothing
+  }
+
   rebuild_F(dt_sec);
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
@@ -92,7 +97,7 @@ void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
 {
   /* double vel_dev = acc_deviation * m_predicts_count; */
   /* double pos_dev = vel_dev * m_predicts_count; */
-  /*  */
+
   /* double cov_dev = vel_dev * pos_dev; */
   /* double pos_dev_2 = pos_dev * pos_dev; */
   /* double vel_dev_2 = vel_dev * vel_dev; */
@@ -103,8 +108,6 @@ void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
   /*       cov_dev,    0.0,        vel_dev_2,  0.0,  */
   /*       0.0,        cov_dev,    0.0,        vel_dev_2; */
   /* // clang-format on */
-
-  // values here are too small because of dt
   Q = B * B.transpose();
   Q *= acc_deviation;
 }

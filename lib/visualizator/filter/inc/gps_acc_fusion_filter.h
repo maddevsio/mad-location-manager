@@ -1,8 +1,6 @@
 #ifndef GPSACCKALMAN_H
 #define GPSACCKALMAN_H
 
-#include <cstdint>
-
 #include "kalman.h"
 
 struct FusionFilterState {
