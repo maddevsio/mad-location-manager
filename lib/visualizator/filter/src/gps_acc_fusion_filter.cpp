@@ -21,9 +21,10 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
                                double acc_deviation,
                                double pos_deviation)
 {
+  m_predicts_count = 0;
   Xk_k << x, y, x_vel, y_vel;
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
-  Pk_k *= pos_deviation * 2;  // 2sigma ~ 66.6%
+  Pk_k *= pos_deviation;
   m_acc_deviation = acc_deviation;
 };
 //////////////////////////////////////////////////////////////
@@ -40,7 +41,8 @@ void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
 
-  rebuild_Q(m_acc_deviation);
+  ++m_predicts_count;
+  rebuild_Q();
   estimate();
 
   m_last_predict_sec = time_sec;
@@ -56,10 +58,11 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double pos_deviation,
                                 double vel_deviation)
 {
+  m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
   Zk << state.x, state.y, state.x_vel, state.y_vel;
   bool corrected = correct();
-  // todo check corrected. if not - throw error
+  // todo check corrected. if not - throw an error
 }
 //////////////////////////////////////////////////////////////
 
@@ -93,23 +96,10 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::rebuild_Q(double acc_deviation)
+void GPSAccFusionFilter::rebuild_Q(void)
 {
-  /* double vel_dev = acc_deviation * m_predicts_count; */
-  /* double pos_dev = vel_dev * m_predicts_count; */
-
-  /* double cov_dev = vel_dev * pos_dev; */
-  /* double pos_dev_2 = pos_dev * pos_dev; */
-  /* double vel_dev_2 = vel_dev * vel_dev; */
-  /*  */
-  /* // clang-format off */
-  /* Q <<  pos_dev_2,  0.0,        cov_dev,    0.0,  */
-  /*       0.0,        pos_dev_2,  0.0,        cov_dev,  */
-  /*       cov_dev,    0.0,        vel_dev_2,  0.0,  */
-  /*       0.0,        cov_dev,    0.0,        vel_dev_2; */
-  /* // clang-format on */
   Q = B * B.transpose();
-  Q *= acc_deviation;
+  Q *= m_acc_deviation * m_predicts_count;
 }
 //////////////////////////////////////////////////////////////
 
