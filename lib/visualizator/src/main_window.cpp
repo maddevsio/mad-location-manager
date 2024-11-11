@@ -741,7 +741,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   const std::vector<sd_record> &src =
       gmw->layers[MT_GPS_GENERATED].lst_sd_records;
-  gmw_layer &dst = gmw->layers[MT_GPS_FILTERED_PREDICTED];
+  gmw_layer &dst = gmw->layers[MT_GPS_FILTERED_UPDATED];
 
   if (src.empty()) {
     return;  // do nothing
