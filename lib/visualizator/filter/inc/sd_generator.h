@@ -13,8 +13,12 @@ struct movement_interval {
   double duration;         // seconds
 
   movement_interval() = delete;
-  movement_interval(double cartezian_angle, double acceleration, double duration)
-      : cartezian_angle(cartezian_angle), acceleration(acceleration), duration(duration)
+  movement_interval(double cartezian_angle,
+                    double acceleration,
+                    double duration)
+      : cartezian_angle(cartezian_angle),
+        acceleration(acceleration),
+        duration(duration)
   {
   }
 };
@@ -34,6 +38,9 @@ double sd_acc_between_two_points(double distance,
                                  double v0,
                                  double acceleration_time,
                                  double no_acceleration_time);
+
+double sd_distance_between_two_points(const gps_coordinate &a,
+                                      const gps_coordinate &b);
 
 geopoint sd_noised_geopoint(const geopoint &src, double gps_noise);
 abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise);

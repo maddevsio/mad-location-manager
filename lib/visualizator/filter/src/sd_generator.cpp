@@ -76,6 +76,20 @@ double sd_acc_between_two_points(double distance,
 }
 //////////////////////////////////////////////////////////////
 
+double sd_distance_between_two_points(const gps_coordinate &a,
+                                      const gps_coordinate &b)
+{
+  const GeographicLib::Geodesic &geod = GeographicLib::Geodesic::WGS84();
+  double distance = 0.0;
+  geod.Inverse(a.location.latitude,
+               a.location.longitude,
+               b.location.latitude,
+               b.location.longitude,
+               distance);
+  return distance;
+}
+//////////////////////////////////////////////////////////////
+
 abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    const gps_coordinate &b,
                                                    double acceleration_time,

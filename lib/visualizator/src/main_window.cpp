@@ -20,7 +20,8 @@ enum marker_type {
   MT_GPS_FILTERED_UPDATED,    // filtered by MLM, current state after update
   MT_COUNT
 };
-static const gchar *marker_css_data =
+
+static const gchar *gmw_css_data =
     ".red-shumate-marker {"
     "   background-color: red;"
     "}"
@@ -30,13 +31,30 @@ static const gchar *marker_css_data =
     ".blue-shumate-marker {"
     "   background-color: blue;"
     "}"
-    ".yellow-shumate-marker {"
-    "   background-color: yellow;"
+    ".orange-shumate-marker {"
+    "   background-color: orange;"
+    "}"
+    ".label-red {"
+    "   color: red;"
+    "}"
+    ".label-green {"
+    "   color: green;"
+    "}"
+    ".label-blue {"
+    "   color: blue;"
+    "}"
+    ".label-orange {"
+    "   color: orange;"
     "}";
+
 static const char *marker_css_classes[] = {"green-shumate-marker",
                                            "red-shumate-marker",
                                            "blue-shumate-marker",
-                                           "yellow-shumate-marker"};
+                                           "orange-shumate-marker"};
+static const char *label_css_classes[] = {"label-green",
+                                          "label-red",
+                                          "label-blue",
+                                          "label-orange"};
 static const int marker_sizes[] = {24, 16, 8, 20};
 //////////////////////////////////////////////////////////////
 
@@ -45,10 +63,49 @@ struct gmw_layer {
   ShumatePathLayer *path_layer;
   std::vector<sd_record> lst_sd_records;
 
-  gmw_layer() : marker_layer(nullptr), path_layer(nullptr) {}
-  gmw_layer(ShumateMarkerLayer *marker_layer, ShumatePathLayer *path_layer)
-      : marker_layer(marker_layer), path_layer(path_layer)
+  size_t last_gps_idx;
+  double distance;
+  GtkWidget *lbl;
+
+  gmw_layer()
+      : marker_layer(nullptr),
+        path_layer(nullptr),
+        last_gps_idx(-1),
+        distance(0.0)
   {
+  }
+  gmw_layer(ShumateMarkerLayer *marker_layer, ShumatePathLayer *path_layer)
+      : marker_layer(marker_layer),
+        path_layer(path_layer),
+        last_gps_idx(-1),
+        distance(0.0)
+  {
+  }
+
+  void add_record(sd_record rec)
+  {
+    lst_sd_records.push_back(rec);
+    if (rec.hdr.type == SD_ACC_ABS_SET ||
+        rec.hdr.type == SD_ACC_ABS_GENERATED) {
+      return;  // do nothing, we want GPS
+    }
+
+    if (last_gps_idx == static_cast<size_t>(-1)) {
+      last_gps_idx = lst_sd_records.size() - 1;
+      return;
+    }
+
+    distance +=
+        sd_distance_between_two_points(lst_sd_records[last_gps_idx].data.gps,
+                                       rec.data.gps);
+    last_gps_idx = lst_sd_records.size() - 1;
+  }
+
+  void clear()
+  {
+    lst_sd_records.clear();
+    last_gps_idx = -1;
+    distance = 0.;
   }
 };
 //////////////////////////////////////////////////////////////
@@ -146,7 +203,8 @@ static void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
 // private methods
 static GtkWidget *create_filter_settings_frame(generator_main_window *gmw);
 static GtkWidget *create_load_track_frame(generator_main_window *gmw);
-static GtkWidget *create_layers_visibility_frame(generator_main_window *gmw);
+static GtkWidget *create_layers_visibility_and_distance_frame(
+    generator_main_window *gmw);
 static GtkWidget *create_generator_settings_frame(generator_main_window *gmw);
 
 static void gmw_add_marker(generator_main_window *gmw,
@@ -207,10 +265,10 @@ GtkWidget *create_load_track_frame(generator_main_window *gmw)
 
 static void gmw_layer_set_visible(generator_main_window *gmw,
                                   marker_type mt,
-                                  bool active)
+                                  bool visible)
 {
-  gtk_widget_set_visible(GTK_WIDGET(gmw->layers[mt].path_layer), active);
-  gtk_widget_set_visible(GTK_WIDGET(gmw->layers[mt].marker_layer), active);
+  gtk_widget_set_visible(GTK_WIDGET(gmw->layers[mt].path_layer), visible);
+  gtk_widget_set_visible(GTK_WIDGET(gmw->layers[mt].marker_layer), visible);
 }
 //////////////////////////////////////////////////////////////
 
@@ -252,13 +310,40 @@ void gmw_chk_layer_filtered_acc_toggled(GtkCheckButton *self,
 }
 //////////////////////////////////////////////////////////////
 
-GtkWidget *create_layers_visibility_frame(generator_main_window *gmw)
+GtkWidget *create_layers_visibility_and_distance_frame(
+    generator_main_window *gmw)
 {
-  // todo add labels with distances
+  // chks
   GtkWidget *chk_set = gtk_check_button_new_with_label("Set manually");
   GtkWidget *chk_generated = gtk_check_button_new_with_label("Generated");
   GtkWidget *chk_filtered_gps = gtk_check_button_new_with_label("Filtered GPS");
   GtkWidget *chk_filtered_acc = gtk_check_button_new_with_label("Filtered ACC");
+
+  // lbls
+  GtkWidget *lbl_set = gtk_label_new("0.0");
+  const char *lbl_set_css[] = {label_css_classes[MT_GPS_SET], NULL};
+  gtk_widget_set_css_classes(lbl_set, lbl_set_css);
+
+  GtkWidget *lbl_generated = gtk_label_new("0.0");
+  const char *lbl_generated_css[] = {label_css_classes[MT_GPS_GENERATED], NULL};
+  gtk_widget_set_css_classes(lbl_generated, lbl_generated_css);
+
+  GtkWidget *lbl_filtered_gps = gtk_label_new("0.0");
+  const char *lbl_filtered_gps_css[] = {
+      label_css_classes[MT_GPS_FILTERED_UPDATED],
+      NULL};
+  gtk_widget_set_css_classes(lbl_filtered_gps, lbl_filtered_gps_css);
+
+  GtkWidget *lbl_filtered_acc = gtk_label_new("0.0");
+  const char *lbl_filtered_acc_css[] = {
+      label_css_classes[MT_GPS_FILTERED_PREDICTED],
+      NULL};
+  gtk_widget_set_css_classes(lbl_filtered_acc, lbl_filtered_acc_css);
+
+  gmw->layers[MT_GPS_SET].lbl = lbl_set;
+  gmw->layers[MT_GPS_GENERATED].lbl = lbl_generated;
+  gmw->layers[MT_GPS_FILTERED_PREDICTED].lbl = lbl_filtered_acc;
+  gmw->layers[MT_GPS_FILTERED_UPDATED].lbl = lbl_filtered_gps;
 
   GtkWidget *grid = gtk_grid_new();
   gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
@@ -270,19 +355,26 @@ GtkWidget *create_layers_visibility_frame(generator_main_window *gmw)
                        chk_filtered_gps,
                        chk_filtered_acc,
                        nullptr};
+  GtkWidget *lbls[] = {lbl_set,
+                       lbl_generated,
+                       lbl_filtered_gps,
+                       lbl_filtered_acc,
+                       nullptr};
 
-  void (*chk_toggled[])(GtkCheckButton *, gpointer) = {
+  void (*chk_toggled_cbs[])(GtkCheckButton *, gpointer) = {
       gmw_chk_layer_set_toggled,
       gmw_chk_layer_generated_toggled,
       gmw_chk_layer_filtered_gps_toggled,
       gmw_chk_layer_filtered_acc_toggled,
   };
-  for (int r = 0; chks[r]; ++r) {
+
+  for (int r = 0; chks[r] && lbls[r]; ++r) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(chks[r]), true);
     gtk_grid_attach(GTK_GRID(grid), chks[r], 0, r, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), lbls[r], 1, r, 1, 1);
     g_signal_connect(GTK_CHECK_BUTTON(chks[r]),
                      "toggled",
-                     G_CALLBACK(chk_toggled[r]),
+                     G_CALLBACK(chk_toggled_cbs[r]),
                      gmw);
   }
 
@@ -314,7 +406,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 {
   // register css styles (for markers)
   GtkCssProvider *css_provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_string(css_provider, marker_css_data);
+  gtk_css_provider_load_from_string(css_provider, gmw_css_data);
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                              GTK_STYLE_PROVIDER(css_provider),
                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
@@ -362,7 +454,8 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
   GtkWidget *frame_generator = create_generator_settings_frame(gmw);
   GtkWidget *frame_filter = create_filter_settings_frame(gmw);
   GtkWidget *frame_load_track = create_load_track_frame(gmw);
-  GtkWidget *frame_layers_visibility = create_layers_visibility_frame(gmw);
+  GtkWidget *frame_layers_visibility =
+      create_layers_visibility_and_distance_frame(gmw);
 
   // main grid
   GtkWidget *grid_main = gtk_grid_new();
@@ -410,7 +503,11 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
   rec.hdr = sd_record_hdr(SD_GPS_SET, 0.);
   rec.data.gps.location = geopoint(lat, lng);
   rec.data.gps.speed = gps_speed(0., 0., 0.);
-  gmw->layers[MT_GPS_SET].lst_sd_records.push_back(rec);
+
+  gmw->layers[MT_GPS_SET].add_record(rec);
+  std::string sd = std::to_string(gmw->layers[MT_GPS_SET].distance);
+  gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_SET].lbl), sd.c_str());
+
   gmw_add_marker(gmw, MT_GPS_SET, lat, lng);
 }
 //////////////////////////////////////////////////////////////
@@ -441,17 +538,30 @@ void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)
       continue;
     }
 
+    std::string sd;
     switch (rec.hdr.type) {
       case SD_ACC_ABS_SET:
       case SD_GPS_SET:
-        gmw->layers[MT_GPS_SET].lst_sd_records.push_back(rec);
+        /* gmw->layers[MT_GPS_SET].lst_sd_records.push_back(rec); */
+        gmw->layers[MT_GPS_SET].add_record(rec);
+        sd = std::to_string(gmw->layers[MT_GPS_SET].distance);
+        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_SET].lbl), sd.c_str());
         continue;
       case SD_ACC_ABS_GENERATED:
       case SD_GPS_GENERATED:
-        gmw->layers[MT_GPS_GENERATED].lst_sd_records.push_back(rec);
+        /* gmw->layers[MT_GPS_GENERATED].lst_sd_records.push_back(rec); */
+        gmw->layers[MT_GPS_GENERATED].add_record(rec);
+        sd = std::to_string(gmw->layers[MT_GPS_GENERATED].distance);
+        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_GENERATED].lbl),
+                           sd.c_str());
         continue;
       case SD_GPS_FILTERED:
-        gmw->layers[MT_GPS_FILTERED_UPDATED].lst_sd_records.push_back(rec);
+        /* gmw->layers[MT_GPS_FILTERED_UPDATED].lst_sd_records.push_back(rec);
+         */
+        gmw->layers[MT_GPS_FILTERED_UPDATED].add_record(rec);
+        sd = std::to_string(gmw->layers[MT_GPS_FILTERED_UPDATED].distance);
+        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_FILTERED_UPDATED].lbl),
+                           sd.c_str());
         continue;
       case SD_UNKNOWN:
         continue;
@@ -481,7 +591,8 @@ void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud)
   for (int i = 0; i < MT_COUNT; ++i) {
     shumate_path_layer_remove_all(gmw->layers[i].path_layer);
     shumate_marker_layer_remove_all(gmw->layers[i].marker_layer);
-    gmw->layers[i].lst_sd_records.clear();
+    gmw->layers[i].clear();
+    gtk_label_set_text(GTK_LABEL(gmw->layers[i].lbl), "0.0");
   }
 }
 //////////////////////////////////////////////////////////////
@@ -542,15 +653,18 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   const std::vector<sd_record> &src = gmw->layers[MT_GPS_SET].lst_sd_records;
-  std::vector<sd_record> &dst = gmw->layers[MT_GPS_GENERATED].lst_sd_records;
+  gmw_layer &dst = gmw->layers[MT_GPS_GENERATED];
 
   if (src.empty()) {
     return;  // do nothing
   }
   generator_options go = gmw->w_gs->opts;
 
-  dst.push_back(
+  dst.add_record(
       sd_record(sd_record_hdr(SD_GPS_GENERATED, 0.), src.front().data.gps));
+  std::string sd = std::to_string(dst.distance);
+  gtk_label_set_text(GTK_LABEL(dst.lbl), sd.c_str());
+
   gmw_add_marker(gmw,
                  MT_GPS_GENERATED,
                  src.front().data.gps.location.latitude,
@@ -558,7 +672,8 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 
   double ts = 0.;  // global ts
   for (size_t i = 1; i < src.size(); ++i) {
-    const sd_record &prev_rec = dst.back();  // WARNING! but should work fine
+    const sd_record &prev_rec =
+        dst.lst_sd_records.back();  // WARNING! but should work fine
     const sd_record &curr_rec = src[i];
 
     const double gps_mp = go.gps_measurement_period;
@@ -573,7 +688,7 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
                                            ats);
 
       acc = sd_noised_acc(acc, go.acc_noise);
-      dst.push_back(
+      dst.add_record(
           sd_record(sd_record_hdr(SD_ACC_ABS_GENERATED, ts + ats), acc));
     }  // finished generating accelerometer data
 
@@ -597,12 +712,14 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
     // there
     cc.location = sd_noised_geopoint(cc.location, go.gps_location_noise);
     ts += go.gps_measurement_period;
-    dst.push_back(sd_record(sd_record_hdr(SD_GPS_GENERATED, ts), cc));
+    dst.add_record(sd_record(sd_record_hdr(SD_GPS_GENERATED, ts), cc));
+    std::string sd = std::to_string(dst.distance);
+    gtk_label_set_text(GTK_LABEL(dst.lbl), sd.c_str());
     gmw_add_marker(gmw,
                    MT_GPS_GENERATED,
                    cc.location.latitude,
                    cc.location.longitude);
-  }
+  }  // for (size_t i = 1; i < src.size(); ++i}
 }
 //////////////////////////////////////////////////////////////
 
@@ -613,7 +730,8 @@ void gmw_btn_clear_generated_data_clicked(GtkWidget *btn, gpointer ud)
   int li = MT_GPS_GENERATED;
   shumate_path_layer_remove_all(gmw->layers[li].path_layer);
   shumate_marker_layer_remove_all(gmw->layers[li].marker_layer);
-  gmw->layers[li].lst_sd_records.clear();
+  gmw->layers[li].clear();
+  gtk_label_set_text(GTK_LABEL(gmw->layers[li].lbl), "0.0");
 }
 //////////////////////////////////////////////////////////////
 
@@ -623,8 +741,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   const std::vector<sd_record> &src =
       gmw->layers[MT_GPS_GENERATED].lst_sd_records;
-  std::vector<sd_record> &dst =
-      gmw->layers[MT_GPS_FILTERED_PREDICTED].lst_sd_records;
+  gmw_layer &dst = gmw->layers[MT_GPS_FILTERED_PREDICTED];
 
   if (src.empty()) {
     return;  // do nothing
@@ -635,8 +752,9 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
           gmw->w_fs->opts.loc_sigma_2,
           gmw->w_fs->opts.vel_sigma_2);
   gps_coordinate pc;
+  std::string sd;
   for (const sd_record &rec : src) {
-    // todo change switch to something
+    // todo change gwitch to something
     switch (rec.hdr.type) {
       case SD_ACC_ABS_GENERATED:
         mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
@@ -649,6 +767,10 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
       case SD_GPS_GENERATED:
         mlm.process_gps_data(rec.data.gps);
         pc = mlm.predicted_coordinate();
+        dst.add_record(
+            sd_record(sd_record_hdr(SD_GPS_FILTERED, rec.hdr.timestamp), pc));
+        sd = std::to_string(dst.distance);
+        gtk_label_set_text(GTK_LABEL(dst.lbl), sd.c_str());
         gmw_add_marker(gmw,
                        MT_GPS_FILTERED_UPDATED,
                        pc.location.latitude,
@@ -670,7 +792,8 @@ void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud)
     int li = lis[i];
     shumate_path_layer_remove_all(gmw->layers[li].path_layer);
     shumate_marker_layer_remove_all(gmw->layers[li].marker_layer);
-    gmw->layers[li].lst_sd_records.clear();
+    gmw->layers[li].clear();
+    gtk_label_set_text(GTK_LABEL(gmw->layers[li].lbl), "0.0");
   }
 }
 //////////////////////////////////////////////////////////////
