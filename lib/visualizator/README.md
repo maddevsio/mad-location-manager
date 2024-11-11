@@ -1,5 +1,5 @@
-# mad-location-manager library
-This is a C++ library for GPS and Accelerometer data "fusion" with Kalman filter.
+# mad-location-manager generator/visualizer
+This is a desktop application for testing MLM.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Developed by Mad Devs](https://maddevs.io/badge-light.svg)](https://maddevs.io)
@@ -15,7 +15,7 @@ This is a C++ library for GPS and Accelerometer data "fusion" with Kalman filter
 
 ## How to build
 
-This is a CMake base project. To build use following command (or see .nvim.lua file):
+This is a CMake-based project. To build use the following command (or see .nvim.lua file):
 
 ```
 cmake -B build
@@ -33,14 +33,19 @@ cmake --build build -j12
 
 Then run `build/filter/filter_unit_tests`
 
-## How to use visualizer
+## How to use the visualizer
+
+- Build ideal route (ctrl + mouse left click on a map)
+- Set noise level for GPS and accelerometer
+- Set sigmas for MLM
+- Push generate buttons in generator/filter sections on the right side of the main window
 
 ## The roadmap
 
 ### Visualizer 
 
-- [x] Implement some route visualizer as desktop application
-- [ ] Maybe it's better to rewrite main window using gtkmm (C++)
+- [x] Implement some route visualizer as a desktop application
+- [ ] Maybe it's better to rewrite the main window using gtkmm (C++ gtk binding)
 
 ## License
 
