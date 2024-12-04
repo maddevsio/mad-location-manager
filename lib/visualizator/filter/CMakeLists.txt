@@ -8,7 +8,7 @@ project(mlm_filter)            # this sets the project name
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -36,9 +36,17 @@ find_package(PkgConfig REQUIRED)
 find_package(Git REQUIRED)
 
 # Eigen 
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+# find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 # include_directories(${EIGEN_INCLUDE_DIRS})
 # link_directories(${EIGEN_LIBRARY_DIRS})
+find_path(EIGENLIB "eigen" ${CMAKE_CURRENT_SOURCE_DIR}/external)
+if (NOT EIGENLIB) 
+  message("unable to find eigen sources")
+  execute_process(COMMAND git submodule update --init -- external/eigen
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  set(EIGENLIB ${CMAKE_CURRENT_SOURCE_DIR}/external)
+endif()
+set(EIGENLIB ${EIGENLIB}/eigen)
 
 # GeographicLib
 # include(FetchContent)
@@ -59,6 +67,8 @@ target_include_directories(mlm_filter PUBLIC inc)
 target_include_directories(mlm_filter PRIVATE
   external/geographiclib/include
   ${CMAKE_CURRENT_BINARY_DIR}/external/geographiclib/include
+  external/eigen
+  ${CMAKE_CURRENT_BINARY_DIR}/external/eigen
 )
 
 set(CMAKE_CXX_FLAGS_BACK ${CMAKE_CXX_FLAGS})
@@ -69,6 +79,8 @@ add_subdirectory(${GEOGRAPHICLIB})
 unset(BUILD_SHARED_LIBS)
 unset(BUILD_DOCUMENTATION)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_BACK})
+
+add_subdirectory(${EIGENLIB})
 
 target_link_libraries(mlm_filter 
   PUBLIC Eigen3::Eigen
