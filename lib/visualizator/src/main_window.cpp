@@ -159,6 +159,14 @@ void gmw_show(generator_main_window *gmw)
 {
   gtk_widget_set_visible(GTK_WIDGET(gmw->window), true);
 }
+
+static void gmw_set_center(generator_main_window *gmw,
+                           double latitude,
+                           double longitude)
+{
+  ShumateMap *map = shumate_simple_map_get_map(gmw->simple_map);
+  shumate_map_center_on(map, latitude, longitude);
+}
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
@@ -439,8 +447,7 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
     gmw->layers.push_back(gmw_layer(marker_layer, path_layer));
   }
 
-  ShumateMap *map = shumate_simple_map_get_map(gmw->simple_map);
-  shumate_map_center_on(map, 36.5519514, 31.9801362);
+  gmw_set_center(gmw, 36.5519514, 31.9801362);
 
   GtkGestureClick *ggc = GTK_GESTURE_CLICK(gtk_gesture_click_new());
   gtk_widget_add_controller(GTK_WIDGET(gmw->simple_map),
@@ -539,25 +546,40 @@ void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)
     }
 
     std::string sd;
+    bool center_set = false;
     switch (rec.hdr.type) {
       case SD_ACC_ABS_SET:
+        gmw->layers[MT_GPS_SET].add_record(rec);
+        continue;
       case SD_GPS_SET:
-        /* gmw->layers[MT_GPS_SET].lst_sd_records.push_back(rec); */
         gmw->layers[MT_GPS_SET].add_record(rec);
         sd = std::to_string(gmw->layers[MT_GPS_SET].distance);
         gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_SET].lbl), sd.c_str());
+        gmw_add_marker(gmw,
+                       MT_GPS_SET,
+                       rec.data.gps.location.latitude,
+                       rec.data.gps.location.longitude);
         continue;
       case SD_ACC_ABS_GENERATED:
+        gmw->layers[MT_GPS_GENERATED].add_record(rec);
+        continue;
       case SD_GPS_GENERATED:
-        /* gmw->layers[MT_GPS_GENERATED].lst_sd_records.push_back(rec); */
         gmw->layers[MT_GPS_GENERATED].add_record(rec);
         sd = std::to_string(gmw->layers[MT_GPS_GENERATED].distance);
         gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_GENERATED].lbl),
                            sd.c_str());
+        gmw_add_marker(gmw,
+                       MT_GPS_GENERATED,
+                       rec.data.gps.location.latitude,
+                       rec.data.gps.location.longitude);
+        if (!center_set) {
+          center_set = true;
+          gmw_set_center(gmw,
+                         rec.data.gps.location.latitude,
+                         rec.data.gps.location.longitude);
+        }
         continue;
       case SD_GPS_FILTERED:
-        /* gmw->layers[MT_GPS_FILTERED_UPDATED].lst_sd_records.push_back(rec);
-         */
         gmw->layers[MT_GPS_FILTERED_UPDATED].add_record(rec);
         sd = std::to_string(gmw->layers[MT_GPS_FILTERED_UPDATED].distance);
         gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_FILTERED_UPDATED].lbl),

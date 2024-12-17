@@ -60,7 +60,7 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
 {
   m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
-  Zk << state.x, state.y, state.x_vel, state.y_vel;
+  Zk << state.x, state.y;  //, state.x_vel, state.y_vel;
   bool corrected = correct();
   // todo check corrected. if not - throw an error
 }
@@ -107,11 +107,15 @@ void GPSAccFusionFilter::rebuild_R(double pos_sigma, double vel_sigma)
 {
   // clang-format off
   /* vel_sigma = pos_sigma * 1.0e-01; */
+  /* R <<  */
+  /*   pos_sigma,  0.0,        0.0,        0.0,  */
+  /*   0.0,        pos_sigma,  0.0,        0.0,  */
+  /*   0.0,        0.0,        vel_sigma,  0.0,  */
+  /*   0.0,        0.0,        0.0,        vel_sigma; */
+
   R << 
-    pos_sigma,  0.0,        0.0,        0.0, 
-    0.0,        pos_sigma,  0.0,        0.0, 
-    0.0,        0.0,        vel_sigma,  0.0, 
-    0.0,        0.0,        0.0,        vel_sigma;
+    pos_sigma,  0.0,
+    0.0,        pos_sigma;
   // clang-format on
 }
 //////////////////////////////////////////////////////////////

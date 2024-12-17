@@ -71,9 +71,7 @@ public class AccelerationLogger implements SensorEventListener {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
                 System.arraycopy(event.values, 0, linAcc, 0, event.values.length);
-                android.opengl.Matrix.multiplyMV(accAxis, 0, RI,
-                        0, linAcc, 0);
-//                long now = System.currentTimeMillis();
+                android.opengl.Matrix.multiplyMV(accAxis, 0, RI, 0, linAcc, 0);
                 long now = SystemClock.elapsedRealtime();
                 lastAbsAccelerationString = String.format("%d%d abs acc: %f %f %f",
                         Utils.LogMessageType.ABS_ACC_DATA.ordinal(),
