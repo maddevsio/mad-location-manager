@@ -41,8 +41,8 @@ struct magnetometer {
 /// abs_accelerometer_t  - data calculated by quaternion x
 /// linear_accelerometer_data or roatation matrix * linear_accelerometer_data
 /// vector
-/// @x - axis X (longitude)
-/// @y - axis Y (latitude)
+/// @x - axis X (longitude/east)
+/// @y - axis Y (latitude/north)
 /// @z - axiz Z (altitude) zero for now
 struct abs_accelerometer {
   double x, y, z;

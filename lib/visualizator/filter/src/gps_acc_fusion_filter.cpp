@@ -16,12 +16,14 @@ const FusionFilterState GPSAccFusionFilter::current_state() const
 
 void GPSAccFusionFilter::reset(double x,  // longitude in meters
                                double y,  // latitude in meters
+                               double ts,
                                double x_vel,
                                double y_vel,
                                double acc_deviation,
                                double pos_deviation)
 {
   m_predicts_count = 0;
+  m_last_predict_sec = ts;
   Xk_k << x, y, x_vel, y_vel;
   Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
   Pk_k *= pos_deviation;

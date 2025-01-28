@@ -40,12 +40,14 @@ class GPSAccFusionFilter : public KalmanFilter<4, 2, 2>
  public:
   GPSAccFusionFilter();
 
-  void reset(double x,  // longitude in meters
-             double y,  // latitude in meters
-             double x_vel,
-             double y_vel,
-             double acc_deviation,
-             double pos_deviation);
+  void reset(
+      double x,   // longitude in meters
+      double y,   // latitude in meters
+      double ts,  // last prediction time (need to set to first GPS coord)
+      double x_vel,
+      double y_vel,
+      double acc_deviation,
+      double pos_deviation);
 
   void predict(double xAcc, double yAcc, double time_sec);
   void update(const FusionFilterState& state,

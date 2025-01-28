@@ -787,7 +787,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
                        pc.location.longitude);
         break;
       case SD_GPS_GENERATED:
-        mlm.process_gps_data(rec.data.gps);
+        mlm.process_gps_data(rec.data.gps, rec.hdr.timestamp);
         pc = mlm.predicted_coordinate();
         dst.add_record(
             sd_record(sd_record_hdr(SD_GPS_FILTERED, rec.hdr.timestamp), pc));

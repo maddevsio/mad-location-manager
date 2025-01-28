@@ -19,13 +19,15 @@ MLM::~MLM(void) {}
 
 void MLM::process_acc_data(const abs_accelerometer &acc, double time_sec)
 {
-  if (!m_got_start_point)
+  if (!m_got_start_point) {
+    m_fk.predict(0., 0., time_sec);
     return;  // do nothing until first GPS coordinate
+  }
   m_fk.predict(acc.x, acc.y, time_sec);
 }
 //////////////////////////////////////////////////////////////
 
-void MLM::process_gps_data(const gps_coordinate &gps)
+void MLM::process_gps_data(const gps_coordinate &gps, double time_sec)
 {
   double x, y, z;
   double az_rad = degree_to_rad(gps.speed.azimuth);
@@ -37,7 +39,7 @@ void MLM::process_gps_data(const gps_coordinate &gps)
     m_got_start_point = true;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
-    m_fk.reset(x, y, speed_x, speed_y, m_acc_sigma_2, m_loc_sigma_2);
+    m_fk.reset(x, y, time_sec, speed_x, speed_y, m_acc_sigma_2, m_loc_sigma_2);
     return;
   }
 

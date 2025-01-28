@@ -28,7 +28,7 @@ class MLM
   // predict
   void process_acc_data(const abs_accelerometer &acc, double time_sec);
   // update
-  void process_gps_data(const gps_coordinate &gps);
+  void process_gps_data(const gps_coordinate &gps, double time_sec);
   // current state
   gps_coordinate predicted_coordinate() const;
 };
