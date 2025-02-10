@@ -75,12 +75,17 @@ public class FusedLocationProvider {
             anyOf = {"android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"}
     )
     public void startLocationUpdates(Settings m_settings, HandlerThread thread) {
-        m_locationRequest = LocationRequest.create();
-        m_locationRequest.setInterval(m_settings.gpsMinTime);
-        m_locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        m_locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY)
+            .setIntervalMillis(m_settings)
+            .setMinUpdateIntervalMillis(2000)
+            .setMinUpdateDistanceMeters(20)
+            .build();
+    //        m_locationRequest = LocationRequest.create();
+    //        m_locationRequest.setInterval(m_settings.gpsMinTime);
+    //        m_locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         m_fusedLocationProviderClient.requestLocationUpdates(m_locationRequest,
-                locationCallback,
-                thread.getLooper());
+        locationCallback,
+        thread.getLooper());
     }
 
 
