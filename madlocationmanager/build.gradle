@@ -61,9 +61,3 @@ tasks.register('javadocJar', Jar) {
     archiveClassifier.set('javadoc')
     from androidJavadocs.destinationDir
 }
-
-
-
-
-
-
