@@ -25,8 +25,18 @@ endif()
 # `sources` and `data`.
 file(GLOB_RECURSE sources_lib src/*.cpp inc/*h)
 file(GLOB_RECURSE sources_test tests/*.cpp)
-# You can use set(sources src/main.cpp) etc if you don't want to
-# use globbing to find files automatically.
+
+# find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+# if (CMAKE_CXX_CPPCHECK)
+#     list(
+#         APPEND CMAKE_CXX_CPPCHECK 
+#             "--enable=warning"
+#             "--inconclusive"
+#             "--force" 
+#             "--inline-suppr"
+#             "--suppressions-list=${CMAKE_SOURCE_DIR}/CppCheckSuppressions.txt"
+#     )
+# endif()
 
 ###############################################################################
 ## target definitions #########################################################

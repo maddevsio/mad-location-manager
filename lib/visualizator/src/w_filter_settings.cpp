@@ -46,8 +46,8 @@ w_filter_settings *w_filter_settings_default()
   gtk_button_set_label(GTK_BUTTON(res->btn_clear), "Clear");
 
   res->grid = gtk_grid_new();
-  gtk_grid_set_column_spacing(GTK_GRID(res->grid), 10);
-  gtk_grid_set_row_spacing(GTK_GRID(res->grid), 10);
+  gtk_grid_set_column_spacing(GTK_GRID(res->grid), 5);
+  gtk_grid_set_row_spacing(GTK_GRID(res->grid), 5);
 
   // looks little better without row_homogeneous
   /* gtk_grid_set_row_homogeneous(GTK_GRID(grid), true); */

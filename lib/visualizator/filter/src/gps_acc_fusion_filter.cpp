@@ -63,7 +63,7 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
   m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
   Zk << state.x, state.y;  //, state.x_vel, state.y_vel;
-  bool corrected = correct();
+  correct();
   // todo check corrected. if not - throw an error
 }
 //////////////////////////////////////////////////////////////

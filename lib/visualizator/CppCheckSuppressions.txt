@@ -1,0 +1,22 @@
+// ============
+// Suppressions
+// ============
+
+// 3rd party libraries
+*:./build/filter/external/*
+*:./filter/external/*
+
+// Category: warning
+// Suppress warnings about suppressions that don't match, for some reasons cppcheck shows this message a lot
+//  (e.g.) nofile:0:0: warning: Unmatched suppression: missingIncludeSystem [unmatchedSuppression]
+//unmatchedSuppression:*
+
+// Category: warning
+// Suppress warnings about being unable to find system includes (which it doesn't need to work correctly)
+// missingIncludeSystem
+
+// Category: false positives
+// 'nmdo::AcRule& _rule' cannot be declared const
+// constParameter:datastore/importers/nmdb-import-cisco/Parser.cpp:746
+// Fairly confident the Boost Spirit rule is being poorly evaluated
+// duplicateExpression:datastore/importers/nmdb-import-traceroute/Parser.cpp:46

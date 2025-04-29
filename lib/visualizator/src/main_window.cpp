@@ -183,7 +183,7 @@ static void gmw_btn_clear_generated_data_clicked(GtkWidget *btn, gpointer ud);
 
 /// gmw_btn_filter_data_clicked
 static void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud);
-static void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud);
+static void gmw_btn_clear_filtered_data_clicked(GtkWidget *btn, gpointer ud);
 
 ///
 static void gmw_btn_clear_all_points_clicked(GtkWidget *btn, gpointer ud);
@@ -233,7 +233,7 @@ GtkWidget *create_filter_settings_frame(generator_main_window *gmw)
 
   g_signal_connect(gmw->w_fs->btn_clear,
                    "clicked",
-                   G_CALLBACK(gmw_btn_clear_filtered_data_cliecked),
+                   G_CALLBACK(gmw_btn_clear_filtered_data_clicked),
                    gmw);
 
   return gmw->w_fs->frame;
@@ -252,7 +252,8 @@ GtkWidget *create_load_track_frame(generator_main_window *gmw)
   GtkWidget *btns[] = {btn_clear, btn_load, btn_save, nullptr};
 
   GtkWidget *grid = gtk_grid_new();
-  gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
+  gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
+  gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
   gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
   gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
@@ -354,7 +355,7 @@ GtkWidget *create_layers_visibility_and_distance_frame(
   gmw->layers[MT_GPS_FILTERED_UPDATED].lbl = lbl_filtered_gps;
 
   GtkWidget *grid = gtk_grid_new();
-  gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
+  gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
   gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
   gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
@@ -466,8 +467,8 @@ void gmw_bind_to_app(GtkApplication *app, generator_main_window *gmw)
 
   // main grid
   GtkWidget *grid_main = gtk_grid_new();
-  gtk_grid_set_column_spacing(GTK_GRID(grid_main), 10);
-  gtk_grid_set_row_spacing(GTK_GRID(grid_main), 10);
+  gtk_grid_set_column_spacing(GTK_GRID(grid_main), 5);
+  gtk_grid_set_row_spacing(GTK_GRID(grid_main), 5);
 
   gtk_grid_set_row_homogeneous(GTK_GRID(grid_main), true);
   gtk_grid_set_column_homogeneous(GTK_GRID(grid_main), true);
@@ -776,7 +777,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   gps_coordinate pc;
   std::string sd;
   for (const sd_record &rec : src) {
-    // todo change gwitch to something
+    // todo change switch to something
     switch (rec.hdr.type) {
       case SD_ACC_ABS_GENERATED:
         mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
@@ -805,7 +806,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 }
 //////////////////////////////////////////////////////////////
 
-void gmw_btn_clear_filtered_data_cliecked(GtkWidget *btn, gpointer ud)
+void gmw_btn_clear_filtered_data_clicked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
