@@ -782,10 +782,10 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
       case SD_ACC_ABS_GENERATED:
         mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
         pc = mlm.predicted_coordinate();
-        gmw_add_marker(gmw,
-                       MT_GPS_FILTERED_PREDICTED,
-                       pc.location.latitude,
-                       pc.location.longitude);
+        // gmw_add_marker(gmw,
+        //                MT_GPS_FILTERED_PREDICTED,
+        //                pc.location.latitude,
+        //                pc.location.longitude);
         break;
       case SD_GPS_GENERATED:
         mlm.process_gps_data(rec.data.gps, rec.hdr.timestamp);

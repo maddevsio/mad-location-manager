@@ -11,7 +11,7 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
-public class GPSSensor implements ISensor, LocationListener {
+public class GPSSensor extends ISensor implements LocationListener {
     private LocationManager m_locationManager = null;
     private Context m_context = null;
 
@@ -46,7 +46,7 @@ public class GPSSensor implements ISensor, LocationListener {
     }
 
     @Override
-    public boolean start() {
+    protected boolean onStart() {
         if (m_locationManager == null)
             return false;
         if (ActivityCompat.checkSelfPermission(m_context,
@@ -61,7 +61,7 @@ public class GPSSensor implements ISensor, LocationListener {
     }
 
     @Override
-    public boolean stop() {
+    protected boolean onStop() {
         if (m_locationManager == null)
             return false;
         m_locationManager.removeUpdates(this);

@@ -13,14 +13,18 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy2;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 import com.example.mlmexample.calibration.LinAccelerometerCalibrator;
+import com.example.mlmexample.loggers.AbsAccelerometerLogger;
+import com.example.mlmexample.loggers.GPSLogger;
+import com.example.mlmexample.sensors.AbsAccelerometerSensor;
+import com.example.mlmexample.sensors.GPSSensor;
 import com.example.mlmexample.sensors.ISensor;
 import com.example.mlmexample.databinding.ActivityMainBinding;
-import com.example.mlmexample.loggers.AbsAccelerometerLogger;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,7 +37,6 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.AndroidPrinter;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
-import com.example.mlmexample.loggers.GPSLogger;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -44,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
 
     private AbsAccelerometerLogger m_accLogger;
     private GPSLogger m_GPSLogger;
+
+//    private AbsAccelerometerSensor m_accLogger;
+//    private GPSSensor m_GPSLogger;
     private final List<ISensor> m_loggers = new ArrayList<>();
     private ActivityMainBinding m_binding;
     private boolean m_isLogging = false;
@@ -108,26 +114,53 @@ public class MainActivity extends AppCompatActivity {
 
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
-        m_accLogger = new AbsAccelerometerLogger(sensorManager);
+//        m_accLogger = new AbsAccelerometerSensor(sensorManager);
+//        m_GPSLogger = new GPSSensor(locationManager, this.getApplicationContext());
+        m_accLogger = new AbsAccelerometerLogger(sensorManager, windowManager);
         m_GPSLogger = new GPSLogger(locationManager, this.getApplicationContext());
         m_loggers.add(m_accLogger);
         m_loggers.add(m_GPSLogger);
     }
 
+
     public void btnStartStop_click(View v) {
         m_isLogging = !m_isLogging;
-        if (m_isLogging) {
-            m_binding.btnStartStop.setText("Stop");
+        if (!m_isLogging) {
+            m_binding.btnStartStop.setText("Start");
             for (ISensor mDataLogger : m_loggers) {
-                mDataLogger.start();
+                mDataLogger.stop();
             }
             return;
         }
-        m_binding.btnStartStop.setText("Start");
+
+        m_binding.btnStartStop.setText("Stop");
         for (ISensor mDataLogger : m_loggers) {
-            mDataLogger.stop();
+            mDataLogger.start();
         }
+
+        new Thread(() -> {
+            while (m_accLogger.is_active()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        float[] enu = m_accLogger.ENU();
+                        float east = enu[0];
+                        float north = enu[1];
+                        float up = enu[2];
+                        String txt = String.format(Locale.US, "east: %f\nnorth: %f\nup: %f\n", east, north, up);
+                        m_binding.lblSampleText.setText(txt);
+                    }
+                });
+            }
+        }).start();
     }
 
     public void btnCalibrate_click(View v) {
@@ -143,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 1000 && c.IsInProgress(); ++i) {
+                for (int i = 0; i < 1000 && c.is_active(); ++i) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {

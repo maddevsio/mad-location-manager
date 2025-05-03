@@ -161,6 +161,9 @@ abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
   std::mt19937 gen(rd());
   std::uniform_real_distribution<double> gps_dist(-acc_noise / 2.0,
                                                   acc_noise / 2.0);
-  abs_accelerometer nacc(acc.x + gps_dist(gen), acc.y + gps_dist(gen), acc.z);
+
+  double x_noised = acc.x + gps_dist(gen);
+  double y_noised = acc.y + gps_dist(gen);
+  abs_accelerometer nacc(x_noised, y_noised, acc.z);
   return nacc;
 }

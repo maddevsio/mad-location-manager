@@ -43,7 +43,7 @@ struct magnetometer {
 /// vector
 /// @x - axis X (longitude/east)
 /// @y - axis Y (latitude/north)
-/// @z - axiz Z (altitude) zero for now
+/// @z - axiz Z (altitude/up)
 struct abs_accelerometer {
   double x, y, z;
 

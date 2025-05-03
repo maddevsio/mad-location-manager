@@ -9,12 +9,13 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LinAccelerometerSensor implements SensorEventListener, ISensor {
+public class LinAccelerometerSensor extends ISensor implements SensorEventListener {
 
     private static final String TAG = "AccelerationLogger";
     private final List<Sensor> m_lst_sensors = new ArrayList<>();
     private final SensorManager m_sensor_manager;
 
+    private int m_sensor_delay = SensorManager.SENSOR_DELAY_UI;
     private boolean m_got_rotation_vector = false;
 
     private static final int[] sensor_types = {
@@ -35,10 +36,11 @@ public class LinAccelerometerSensor implements SensorEventListener, ISensor {
         }
     }
 
-    public boolean start(int sensor_delay) {
+    @Override
+    protected boolean onStart() {
         m_got_rotation_vector = false;
         for (Sensor sensor : m_lst_sensors) {
-            if (!m_sensor_manager.registerListener(this, sensor, sensor_delay)) {
+            if (!m_sensor_manager.registerListener(this, sensor, m_sensor_delay)) {
                 Log.e(TAG, String.format("Couldn't registerListener %d", sensor.getType()));
                 return false;
             }
@@ -46,11 +48,8 @@ public class LinAccelerometerSensor implements SensorEventListener, ISensor {
         return true;
     }
 
-    public boolean start() {
-        return start(SensorManager.SENSOR_DELAY_UI);
-    }
-
-    public boolean stop() {
+    @Override
+    protected boolean onStop() {
         for (Sensor sensor : m_lst_sensors) {
             m_sensor_manager.unregisterListener(this, sensor);
         }

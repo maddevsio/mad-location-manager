@@ -8,18 +8,17 @@ import com.example.mlmexample.sensors.AbsAccelerometerSensor;
 
 
 public class AbsAccelerometerLogger extends AbsAccelerometerSensor {
-    public AbsAccelerometerLogger(SensorManager sensor_manager) {
-        super(sensor_manager);
+    public AbsAccelerometerLogger(SensorManager sensor_manager, WindowManager window_manager) {
+        super(sensor_manager, window_manager);
     }
 
     @Override
-    public void onNEDReceived(double ts, float north, float east, float down) {
-        // north = acc_world[0] --> Y
-        // east = acc_world[1] --> X
-        // down = acc_world[2] --> Z
-        // however lib waits tuple (x, y, z)
-        String msg = String.format(java.util.Locale.US,
-                "1 %f:::%f %f %f", ts, east, north, down);
+    public void onENUReceived(double ts, float east, float north, float up) {
+        float x = east;
+        float y = north;
+        float z = up;
+        String fmt = "1 %f:::%f %f %f";
+        String msg = String.format(java.util.Locale.US, fmt, ts, x, y, z);
         XLog.i(msg);
     }
 }
