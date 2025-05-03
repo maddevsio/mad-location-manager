@@ -776,16 +776,19 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
           gmw->w_fs->opts.vel_sigma_2);
   gps_coordinate pc;
   std::string sd;
+  bool pad;
   for (const sd_record &rec : src) {
     // todo change switch to something
     switch (rec.hdr.type) {
       case SD_ACC_ABS_GENERATED:
-        mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
-        pc = mlm.predicted_coordinate();
-        // gmw_add_marker(gmw,
-        //                MT_GPS_FILTERED_PREDICTED,
-        //                pc.location.latitude,
-        //                pc.location.longitude);
+        pad = mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
+        if (pad) {
+          pc = mlm.predicted_coordinate();
+          gmw_add_marker(gmw,
+                         MT_GPS_FILTERED_PREDICTED,
+                         pc.location.latitude,
+                         pc.location.longitude);
+        }
         break;
       case SD_GPS_GENERATED:
         mlm.process_gps_data(rec.data.gps, rec.hdr.timestamp);

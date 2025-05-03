@@ -21,7 +21,6 @@ public class LinAccelerometerSensor extends ISensor implements SensorEventListen
     private static final int[] sensor_types = {
             Sensor.TYPE_ROTATION_VECTOR,
             Sensor.TYPE_ACCELEROMETER,
-//            Sensor.TYPE_LINEAR_ACCELERATION,
     };
 
     public LinAccelerometerSensor(SensorManager sensor_manager) {
@@ -56,10 +55,8 @@ public class LinAccelerometerSensor extends ISensor implements SensorEventListen
         return true;
     }
 
-    // Adjust rotation matrix for display orientation
 
     protected final float[] R = new float[16];  // rotation matrix from rotation_vector
-    protected final float[] RI = new float[16]; // inverted adjusted rotation matrix
     private final float[] gravity_phone_frame = new float[4];
     private final float[] gravity_world = {0.f, 0.f, 9.81f, 1.f};
     private final float[] lin_acc = {0.f, 0.f, 0.f, 1.f};
@@ -80,9 +77,7 @@ public class LinAccelerometerSensor extends ISensor implements SensorEventListen
         switch (event.sensor.getType()) {
             case Sensor.TYPE_ROTATION_VECTOR:
                 m_got_rotation_vector = true;
-//                SensorManager.getRotationMatrixFromVector(R, event.values);
-//                android.opengl.Matrix.invertM(RI, 0, R, 0);
-                SensorManager.getRotationMatrixFromVector(RI, event.values);
+                SensorManager.getRotationMatrixFromVector(R, event.values);
                 break;
 
             case Sensor.TYPE_ACCELEROMETER:
@@ -90,18 +85,10 @@ public class LinAccelerometerSensor extends ISensor implements SensorEventListen
                     break;
                 }
                 System.arraycopy(event.values, 0, lin_acc, 0, 3);
-                android.opengl.Matrix.multiplyMV(gravity_phone_frame, 0, RI, 0, gravity_world, 0);
+                android.opengl.Matrix.multiplyMV(gravity_phone_frame, 0, R, 0, gravity_world, 0);
                 for (int i = 0; i < 3; ++i) {
                     lin_acc[i] -= gravity_phone_frame[i];
                 }
-                onACCReceived(ts, lin_acc[0], lin_acc[1], lin_acc[2]);
-                break;
-
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                if (!m_got_rotation_vector) {
-                    break;
-                }
-                System.arraycopy(event.values, 0, lin_acc, 0, 3);
                 onACCReceived(ts, lin_acc[0], lin_acc[1], lin_acc[2]);
                 break;
         }

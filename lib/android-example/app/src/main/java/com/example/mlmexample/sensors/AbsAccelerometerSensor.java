@@ -42,7 +42,7 @@ public class AbsAccelerometerSensor extends ISensor implements SensorEventListen
     protected boolean onStart() {
         m_got_rotation_vector.compareAndSet(true, false);
         for (Sensor sensor : m_lst_sensors) {
-            if (!m_sensor_manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)) {
+            if (!m_sensor_manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)) {
                 Log.e(TAG, String.format("Couldn't registerListener %d", sensor.getType()));
                 return false;
             }
@@ -62,7 +62,7 @@ public class AbsAccelerometerSensor extends ISensor implements SensorEventListen
     protected final float[] RM = new float[16];  // rotation matrix adjusted to display orientation
     protected final float[] RI = new float[16]; // inverted adjusted rotation matrix
     protected final float[] acc_enu = new float[4]; // world coordinates (east/north/up)
-    protected final float[] lin_acc = {0.f, 9.81f, 0.f, 1.f};
+    protected final float[] lin_acc = {0.f, 0.f, 0.f, 1.f};
 
     public float[] ENU() {
         return acc_enu.clone();
@@ -106,7 +106,7 @@ public class AbsAccelerometerSensor extends ISensor implements SensorEventListen
                 if (!m_got_rotation_vector.get()) {
                     break;
                 }
-//                System.arraycopy(event.values, 0, lin_acc, 0, 3);
+                System.arraycopy(event.values, 0, lin_acc, 0, 3);
                 lin_acc[3] = 1.f;
                 android.opengl.Matrix.multiplyMV(acc_enu, 0, RI, 0, lin_acc, 0);
                 onENUReceived(ts, acc_enu[0], acc_enu[1], acc_enu[2]);

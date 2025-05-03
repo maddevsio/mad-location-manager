@@ -17,7 +17,7 @@ public class AbsAccelerometerLogger extends AbsAccelerometerSensor {
         float x = east;
         float y = north;
         float z = up;
-        String fmt = "1 %f:::%f %f %f";
+        String fmt = "1 %f:::%.8f %.8f %.8f";
         String msg = String.format(java.util.Locale.US, fmt, ts, x, y, z);
         XLog.i(msg);
     }

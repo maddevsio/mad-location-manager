@@ -27,7 +27,11 @@ public class GPSLogger extends GPSSensor {
         // &rec.data.gps.speed.azimuth,
         // &rec.data.gps.speed.error);
         double ts = android.os.SystemClock.elapsedRealtime() / 1000.;
-        String msg = String.format(java.util.Locale.US, "4 %f:::%f %f %f %f %f %f %f", ts, loc.getLatitude(), loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
+        String fmt = "4 %f:::%.8f %.8f %.8f %.8f %.8f %.8f %.8f";
+        String msg = String.format(java.util.Locale.US,
+                fmt,
+                ts,
+                loc.getLatitude(), loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(),
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS);
         XLog.i(msg);
     }

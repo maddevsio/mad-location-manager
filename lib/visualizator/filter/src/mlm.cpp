@@ -17,13 +17,13 @@ MLM::MLM(double acc_sigma_2, double loc_sigma_2, double vel_sigma_2)
 MLM::~MLM(void) {}
 //////////////////////////////////////////////////////////////
 
-void MLM::process_acc_data(const abs_accelerometer &acc, double time_sec)
+bool MLM::process_acc_data(const abs_accelerometer &acc, double time_sec)
 {
   if (!m_got_start_point) {
-    m_fk.predict(0., 0., time_sec);
-    return;  // do nothing until first GPS coordinate
+    return false;  // do nothing until first GPS coordinate
   }
   m_fk.predict(acc.x, acc.y, time_sec);
+  return true;
 }
 //////////////////////////////////////////////////////////////
 
