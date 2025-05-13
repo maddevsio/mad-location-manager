@@ -98,25 +98,46 @@ public class AbsAccelerometerSensor extends ISensor implements SensorEventListen
         }
     }
 
+    // For sensor timing synchronization
+    private long m_last_rotation_ts = 0;
+    private boolean m_is_rotation_valid = false;
+    private static final long MAX_SENSOR_TIMESTAMP_DELTA_NS =  30 * 1000_000; // 30ms in nanoseconds
+    private void handleLinearAcceleration(SensorEvent event) {
+        if (!m_is_rotation_valid) {
+            return; // ignore this
+        }
+
+        if (Math.abs(event.timestamp - m_last_rotation_ts) > MAX_SENSOR_TIMESTAMP_DELTA_NS) {
+            return; // Skip this acceleration update as rotation might be outdated
+        }
+
+        double ts = android.os.SystemClock.elapsedRealtime() / 1000.;
+        System.arraycopy(event.values, 0, lin_acc, 0, 3);
+        lin_acc[3] = 0.f;
+        android.opengl.Matrix.multiplyMV(acc_enu, 0, RI, 0, lin_acc, 0);
+        onENUReceived(ts, acc_enu[0], acc_enu[1], acc_enu[2]);
+    }
+
+    private void handleRotationVector(SensorEvent event) {
+        long ts = event.timestamp;
+        SensorManager.getRotationMatrixFromVector(R, event.values);
+        adjustForDisplayRotation(R, RM);
+        // invert matrix to get ENU
+        android.opengl.Matrix.invertM(RI, 0, RM, 0);
+
+        // Update timestamp and validity
+        m_last_rotation_ts = ts;
+        m_is_rotation_valid = true;
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
-        double ts = android.os.SystemClock.elapsedRealtime() / 1000.;
         switch (event.sensor.getType()) {
             case Sensor.TYPE_LINEAR_ACCELERATION:
-                if (!m_got_rotation_vector.get()) {
-                    break;
-                }
-                System.arraycopy(event.values, 0, lin_acc, 0, 3);
-                lin_acc[3] = 1.f;
-                android.opengl.Matrix.multiplyMV(acc_enu, 0, RI, 0, lin_acc, 0);
-                onENUReceived(ts, acc_enu[0], acc_enu[1], acc_enu[2]);
+                handleLinearAcceleration(event);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
-                m_got_rotation_vector.compareAndSet(false, true);
-                SensorManager.getRotationMatrixFromVector(R, event.values);
-                adjustForDisplayRotation(R, RM);
-                // invert matrix to get ENU
-                android.opengl.Matrix.invertM(RI, 0, RM, 0);
+                handleRotationVector(event);
                 break;
         }
     }
