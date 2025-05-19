@@ -46,9 +46,6 @@ find_package(PkgConfig REQUIRED)
 find_package(Git REQUIRED)
 
 # Eigen 
-# find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-# include_directories(${EIGEN_INCLUDE_DIRS})
-# link_directories(${EIGEN_LIBRARY_DIRS})
 find_path(EIGENLIB "eigen" ${CMAKE_CURRENT_SOURCE_DIR}/external)
 if (NOT EIGENLIB) 
   message("unable to find eigen sources")
@@ -59,7 +56,6 @@ endif()
 set(EIGENLIB ${EIGENLIB}/eigen)
 
 # GeographicLib
-# include(FetchContent)
 find_path(GEOGRAPHICLIB "geographiclib" ${CMAKE_CURRENT_SOURCE_DIR}/external)
 if (NOT GEOGRAPHICLIB) 
   message("unable to find geographiclib sources")

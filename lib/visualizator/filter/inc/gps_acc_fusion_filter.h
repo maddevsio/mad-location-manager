@@ -28,13 +28,12 @@ class GPSAccFusionFilter : public KalmanFilter<4, 2, 2>
 {
  private:
   double m_last_predict_sec;
-  double m_acc_deviation;  // accelerometer sigma
-  int m_predicts_count;
+  double m_acc_sigma_2;  // accelerometer sigma^2
 
   void rebuild_F(double dt_sec);
   void rebuild_U(double xAcc, double yAcc);
   void rebuild_B(double dt_sec);
-  void rebuild_Q(void);
+  void rebuild_Q(double dt_sec);
   void rebuild_R(double pos_sigma, double vel_sigma);
 
  public:

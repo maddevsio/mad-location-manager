@@ -2,44 +2,46 @@
 #define KALMAN_H
 
 #include <Eigen/Eigen>
-#include <iostream>
-using namespace Eigen;
+#include <cstddef>
 
 template <size_t state_dim, size_t measure_dim, size_t control_dim>
 class KalmanFilter
 {
  protected:
   /*these matrices should be provided by user*/
-  Matrix<double, state_dim, state_dim> F;    // state transition model
-  Matrix<double, measure_dim, state_dim> H;  // observation model
-  Matrix<double, state_dim, control_dim> B;  // control matrix
+  Eigen::Matrix<double, state_dim, state_dim> F;    // state transition model
+  Eigen::Matrix<double, measure_dim, state_dim> H;  // observation model
+  Eigen::Matrix<double, state_dim, control_dim> B;  // control matrix
 
-  Matrix<double, state_dim, state_dim> Q;      // process noise covariance
-  Matrix<double, measure_dim, measure_dim> R;  // observation noise covariance
+  Eigen::Matrix<double, state_dim, state_dim> Q;  // process noise covariance
+  Eigen::Matrix<double, measure_dim, measure_dim>
+      R;  // observation noise covariance
 
   /*these matrices will be updated by user*/
-  Matrix<double, control_dim, 1> Uk;            // control vector
-  Matrix<double, measure_dim, 1> Zk;            // actual measured values vector
-  Matrix<double, state_dim, 1> Xk_km1;          // predicted state estimate
-  Matrix<double, state_dim, state_dim> Pk_km1;  // predicted estimate covariance
-  Matrix<double, measure_dim, 1> Yk;            // measurement innovation
+  Eigen::Matrix<double, control_dim, 1> Uk;    // control vector
+  Eigen::Matrix<double, measure_dim, 1> Zk;    // actual measured values vector
+  Eigen::Matrix<double, state_dim, 1> Xk_km1;  // predicted state estimate
+  Eigen::Matrix<double, state_dim, state_dim>
+      Pk_km1;                                // predicted estimate covariance
+  Eigen::Matrix<double, measure_dim, 1> Yk;  // measurement innovation
 
   /*these matrices will be calculated*/
-  Matrix<double, measure_dim, measure_dim> Sk;  // innovation covariance
-  Matrix<double, state_dim, measure_dim> K;     // Kalman gain
-  Matrix<double, state_dim, 1> Xk_k;            // updated (current) state
-  Matrix<double, state_dim, state_dim> Pk_k;    // updated estimate covariance
-  Matrix<double, measure_dim, 1> Yk_k;          // post fit residual
+  Eigen::Matrix<double, measure_dim, measure_dim> Sk;  // innovation covariance
+  Eigen::Matrix<double, state_dim, measure_dim> K;     // Kalman gain
+  Eigen::Matrix<double, state_dim, 1> Xk_k;  // updated (current) state
+  Eigen::Matrix<double, state_dim, state_dim>
+      Pk_k;                                    // updated estimate covariance
+  Eigen::Matrix<double, measure_dim, 1> Yk_k;  // post fit residual
 
   /*auxiliary matrices*/
-  Matrix<double, state_dim, state_dim> I;  // (I - Kk*Hk)
+  Eigen::Matrix<double, state_dim, state_dim> I;  // (I - Kk*Hk)
 
   static const size_t _state_dim = state_dim;
   static const size_t _measure_dim = measure_dim;
   static const size_t _control_dim = control_dim;
 
  protected:
-  KalmanFilter() : I(Matrix<double, state_dim, state_dim>::Identity()) {}
+  KalmanFilter() : I(Eigen::Matrix<double, state_dim, state_dim>::Identity()) {}
   //////////////////////////////////////////////////////////////
 
   // predict

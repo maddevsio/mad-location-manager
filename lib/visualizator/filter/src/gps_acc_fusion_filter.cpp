@@ -2,8 +2,8 @@
 
 GPSAccFusionFilter::GPSAccFusionFilter()
 {
-  H = Matrix<double, _measure_dim, _state_dim>::Identity();
-  Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
+  H = Eigen::Matrix<double, _measure_dim, _state_dim>::Identity();
+  Pk_k = Eigen::Matrix<double, _state_dim, _state_dim>::Identity();
 }
 //////////////////////////////////////////////////////////////
 
@@ -22,12 +22,11 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
                                double acc_deviation,
                                double pos_deviation)
 {
-  m_predicts_count = 0;
   m_last_predict_sec = ts;
   Xk_k << x, y, x_vel, y_vel;
-  Pk_k = Matrix<double, _state_dim, _state_dim>::Identity();
+  Pk_k = Eigen::Matrix<double, _state_dim, _state_dim>::Identity();
   Pk_k *= pos_deviation;
-  m_acc_deviation = acc_deviation;
+  m_acc_sigma_2 = acc_deviation;
 };
 //////////////////////////////////////////////////////////////
 
@@ -43,8 +42,7 @@ void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
   rebuild_B(dt_sec);
   rebuild_U(xAcc, yAcc);
 
-  ++m_predicts_count;
-  rebuild_Q();
+  rebuild_Q(dt_sec);
   estimate();
 
   m_last_predict_sec = time_sec;
@@ -60,11 +58,9 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double pos_deviation,
                                 double vel_deviation)
 {
-  m_predicts_count = 0;
   rebuild_R(pos_deviation, vel_deviation);
   Zk << state.x, state.y;  //, state.x_vel, state.y_vel;
   correct();
-  // todo check corrected. if not - throw an error
 }
 //////////////////////////////////////////////////////////////
 
@@ -98,10 +94,26 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 }
 //////////////////////////////////////////////////////////////
 
-void GPSAccFusionFilter::rebuild_Q(void)
+void GPSAccFusionFilter::rebuild_Q(double dt_sec)
 {
-  Q = B * B.transpose();
-  Q *= m_acc_deviation * m_predicts_count;
+  // Q = B * B.transpose();
+  // Q *= m_acc_sigma_2 * m_predicts_count;
+  //
+  // The correct continuous-white-noise model (Brown & Hwang, Bar-Shalom, etc.) gives
+  // Q = σa² · [ dt³/3   dt²/2
+  //             dt²/2   dt   ]
+  double dt = dt_sec;
+  const double dt2 = dt * dt;
+  const double dt3 = dt2 * dt;
+
+  // clang-format off
+  Q <<  dt3 / 3.,   0.,       dt2 / 2,    0, 
+        0.,         dt3 / 3,  0,          dt2 / 2, 
+        dt2 / 2,    0,        dt,         0, 
+        0,          dt2 / 2,  0,          dt;
+  // clang-format on
+
+  Q *= m_acc_sigma_2;  // σa² already
 }
 //////////////////////////////////////////////////////////////
 
