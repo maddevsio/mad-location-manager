@@ -46,12 +46,9 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("mlm_filter");
     }
 
-    private AbsAccelerometerLogger m_accLogger;
-    private GPSLogger m_GPSLogger;
-
-//    private AbsAccelerometerSensor m_accLogger;
-//    private GPSSensor m_GPSLogger;
-    private final List<ISensor> m_loggers = new ArrayList<>();
+    private AbsAccelerometerSensor m_accLogger;
+    private GPSSensor m_GPSLogger;
+    private final List<ISensor> m_sensors = new ArrayList<>();
     private ActivityMainBinding m_binding;
     private boolean m_isLogging = false;
 
@@ -105,8 +102,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-//        setContentView(R.layout.activity_main);
-//        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+        setContentView(R.layout.activity_main);
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
 
         m_binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(m_binding.getRoot());
@@ -120,13 +117,12 @@ public class MainActivity extends AppCompatActivity {
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-
-//        m_accLogger = new AbsAccelerometerSensor(sensorManager);
+//        m_accLogger = new AbsAccelerometerSensor(sensorManager, windowManager);
 //        m_GPSLogger = new GPSSensor(locationManager, this.getApplicationContext());
         m_accLogger = new AbsAccelerometerLogger(sensorManager, windowManager);
         m_GPSLogger = new GPSLogger(locationManager, this.getApplicationContext());
-        m_loggers.add(m_accLogger);
-        m_loggers.add(m_GPSLogger);
+        m_sensors.add(m_accLogger);
+        m_sensors.add(m_GPSLogger);
     }
 
 
@@ -134,14 +130,14 @@ public class MainActivity extends AppCompatActivity {
         m_isLogging = !m_isLogging;
         if (!m_isLogging) {
             m_binding.btnStartStop.setText("Start");
-            for (ISensor mDataLogger : m_loggers) {
+            for (ISensor mDataLogger : m_sensors) {
                 mDataLogger.stop();
             }
             return;
         }
 
         m_binding.btnStartStop.setText("Stop");
-        for (ISensor mDataLogger : m_loggers) {
+        for (ISensor mDataLogger : m_sensors) {
             mDataLogger.start();
         }
 

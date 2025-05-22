@@ -96,9 +96,6 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 
 void GPSAccFusionFilter::rebuild_Q(double dt_sec)
 {
-  // Q = B * B.transpose();
-  // Q *= m_acc_sigma_2 * m_predicts_count;
-  //
   // The correct continuous-white-noise model (Brown & Hwang, Bar-Shalom, etc.) gives
   // Q = σa² · [ dt³/3   dt²/2
   //             dt²/2   dt   ]
