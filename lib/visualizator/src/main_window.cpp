@@ -85,8 +85,8 @@ struct gmw_layer {
   void add_record(sd_record rec)
   {
     lst_sd_records.push_back(rec);
-    if (rec.hdr.type == SD_ACC_ABS_SET ||
-        rec.hdr.type == SD_ACC_ABS_GENERATED) {
+    if (rec.hdr.type == SD_ACC_ENU_SET ||
+        rec.hdr.type == SD_ACC_ENU_GENERATED) {
       return;  // do nothing, we want GPS
     }
 
@@ -520,8 +520,79 @@ void gmw_simple_map_gesture_click_released(GtkGestureClick *gesture,
 }
 //////////////////////////////////////////////////////////////
 
+// case SD_ACC_ENU_SET:
+static void load_acc_enu_set(generator_main_window *gmw, const sd_record &rec)
+{
+  gmw->layers[MT_GPS_SET].add_record(rec);
+}
+
+// case SD_GPS_SET:
+static void load_gps_set(generator_main_window *gmw, const sd_record &rec)
+{
+  std::string sd;
+  gmw->layers[MT_GPS_SET].add_record(rec);
+  sd = std::to_string(gmw->layers[MT_GPS_SET].distance);
+  gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_SET].lbl), sd.c_str());
+  gmw_add_marker(gmw,
+                 MT_GPS_SET,
+                 rec.data.gps.location.latitude,
+                 rec.data.gps.location.longitude);
+}
+
+// case SD_ACC_ENU_GENERATED
+static void load_acc_enu_generated(generator_main_window *gmw,
+                                   const sd_record &rec)
+{
+  gmw->layers[MT_GPS_GENERATED].add_record(rec);
+}
+
+// case SD_GPS_GENERATED
+static void load_gps_generated(generator_main_window *gmw, const sd_record &rec)
+{
+  std::string sd;
+  gmw->layers[MT_GPS_GENERATED].add_record(rec);
+  sd = std::to_string(gmw->layers[MT_GPS_GENERATED].distance);
+  gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_GENERATED].lbl), sd.c_str());
+  gmw_add_marker(gmw,
+                 MT_GPS_GENERATED,
+                 rec.data.gps.location.latitude,
+                 rec.data.gps.location.longitude);
+  gmw_set_center(gmw,
+                 rec.data.gps.location.latitude,
+                 rec.data.gps.location.longitude);
+}
+
+// case SD_GPS_FILTERED
+static void load_gps_filtered(generator_main_window *gmw, const sd_record &rec)
+{
+  gmw->layers[MT_GPS_FILTERED_UPDATED].add_record(rec);
+  std::string sd =
+      std::to_string(gmw->layers[MT_GPS_FILTERED_UPDATED].distance);
+  gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_FILTERED_UPDATED].lbl),
+                     sd.c_str());
+}
+
+static void load_unknown(generator_main_window *gmw, const sd_record &rec)
+{
+  UNUSED(gmw);
+  UNUSED(rec);
+  // do nothing actually
+}
+
 void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)
 {
+  typedef void (*pf_load_track_handler)(generator_main_window *,
+                                        const sd_record &);
+  static std::vector<std::pair<sensor_data_record_type, pf_load_track_handler>>
+      handlers = {
+          std::make_pair(SD_ACC_ENU_SET, load_acc_enu_set),
+          std::make_pair(SD_GPS_SET, load_gps_set),
+          std::make_pair(SD_ACC_ENU_GENERATED, load_acc_enu_generated),
+          std::make_pair(SD_GPS_GENERATED, load_gps_generated),
+          std::make_pair(SD_GPS_FILTERED, load_gps_filtered),
+          std::make_pair(SD_UNKNOWN, load_unknown),
+      };
+
   GtkFileDialog *dlg = reinterpret_cast<GtkFileDialog *>(source_object);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(data);
   GFile *g_file = gtk_file_dialog_open_finish(dlg, res, NULL);
@@ -538,57 +609,26 @@ void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)
   }
 
   std::string line;
+  sd_record rec;
   while (std::getline(fs_in, line)) {
-    sd_record rec;
     sdr_deserialize_error derr = sdr_deserialize_str(line, rec);
     if (derr != SDRDE_SUCCESS) {
       std::cerr << derr << "->  failed to process line: " << line << std::endl;
       continue;
     }
 
-    std::string sd;
-    bool center_set = false;
-    switch (rec.hdr.type) {
-      case SD_ACC_ABS_SET:
-        gmw->layers[MT_GPS_SET].add_record(rec);
-        continue;
-      case SD_GPS_SET:
-        gmw->layers[MT_GPS_SET].add_record(rec);
-        sd = std::to_string(gmw->layers[MT_GPS_SET].distance);
-        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_SET].lbl), sd.c_str());
-        gmw_add_marker(gmw,
-                       MT_GPS_SET,
-                       rec.data.gps.location.latitude,
-                       rec.data.gps.location.longitude);
-        continue;
-      case SD_ACC_ABS_GENERATED:
-        gmw->layers[MT_GPS_GENERATED].add_record(rec);
-        continue;
-      case SD_GPS_GENERATED:
-        gmw->layers[MT_GPS_GENERATED].add_record(rec);
-        sd = std::to_string(gmw->layers[MT_GPS_GENERATED].distance);
-        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_GENERATED].lbl),
-                           sd.c_str());
-        gmw_add_marker(gmw,
-                       MT_GPS_GENERATED,
-                       rec.data.gps.location.latitude,
-                       rec.data.gps.location.longitude);
-        if (!center_set) {
-          center_set = true;
-          gmw_set_center(gmw,
-                         rec.data.gps.location.latitude,
-                         rec.data.gps.location.longitude);
-        }
-        continue;
-      case SD_GPS_FILTERED:
-        gmw->layers[MT_GPS_FILTERED_UPDATED].add_record(rec);
-        sd = std::to_string(gmw->layers[MT_GPS_FILTERED_UPDATED].distance);
-        gtk_label_set_text(GTK_LABEL(gmw->layers[MT_GPS_FILTERED_UPDATED].lbl),
-                           sd.c_str());
-        continue;
-      case SD_UNKNOWN:
-        continue;
-    }  // switch (rec.hdr.type)
+    auto h_it = std::find_if(
+        handlers.begin(),
+        handlers.end(),
+        [&rec](const std::pair<sensor_data_record_type, pf_load_track_handler>
+                   &p) { return p.first == rec.hdr.type; });
+
+    if (h_it == handlers.end()) {
+      std::cerr << "unknown header type: " << rec.hdr.type << "\n";
+      continue;
+    }
+
+    h_it->second(gmw, rec);
   }  // while (getline())
 }  // dlg_load_track_cb
 //////////////////////////////////////////////////////////////
@@ -703,7 +743,7 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
     const double acc_mp = go.acc_measurement_period;
     // ats = accelerometer ts
     for (double ats = 0.; ats < gps_mp; ats += acc_mp) {
-      abs_accelerometer acc =
+      enu_accelerometer acc =
           sd_abs_acc_between_two_geopoints(prev_rec.data.gps,
                                            curr_rec.data.gps,
                                            go.acceleration_time,
@@ -712,12 +752,12 @@ void gmw_btn_generate_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 
       acc = sd_noised_acc(acc, go.acc_noise);
       dst.add_record(
-          sd_record(sd_record_hdr(SD_ACC_ABS_GENERATED, ts + ats), acc));
+          sd_record(sd_record_hdr(SD_ACC_ENU_GENERATED, ts + ats), acc));
     }  // finished generating accelerometer data
 
     // need to generate ideal coordinate with speed and then noise it
     gps_coordinate cc = prev_rec.data.gps;
-    abs_accelerometer acc =
+    enu_accelerometer acc =
         sd_abs_acc_between_two_geopoints(prev_rec.data.gps,
                                          curr_rec.data.gps,
                                          go.acceleration_time,
@@ -780,7 +820,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   for (const sd_record &rec : src) {
     // todo change switch to something
     switch (rec.hdr.type) {
-      case SD_ACC_ABS_GENERATED:
+      case SD_ACC_ENU_GENERATED:
         pad = mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
         if (pad) {
           pc = mlm.predicted_coordinate();

@@ -28,7 +28,7 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                                              const movement_interval &interval,
                                              double time_of_interest);
 
-abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
+enu_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    const gps_coordinate &b,
                                                    double acceleration_time,
                                                    double interval_time,
@@ -43,5 +43,5 @@ double sd_distance_between_two_points(const gps_coordinate &a,
                                       const gps_coordinate &b);
 
 geopoint sd_noised_geopoint(const geopoint &src, double gps_noise);
-abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise);
+enu_accelerometer sd_noised_acc(const enu_accelerometer &acc, double acc_noise);
 #endif

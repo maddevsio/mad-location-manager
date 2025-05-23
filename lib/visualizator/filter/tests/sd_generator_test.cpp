@@ -27,7 +27,7 @@ TEST(sd_generator, test_go_to_point_and_back)
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
     double end_time = start_time + i->duration;
-    abs_accelerometer acc(i->acceleration, i->cartezian_angle);
+    enu_accelerometer acc(i->acceleration, i->cartezian_angle);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
@@ -61,7 +61,7 @@ TEST(sd_generator, test_speed_generation)
 
   for (const movement_interval *i = intervals; i->duration != -1.; ++i) {
     double end_time = start_time + i->duration;
-    abs_accelerometer acc(i->acceleration, i->cartezian_angle);
+    enu_accelerometer acc(i->acceleration, i->cartezian_angle);
     // while (end_time > start_time) ..
     while (fabs(end_time - start_time) > 1e-9) {
       start_time += acc_interval;
@@ -83,7 +83,7 @@ TEST(sd_generator, test_abs_acc_generation_1)
   double acceleration_time = 5.0;
   double no_acceleration_time = 10.0;
   double interval_time = acceleration_time + no_acceleration_time;
-  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
+  enu_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
                                                            b,
                                                            acceleration_time,
                                                            interval_time,
@@ -112,7 +112,7 @@ TEST(sd_generator, test_abs_acc_generation_2)
   double acceleration_time = 1.0;
   double no_acceleration_time = 0.5;
   double interval_time = acceleration_time + no_acceleration_time;
-  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
+  enu_accelerometer acc = sd_abs_acc_between_two_geopoints(a,
                                                            b,
                                                            acceleration_time,
                                                            interval_time,
@@ -140,7 +140,7 @@ TEST(sd_generator, test_abs_acc_generation_no_movement)
   b.location = geopoint(36.556144, 31.976737);
   gps_coordinate c = a;
 
-  abs_accelerometer acc =
+  enu_accelerometer acc =
       sd_abs_acc_between_two_geopoints(a, b, 5.0, 15.0, 0.0);
   const movement_interval intervals[] = {
       {acc.cartezian_angle(), acc.acceleration(),  5.0},
@@ -210,7 +210,7 @@ TEST(sd_generator, test_acceleration_axis)
   bb.location = b;
   cc.location = c;
 
-  abs_accelerometer acc = sd_abs_acc_between_two_geopoints(aa, bb, 1.0, 2.0, 0.8);
+  enu_accelerometer acc = sd_abs_acc_between_two_geopoints(aa, bb, 1.0, 2.0, 0.8);
   bb = sd_gps_coordinate_in_interval(
       aa,
       movement_interval(acc.cartezian_angle(), acc.acceleration(), 1.0),

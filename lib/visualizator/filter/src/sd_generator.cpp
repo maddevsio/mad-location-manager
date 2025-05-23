@@ -90,7 +90,7 @@ double sd_distance_between_two_points(const gps_coordinate &a,
 }
 //////////////////////////////////////////////////////////////
 
-abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
+enu_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
                                                    const gps_coordinate &b,
                                                    double acceleration_time,
                                                    double interval_time,
@@ -99,7 +99,7 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
   assert(acceleration_time <= interval_time);
 
   if (time_of_interest > acceleration_time) {
-    return abs_accelerometer(0., 0., 0.);
+    return enu_accelerometer(0., 0., 0.);
   }
 
   double a_az_rad = degree_to_rad(a.speed.azimuth);
@@ -123,7 +123,7 @@ abs_accelerometer sd_abs_acc_between_two_geopoints(const gps_coordinate &a,
       sd_acc_between_two_points(x, v0_x, acceleration_time, no_acc_time);
   double ay =
       sd_acc_between_two_points(y, v0_y, acceleration_time, no_acc_time);
-  return abs_accelerometer(ax, ay, 0.);
+  return enu_accelerometer(ax, ay, 0.);
 }
 //////////////////////////////////////////////////////////////
 
@@ -152,10 +152,10 @@ geopoint sd_noised_geopoint(const geopoint &src, double gps_noise)
 }
 //////////////////////////////////////////////////////////////
 
-abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
+enu_accelerometer sd_noised_acc(const enu_accelerometer &acc, double acc_noise)
 {
   if (acc_noise <= 1e-6) {
-    return abs_accelerometer(acc.x, acc.y, acc.z);
+    return enu_accelerometer(acc.x, acc.y, acc.z);
   }
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -164,6 +164,6 @@ abs_accelerometer sd_noised_acc(const abs_accelerometer &acc, double acc_noise)
 
   double x_noised = acc.x + gps_dist(gen);
   double y_noised = acc.y + gps_dist(gen);
-  abs_accelerometer nacc(x_noised, y_noised, acc.z);
+  enu_accelerometer nacc(x_noised, y_noised, acc.z);
   return nacc;
 }

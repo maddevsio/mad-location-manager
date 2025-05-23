@@ -5,51 +5,47 @@
 #include <string>
 
 #include "commons.h"
-/// accelerometer_t - raw accelerometer data (without g compensation)
+
+/// accelerometer - raw accelerometer data (without g compensation)
 /// @x - axis X
 /// @y - axis Y
 /// @z - axis Z
 struct accelerometer {
   double x, y, z;
-  accelerometer() = default;  //: x(0.0), y(0.0), z(0.0) {}
+  accelerometer() : x(0.0), y(0.0), z(0.0) {}
   accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
-// gyroscope_t - raw gyroscope data
+// gyroscope - raw gyroscope data
 // @x - around axis X
 // @y - around axis Y
 // @z - around axis Z
 struct gyroscope {
   double x, y, z;
-
-  gyroscope() = default;  // : x(0.0), y(0.0), z(0.0) {}
+  gyroscope() : x(0.0), y(0.0), z(0.0) {}
   gyroscope(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
-/// magnetometer_t - raw magnetometer data
+/// magnetometer - raw magnetometer data
 /// @x - axis X
 /// @y - axis Y
 /// @z - axis Z
 struct magnetometer {
   double x, y, z;
-
-  magnetometer() = default;  // : x(0.0), y(0.0), z(0.0) {}
+  magnetometer() : x(0.0), y(0.0), z(0.0) {}
   magnetometer(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 //////////////////////////////////////////////////////////////
 
-/// abs_accelerometer_t  - data calculated by quaternion x
-/// linear_accelerometer_data or roatation matrix * linear_accelerometer_data
-/// vector
+/// enu_accelerometer - acceleration in ENU coordinates (east, north, up)
 /// @x - axis X (longitude/east)
 /// @y - axis Y (latitude/north)
 /// @z - axiz Z (altitude/up)
-struct abs_accelerometer {
+struct enu_accelerometer {
   double x, y, z;
-
-  abs_accelerometer() = default;  // : x(0.0), y(0.0), z(0.0) {}
-  abs_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
-  abs_accelerometer(double acc, double azimuth)
+  enu_accelerometer() : x(0.0), y(0.0), z(0.0) {}
+  enu_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {}
+  enu_accelerometer(double acc, double azimuth)
   {
     double a_rad = degree_to_rad(azimuth);
     x = acc * cos(a_rad);
@@ -61,6 +57,7 @@ struct abs_accelerometer {
   {
     return rad_to_degree(atan2(y, x));
   }
+
   double acceleration(void) const
   {
     return sqrt(x * x + y * y);
@@ -68,20 +65,55 @@ struct abs_accelerometer {
 };
 //////////////////////////////////////////////////////////////
 
-/// geopoint - geopoint gps_coordinate
+/// linear_accelerometer - acceleration along each device axis, not including
+/// gravity. All values have units of m/s^2
+struct linear_accelerometer {
+  double x, y, z;
+  linear_accelerometer() : x(0.), y(0.), z(0.) {};
+  linear_accelerometer(double x, double y, double z) : x(x), y(y), z(z) {};
+};
+//////////////////////////////////////////////////////////////
+
+/// rotation_quaternion - normalized quaternion in form [w, x, y, z] describing
+/// device orientation in ENU coordinate system
+struct rotation_quaternion {
+  double w, x, y, z;
+  rotation_quaternion() : w(0.), x(0.), y(0.), z(0.) {};
+  rotation_quaternion(double w, double x, double y, double z)
+      : w(w), x(x), y(y), z(z) {};
+};
+//////////////////////////////////////////////////////////////
+
+struct raw_enu_accelerometer {
+  linear_accelerometer acc;
+  rotation_quaternion rq;
+  raw_enu_accelerometer() : acc(), rq() {};
+  raw_enu_accelerometer(const linear_accelerometer &acc,
+                        const rotation_quaternion &rq)
+      : acc(acc), rq(rq) {};
+  raw_enu_accelerometer(double acc_x,
+                        double acc_y,
+                        double acc_z,
+                        double q_w,
+                        double q_x,
+                        double q_y,
+                        double q_z)
+      : acc(acc_x, acc_y, acc_z), rq(q_w, q_x, q_y, q_z) {};
+};
+//////////////////////////////////////////////////////////////
+
+/// geopoint - part of gps coordinate representing location
 /// @latitude - latitude (axis Y) - 0 .. M_PI
 /// @longitude - longitude (axis X) - 0 .. 2 * M_PI
 /// @altitude - altitude (axis Z)
 /// @error - error in meters (distance from real point)
-/// location
 struct geopoint {
   double latitude;   // 0 .. M_PI
   double longitude;  // 0 .. 2 * M_PI
   double altitude;
   double error;
 
-  geopoint() = default;  // : latitude(0.0), longitude(0.0), altitude(0.0),
-                         // accuracy(0.0) {}
+  geopoint() : latitude(0.), longitude(0.), altitude(0.), error(1e-6) {};
   geopoint(double latitude,
            double longitude,
            double altitude = 0.,
@@ -95,17 +127,16 @@ struct geopoint {
 };
 //////////////////////////////////////////////////////////////
 
-/// gps_speed - speed received from GPS
+/// gps_speed - part of gps coordinate representing speed
 /// @azimuth - in degrees (HDOP in NMEA)
 /// @value - speed in m/s
 /// @error - the estimated speed error in meters per second of this
-/// location
 struct gps_speed {
   double azimuth;
   double value;
   double error;
 
-  gps_speed() = default;  // : azimuth(0.0), value(0.0), accuracy(0.0) {}
+  gps_speed() : azimuth(0.0), value(0.0), error(0.0) {}
   gps_speed(double azimuth, double value, double error)
       : azimuth(azimuth), value(value), error(error)
   {
@@ -114,23 +145,30 @@ struct gps_speed {
 //////////////////////////////////////////////////////////////
 
 /// gps_coordinate - consists of 2 independent parts : location and speed
-/// @location - see gps_location_t
-/// @speed - see gps_speed_t
+/// @location - see @gps_location
+/// @speed - see @gps_speed
 struct gps_coordinate {
   geopoint location;
   gps_speed speed;
 
-  gps_coordinate() = default;  //: location(), speed() {}
+  gps_coordinate() : location(), speed() {}
 };
 //////////////////////////////////////////////////////////////
 
 enum sensor_data_record_type {
-  SD_ACC_ABS_SET = 0,
-  SD_ACC_ABS_GENERATED,
+  // ACC_ENU_SET - calculated ENU acceleration based on GPS_SET points
+  SD_ACC_ENU_SET = 0,
+  // ACC_ENU_GENERATED - with noise OR from real device
+  SD_ACC_ENU_GENERATED,
+  // GPS_SET manually by user in visualizer
   SD_GPS_SET,
+  // GPS_FILTERED coordinates after Kalman filter applied
   SD_GPS_FILTERED,
+  // GPS_GENERATED coordinates with noise
   SD_GPS_GENERATED,
-  // TODO add accelerometer/gyroscope/magnetometer too
+  // RAW_ENU_ACC - combination of data from linear accelerometer and rotation
+  // vector sensors
+  SD_RAW_ENU_ACC,
   SD_UNKNOWN
 };
 
@@ -139,22 +177,25 @@ struct sd_record_hdr {
   sensor_data_record_type type;
   double timestamp;
 
-  sd_record_hdr() = default;
+  sd_record_hdr() : type(SD_UNKNOWN), timestamp(0.) {};
   sd_record_hdr(sensor_data_record_type type, double ts)
       : type(type), timestamp(ts)
   {
   }
 };
+//////////////////////////////////////////////////////////////
 
 struct sd_record {
   sd_record_hdr hdr;
-  union {
-    abs_accelerometer acc;
+  union data_t {
+    data_t() {};
+    enu_accelerometer acc;
     gps_coordinate gps;
+    raw_enu_accelerometer raw_enu_acc;
   } data;
 
   sd_record() = default;
-  sd_record(sd_record_hdr hdr, abs_accelerometer acc) : hdr(hdr)
+  sd_record(sd_record_hdr hdr, enu_accelerometer acc) : hdr(hdr)
   {
     data.acc = acc;
   }
@@ -163,6 +204,7 @@ struct sd_record {
     data.gps = gps;
   }
 };
+//////////////////////////////////////////////////////////////
 
 std::string sdr_serialize_str(const sd_record &rec);
 

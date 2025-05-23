@@ -17,7 +17,7 @@ MLM::MLM(double acc_sigma_2, double loc_sigma_2, double vel_sigma_2)
 MLM::~MLM(void) {}
 //////////////////////////////////////////////////////////////
 
-bool MLM::process_acc_data(const abs_accelerometer &acc, double time_sec)
+bool MLM::process_acc_data(const enu_accelerometer &acc, double time_sec)
 {
   if (!m_got_start_point) {
     return false;  // do nothing until first GPS coordinate

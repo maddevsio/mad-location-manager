@@ -26,7 +26,7 @@ class MLM
   ~MLM(void);
 
   // predict
-  bool process_acc_data(const abs_accelerometer &acc, double time_sec);
+  bool process_acc_data(const enu_accelerometer &acc, double time_sec);
   // update
   void process_gps_data(const gps_coordinate &gps, double time_sec);
   // current state

@@ -19,7 +19,7 @@ import android.widget.TextView;
 
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy2;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
-import com.example.mlmexample.calibration.LinAccelerometerCalibrator;
+import com.example.mlmexample.calibration.AbsAccelerometerCalibrator;
 import com.example.mlmexample.loggers.AbsAccelerometerLogger;
 import com.example.mlmexample.loggers.GPSLogger;
 import com.example.mlmexample.sensors.AbsAccelerometerSensor;
@@ -171,7 +171,8 @@ public class MainActivity extends AppCompatActivity {
 
         // todo move to onCreate
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        LinAccelerometerCalibrator c = new LinAccelerometerCalibrator(sensorManager);
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        AbsAccelerometerCalibrator c = new AbsAccelerometerCalibrator(sensorManager, windowManager);
         c.start();
 
         new Thread(new Runnable() {

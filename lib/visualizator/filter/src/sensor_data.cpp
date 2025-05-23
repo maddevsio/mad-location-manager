@@ -12,13 +12,17 @@ static const int HDR_LEN = 3;
 static const int PRECISION = 12;
 
 static std::string sd_gps_serialize_str(const sd_record &rec);
-static std::string sd_acc_abs_serialize_str(const sd_record &rec);
+static std::string sd_acc_serialize_str(const sd_record &rec);
+static std::string sd_raw_enu_acc_serialize_str(const sd_record &rec);
 static std::string sd_hdr_serialize_str(const sd_record_hdr &hdr);
 
 static sdr_deserialize_error sd_gps_deserialize_str(const std::string &str,
                                                     sd_record &rec);
-static sdr_deserialize_error sd_acc_abs_deserialize_str(const std::string &str,
-                                                        sd_record &rec);
+static sdr_deserialize_error sd_acc_deserialize_str(const std::string &str,
+                                                    sd_record &rec);
+static sdr_deserialize_error sd_raw_enu_acc_deserialize_str(
+    const std::string &str,
+    sd_record &rec);
 static sdr_deserialize_error sd_hdr_deserialize_str(const std::string &str,
                                                     sd_record_hdr &hdr);
 
@@ -34,11 +38,22 @@ std::string sd_gps_serialize_str(const sd_record &rec)
 }
 //////////////////////////////////////////////////////////////
 
-std::string sd_acc_abs_serialize_str(const sd_record &rec)
+std::string sd_acc_serialize_str(const sd_record &rec)
 {
   std::ostringstream out;
   out << std::setprecision(PRECISION) << rec.data.acc.x << " " << rec.data.acc.y
       << " " << rec.data.acc.z;
+  return out.str();
+}
+//////////////////////////////////////////////////////////////
+
+std::string sd_raw_enu_acc_serialize_str(const sd_record &rec)
+{
+  std::ostringstream out;
+  out << rec.data.raw_enu_acc.acc.x << " " << rec.data.raw_enu_acc.acc.y << " "
+      << rec.data.raw_enu_acc.acc.z << " " << rec.data.raw_enu_acc.rq.w << " "
+      << rec.data.raw_enu_acc.rq.x << " " << rec.data.raw_enu_acc.rq.y << " "
+      << rec.data.raw_enu_acc.rq.z;
   return out.str();
 }
 //////////////////////////////////////////////////////////////
@@ -69,8 +84,8 @@ sdr_deserialize_error sd_gps_deserialize_str(const std::string &str,
 }
 //////////////////////////////////////////////////////////////
 
-sdr_deserialize_error sd_acc_abs_deserialize_str(const std::string &str,
-                                                 sd_record &rec)
+sdr_deserialize_error sd_acc_deserialize_str(const std::string &str,
+                                             sd_record &rec)
 {
   const char *acc_format_in = "%lf %lf %lf";
   int matched = sscanf(str.c_str(),
@@ -79,6 +94,24 @@ sdr_deserialize_error sd_acc_abs_deserialize_str(const std::string &str,
                        &rec.data.acc.y,
                        &rec.data.acc.z);
   return matched == 3 ? SDRDE_SUCCESS : SDRDE_UNEXPECTED_FMT;
+}
+//////////////////////////////////////////////////////////////
+
+sdr_deserialize_error sd_raw_enu_acc_deserialize_str(
+    const std::string &str,
+    sd_record &rec)
+{
+  const char *fmt = "%lf %lf %lf %lf %lf %lf %lf";
+  int matched = sscanf(str.c_str(),
+                       fmt,
+                       &rec.data.raw_enu_acc.acc.x,
+                       &rec.data.raw_enu_acc.acc.y,
+                       &rec.data.raw_enu_acc.acc.z,
+                       &rec.data.raw_enu_acc.rq.w,
+                       &rec.data.raw_enu_acc.rq.x,
+                       &rec.data.raw_enu_acc.rq.y,
+                       &rec.data.raw_enu_acc.rq.z);
+  return matched == 7 ? SDRDE_SUCCESS : SDRDE_UNEXPECTED_FMT;
 }
 //////////////////////////////////////////////////////////////
 
@@ -93,28 +126,48 @@ sdr_deserialize_error sd_hdr_deserialize_str(const std::string &str,
 
 // see sensor_data_type enum in sensor_data.h
 static std::string (*pf_serializers[])(const sd_record &) = {
-    sd_acc_abs_serialize_str,
-    sd_acc_abs_serialize_str,
+    sd_acc_serialize_str,
+    sd_acc_serialize_str,
     sd_gps_serialize_str,
     sd_gps_serialize_str,
     sd_gps_serialize_str,
+    sd_raw_enu_acc_serialize_str,
 };
 
 static sdr_deserialize_error (*pf_deserializers[])(const std::string &,
                                                    sd_record &) = {
-    sd_acc_abs_deserialize_str,
-    sd_acc_abs_deserialize_str,
+    sd_acc_deserialize_str,
+    sd_acc_deserialize_str,
     sd_gps_deserialize_str,
     sd_gps_deserialize_str,
     sd_gps_deserialize_str,
+    sd_raw_enu_acc_deserialize_str,
 };
 //////////////////////////////////////////////////////////////
+
+static const sensor_data_record_type supported_hdrs[] = {SD_ACC_ENU_SET,
+                                                         SD_ACC_ENU_GENERATED,
+                                                         SD_GPS_SET,
+                                                         SD_GPS_FILTERED,
+                                                         SD_GPS_GENERATED,
+                                                         SD_RAW_ENU_ACC,
+                                                         SD_UNKNOWN};
 
 std::string sdr_serialize_str(const sd_record &rec)
 {
   std::string res = sd_hdr_serialize_str(rec.hdr);
   res.append(pf_serializers[rec.hdr.type](rec));
-  return res;
+
+  for (int i = 0; supported_hdrs[i] != SD_UNKNOWN; ++i) {
+    if (supported_hdrs[i] != rec.hdr.type)
+      continue;
+    res.append(pf_serializers[rec.hdr.type](rec));
+    return res;
+  }
+
+  std::cerr << "unsupported record type. failed to serialize record with type: "
+            << rec.hdr.type << std::endl;
+  return "";
 }
 //////////////////////////////////////////////////////////////
 
@@ -133,12 +186,6 @@ sdr_deserialize_error sdr_deserialize_str(const std::string &str,
     return res;
   }
 
-  const sensor_data_record_type supported_hdrs[] = {SD_ACC_ABS_SET,
-                                                    SD_ACC_ABS_GENERATED,
-                                                    SD_GPS_SET,
-                                                    SD_GPS_FILTERED,
-                                                    SD_GPS_GENERATED,
-                                                    SD_UNKNOWN};
   for (int i = 0; supported_hdrs[i] != SD_UNKNOWN; ++i) {
     if (supported_hdrs[i] != rec.hdr.type)
       continue;
