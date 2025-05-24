@@ -159,16 +159,16 @@ enum sensor_data_record_type {
   // ACC_ENU_SET - calculated ENU acceleration based on GPS_SET points
   SD_ACC_ENU_SET = 0,
   // ACC_ENU_GENERATED - with noise OR from real device
-  SD_ACC_ENU_GENERATED,
+  SD_ACC_ENU_GENERATED = 1,
   // GPS_SET manually by user in visualizer
-  SD_GPS_SET,
+  SD_GPS_SET = 2,
   // GPS_FILTERED coordinates after Kalman filter applied
-  SD_GPS_FILTERED,
+  SD_GPS_FILTERED = 3,
   // GPS_GENERATED coordinates with noise
-  SD_GPS_GENERATED,
+  SD_GPS_GENERATED = 4,
   // RAW_ENU_ACC - combination of data from linear accelerometer and rotation
   // vector sensors
-  SD_RAW_ENU_ACC,
+  SD_RAW_ENU_ACC = 5,
   SD_UNKNOWN
 };
 

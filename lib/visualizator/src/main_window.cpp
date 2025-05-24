@@ -574,9 +574,9 @@ static void load_gps_filtered(generator_main_window *gmw, const sd_record &rec)
 
 static void load_unknown(generator_main_window *gmw, const sd_record &rec)
 {
+  // do nothing actually
   UNUSED(gmw);
   UNUSED(rec);
-  // do nothing actually
 }
 
 void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)

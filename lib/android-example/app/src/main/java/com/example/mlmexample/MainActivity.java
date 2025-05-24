@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
+import android.icu.text.SimpleDateFormat;
+import android.icu.util.TimeZone;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,6 +23,7 @@ import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
 import com.example.mlmexample.calibration.ENUAccelerometerCalibrator;
 import com.example.mlmexample.loggers.ENUAccelerometerLogger;
 import com.example.mlmexample.loggers.GPSLogger;
+import com.example.mlmexample.loggers.RawENULogger;
 import com.example.mlmexample.sensors.ENUAccelerometerSensor;
 import com.example.mlmexample.sensors.GPSSensor;
 import com.example.mlmexample.sensors.ISensor;
@@ -37,6 +40,7 @@ import com.elvishew.xlog.printer.Printer;
 import com.elvishew.xlog.printer.AndroidPrinter;
 import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.naming.FileNameGenerator;
+import com.example.mlmexample.sensors.RawENUSensor;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -47,10 +51,36 @@ public class MainActivity extends AppCompatActivity {
 
     private ENUAccelerometerSensor m_accLogger;
     private GPSSensor m_GPSLogger;
+    private RawENUSensor m_rawENULogger;
     private final List<ISensor> m_sensors = new ArrayList<>();
     private ActivityMainBinding m_binding;
     private boolean m_isLogging = false;
 
+    // LOGGER
+    private String xLogFolderPath;
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+
+    class ChangableFileNameGenerator implements FileNameGenerator {
+        private String fileName;
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public ChangableFileNameGenerator() {
+        }
+
+        @Override
+        public boolean isFileNameChangeable() {
+            return true;
+        }
+
+        @Override
+        public String generateFileName(int logLevel, long timestamp) {
+            return fileName;
+        }
+    }
+    // /LOGGER
 
     @Override
     protected void onStart() {
@@ -77,19 +107,38 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private ChangableFileNameGenerator xLogFileNameGenerator = new ChangableFileNameGenerator();
+
+    public void initXlogPrintersFileName() {
+        sdf.setTimeZone(TimeZone.getDefault());
+        String dateStr = sdf.format(System.currentTimeMillis());
+        String fileName = dateStr;
+        final int secondsIn24Hour = 86400; //I don't think that it's possible to press button more frequently
+        for (int i = 0; i < secondsIn24Hour; ++i) {
+            fileName = String.format(Locale.US, "%s_%d", dateStr, i);
+            File f = new File(xLogFolderPath, fileName);
+            if (!f.exists())
+                break;
+        }
+        xLogFileNameGenerator.setFileName(fileName);
+    }
+
     private boolean initXLog() {
         String storageState = Environment.getExternalStorageState();
         if (storageState == null || !storageState.equals(Environment.MEDIA_MOUNTED))
             return false;
 
         File esd = getExternalFilesDir(null);
-        FileNameGenerator xLogFileNameGenerator = new DateFileNameGenerator();
-        String xLogFolderPath = String.format(Locale.US, "%s/%s/", esd.getAbsolutePath(), "SensorDataCollector");
-        Printer androidPrinter = new AndroidPrinter(); // Printer that print the log using android.util.Log
+        if (esd == null)
+            return false;
+
+        xLogFolderPath = String.format(Locale.US, "%s/%s/", esd.getAbsolutePath(), "SensorDataCollector");
+        Printer androidPrinter = new AndroidPrinter();
+        initXlogPrintersFileName();
         Printer xLogFilePrinter = new FilePrinter
                 .Builder(xLogFolderPath)
-                .backupStrategy(new FileSizeBackupStrategy2(300 * 1024 * 1024, 200))
                 .fileNameGenerator(xLogFileNameGenerator)
+                .backupStrategy(new FileSizeBackupStrategy2(300 * 1024 * 1024, 200))
                 .build();
 
         XLog.init(LogLevel.ALL, androidPrinter, xLogFilePrinter);
@@ -100,29 +149,26 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
-
         m_binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(m_binding.getRoot());
-
-        TextView tv = m_binding.lblSampleText;
-        if (!initXLog()) {
-            tv.setText("Failed to init XLog");
-            return;
-        }
-
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//        m_accLogger = new AbsAccelerometerSensor(sensorManager, windowManager);
-//        m_GPSLogger = new GPSSensor(locationManager, this.getApplicationContext());
-        m_accLogger = new ENUAccelerometerLogger(sensorManager);
-        m_GPSLogger = new GPSLogger(locationManager, this.getApplicationContext());
-        m_sensors.add(m_accLogger);
+        boolean useOnlySensors = false; // to use loggers set to false
+        if (useOnlySensors) {
+            m_accLogger = new ENUAccelerometerSensor(sensorManager);
+            m_GPSLogger = new GPSSensor(locationManager, this.getApplicationContext());
+            m_rawENULogger = new RawENUSensor(sensorManager);
+        } else {
+            m_accLogger = new ENUAccelerometerLogger(sensorManager);
+            m_GPSLogger = new GPSLogger(locationManager, this.getApplicationContext());
+            m_rawENULogger = new RawENULogger(sensorManager);
+        }
+//        m_sensors.add(m_accLogger);
         m_sensors.add(m_GPSLogger);
+        m_sensors.add(m_rawENULogger);
     }
-
 
     public void btnStartStop_click(View v) {
         m_isLogging = !m_isLogging;
@@ -134,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        initXLog();
         m_binding.btnStartStop.setText("Stop");
         for (ISensor mDataLogger : m_sensors) {
             mDataLogger.start();
