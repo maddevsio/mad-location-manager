@@ -798,13 +798,51 @@ void gmw_btn_clear_generated_data_clicked(GtkWidget *btn, gpointer ud)
 }
 //////////////////////////////////////////////////////////////
 
+static void filter_acc_enu_generated(generator_main_window *gmw,
+                                     MLM &mlm,
+                                     const sd_record &rec)
+{
+  bool pad = mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
+  if (pad) {
+    gps_coordinate pc = mlm.predicted_coordinate();
+    // gmw_add_marker(gmw,
+    //                MT_GPS_FILTERED_PREDICTED,
+    //                pc.location.latitude,
+    //                pc.location.longitude);
+  }
+}
+
+static void filter_gps_generated(generator_main_window *gmw,
+                                 MLM &mlm,
+                                 const sd_record &rec)
+{
+  gmw_layer &dst = gmw->layers[MT_GPS_FILTERED_UPDATED];
+  mlm.process_gps_data(rec.data.gps, rec.hdr.timestamp);
+  gps_coordinate pc = mlm.predicted_coordinate();
+  dst.add_record(
+      sd_record(sd_record_hdr(SD_GPS_FILTERED, rec.hdr.timestamp), pc));
+  std::string sd = std::to_string(dst.distance);
+  gtk_label_set_text(GTK_LABEL(dst.lbl), sd.c_str());
+  gmw_add_marker(gmw,
+                 MT_GPS_FILTERED_UPDATED,
+                 pc.location.latitude,
+                 pc.location.longitude);
+}
+static void filter_unknown(generator_main_window *gmw,
+                           MLM &mlm,
+                           const sd_record &rec)
+{
+  UNUSED(gmw);
+  UNUSED(mlm);
+  UNUSED(rec);  // do nothing
+}
+
 void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
 {
   UNUSED(btn);
   generator_main_window *gmw = reinterpret_cast<generator_main_window *>(ud);
   const std::vector<sd_record> &src =
       gmw->layers[MT_GPS_GENERATED].lst_sd_records;
-  gmw_layer &dst = gmw->layers[MT_GPS_FILTERED_UPDATED];
 
   if (src.empty()) {
     return;  // do nothing
@@ -814,37 +852,30 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   MLM mlm(gmw->w_fs->opts.acc_sigma_2,
           gmw->w_fs->opts.loc_sigma_2,
           gmw->w_fs->opts.vel_sigma_2);
-  gps_coordinate pc;
-  std::string sd;
-  bool pad;
+
+  typedef void (
+      *pf_filter_handler)(generator_main_window *, MLM &, const sd_record &);
+  static std::vector<std::pair<sensor_data_record_type, pf_filter_handler>>
+      handlers = {
+          std::make_pair(SD_ACC_ENU_GENERATED, filter_acc_enu_generated),
+          std::make_pair(SD_GPS_GENERATED, filter_gps_generated),
+          std::make_pair(SD_UNKNOWN, filter_unknown),
+      };
+
   for (const sd_record &rec : src) {
-    // todo change switch to something
-    switch (rec.hdr.type) {
-      case SD_ACC_ENU_GENERATED:
-        pad = mlm.process_acc_data(rec.data.acc, rec.hdr.timestamp);
-        if (pad) {
-          pc = mlm.predicted_coordinate();
-          // gmw_add_marker(gmw,
-          //                MT_GPS_FILTERED_PREDICTED,
-          //                pc.location.latitude,
-          //                pc.location.longitude);
-        }
-        break;
-      case SD_GPS_GENERATED:
-        mlm.process_gps_data(rec.data.gps, rec.hdr.timestamp);
-        pc = mlm.predicted_coordinate();
-        dst.add_record(
-            sd_record(sd_record_hdr(SD_GPS_FILTERED, rec.hdr.timestamp), pc));
-        sd = std::to_string(dst.distance);
-        gtk_label_set_text(GTK_LABEL(dst.lbl), sd.c_str());
-        gmw_add_marker(gmw,
-                       MT_GPS_FILTERED_UPDATED,
-                       pc.location.latitude,
-                       pc.location.longitude);
-        break;
-      default:
-        break;
-    }  // switch (rec.hdr.type)
+    auto h_it = std::find_if(
+        handlers.begin(),
+        handlers.end(),
+        [&rec](const std::pair<sensor_data_record_type, pf_filter_handler> &p) {
+          return p.first == rec.hdr.type;
+        });
+
+    if (h_it == handlers.end()) {
+      std::cerr << "unknown header type: " << rec.hdr.type << "\n";
+      continue;
+    }
+
+    h_it->second(gmw, mlm, rec);
   }  // for (sd_record &rec : src)
 }
 //////////////////////////////////////////////////////////////

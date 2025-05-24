@@ -1,25 +1,23 @@
 package com.example.mlmexample.calibration;
 
 import android.hardware.SensorManager;
-import android.view.WindowManager;
 
-import com.example.mlmexample.sensors.AbsAccelerometerSensor;
+import com.example.mlmexample.sensors.ENUAccelerometerSensor;
 
 // It seems this is totally wrong approach and we need to calibrate Linear Accelerometer
-public class AbsAccelerometerCalibrator extends AbsAccelerometerSensor {
+public class ENUAccelerometerCalibrator extends ENUAccelerometerSensor {
     private final int m_calibration_measurements_number;
     private int m_calibration_measurements_count = 0;
-
     private double north_offset = 0.;
     private double east_offset = 0.;
-    private double down_offset = 0.;
+    private double up_offset = 0.;
 
-    public AbsAccelerometerCalibrator(SensorManager sensor_manager, WindowManager window_manager) {
-        this(sensor_manager, window_manager,  1000);
+    public ENUAccelerometerCalibrator(SensorManager sensor_manager) {
+        this(sensor_manager, 1000);
     }
 
-    public AbsAccelerometerCalibrator(SensorManager sensor_manager, WindowManager window_manager, int calibration_measurements_number) {
-        super(sensor_manager, window_manager);
+    public ENUAccelerometerCalibrator(SensorManager sensor_manager, int calibration_measurements_number) {
+        super(sensor_manager);
         m_calibration_measurements_number = calibration_measurements_number;
     }
 
@@ -34,7 +32,7 @@ public class AbsAccelerometerCalibrator extends AbsAccelerometerSensor {
         ++m_calibration_measurements_count;
         east_offset += east / (double) m_calibration_measurements_number;
         north_offset += north / (double) m_calibration_measurements_number;
-        down_offset += up / (double) m_calibration_measurements_number;
+        up_offset += up / (double) m_calibration_measurements_number;
     }
 
     public double NorthOffset() {
@@ -45,7 +43,7 @@ public class AbsAccelerometerCalibrator extends AbsAccelerometerSensor {
         return east_offset;
     }
 
-    public double DownOffset() {
-        return down_offset;
+    public double UpOffset() {
+        return up_offset;
     }
 }

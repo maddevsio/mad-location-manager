@@ -14,15 +14,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.elvishew.xlog.printer.file.backup.FileSizeBackupStrategy2;
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator;
-import com.example.mlmexample.calibration.AbsAccelerometerCalibrator;
-import com.example.mlmexample.loggers.AbsAccelerometerLogger;
+import com.example.mlmexample.calibration.ENUAccelerometerCalibrator;
+import com.example.mlmexample.loggers.ENUAccelerometerLogger;
 import com.example.mlmexample.loggers.GPSLogger;
-import com.example.mlmexample.sensors.AbsAccelerometerSensor;
+import com.example.mlmexample.sensors.ENUAccelerometerSensor;
 import com.example.mlmexample.sensors.GPSSensor;
 import com.example.mlmexample.sensors.ISensor;
 import com.example.mlmexample.databinding.ActivityMainBinding;
@@ -46,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("mlm_filter");
     }
 
-    private AbsAccelerometerSensor m_accLogger;
+    private ENUAccelerometerSensor m_accLogger;
     private GPSSensor m_GPSLogger;
     private final List<ISensor> m_sensors = new ArrayList<>();
     private ActivityMainBinding m_binding;
@@ -116,10 +115,9 @@ public class MainActivity extends AppCompatActivity {
 
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 //        m_accLogger = new AbsAccelerometerSensor(sensorManager, windowManager);
 //        m_GPSLogger = new GPSSensor(locationManager, this.getApplicationContext());
-        m_accLogger = new AbsAccelerometerLogger(sensorManager, windowManager);
+        m_accLogger = new ENUAccelerometerLogger(sensorManager);
         m_GPSLogger = new GPSLogger(locationManager, this.getApplicationContext());
         m_sensors.add(m_accLogger);
         m_sensors.add(m_GPSLogger);
@@ -169,10 +167,8 @@ public class MainActivity extends AppCompatActivity {
         m_binding.btnStartStop.setEnabled(false);
         m_binding.btnCalibrate.setEnabled(false);
 
-        // todo move to onCreate
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        AbsAccelerometerCalibrator c = new AbsAccelerometerCalibrator(sensorManager, windowManager);
+        ENUAccelerometerCalibrator c = new ENUAccelerometerCalibrator(sensorManager);
         c.start();
 
         new Thread(new Runnable() {
@@ -189,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        String txt = String.format(Locale.US, "%f\n%f\n%f\n", c.Offset_X(), c.Offset_Y(), c.Offset_Z());
+                        String txt = String.format(Locale.US, "%f\n%f\n%f\n", c.EastOffset(), c.NorthOffset(), c.UpOffset());
                         m_binding.lblSampleText.setText(txt);
                         m_binding.btnCalibrate.setText("Calibrate");
                         m_binding.btnStartStop.setEnabled(true);
