@@ -5,9 +5,11 @@
 #include <shumate/shumate.h>
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
+#include "low_pass.h"
 #include "mlm.h"
 #include "sd_generator.h"
 #include "w_filter_settings.h"
@@ -85,9 +87,23 @@ struct gmw_layer {
   void add_record(sd_record rec)
   {
     lst_sd_records.push_back(rec);
-    if (rec.hdr.type == SD_ACC_ENU_SET ||
-        rec.hdr.type == SD_ACC_ENU_GENERATED) {
-      return;  // do nothing, we want GPS
+
+    // now we want calculate distance for GPS (todo move to separate method)
+    static sensor_data_record_type gps[] = {SD_GPS_SET,
+                                            SD_GPS_FILTERED,
+                                            SD_GPS_GENERATED,
+                                            SD_UNKNOWN};
+
+    bool is_gps = false;
+    for (int i = 0; gps[i] != SD_UNKNOWN; ++i) {
+      if (rec.hdr.type != gps[i])
+        continue;
+      is_gps = true;
+      break;
+    }
+
+    if (!is_gps) {
+      return;
     }
 
     if (last_gps_idx == static_cast<size_t>(-1)) {
@@ -572,6 +588,12 @@ static void load_gps_filtered(generator_main_window *gmw, const sd_record &rec)
                      sd.c_str());
 }
 
+// case SD_RAW_ENU_ACC
+static void load_raw_enu_acc(generator_main_window *gmw, const sd_record &rec)
+{
+  gmw->layers[MT_GPS_GENERATED].add_record(rec);
+}
+
 static void load_unknown(generator_main_window *gmw, const sd_record &rec)
 {
   // do nothing actually
@@ -590,6 +612,7 @@ void dlg_load_track_cb(GObject *source_object, GAsyncResult *res, gpointer data)
           std::make_pair(SD_ACC_ENU_GENERATED, load_acc_enu_generated),
           std::make_pair(SD_GPS_GENERATED, load_gps_generated),
           std::make_pair(SD_GPS_FILTERED, load_gps_filtered),
+          std::make_pair(SD_RAW_ENU_ACC, load_raw_enu_acc),
           std::make_pair(SD_UNKNOWN, load_unknown),
       };
 
@@ -828,6 +851,49 @@ static void filter_gps_generated(generator_main_window *gmw,
                  pc.location.latitude,
                  pc.location.longitude);
 }
+
+static void filter_raw_enu_acc(generator_main_window *gmw,
+                               MLM &mlm,
+                               const sd_record &rec)
+{
+  enu_accelerometer acc;
+  // quaternion rotate vector
+  double ax, ay, az, qw, qx, qy, qz;
+  ax = rec.data.raw_enu_acc.acc.x;
+  ay = rec.data.raw_enu_acc.acc.y;
+  az = rec.data.raw_enu_acc.acc.z;
+  qw = rec.data.raw_enu_acc.rq.w;
+  qx = rec.data.raw_enu_acc.rq.x;
+  qy = rec.data.raw_enu_acc.rq.y;
+  qz = rec.data.raw_enu_acc.rq.z;
+
+  // t = 2 * cross(q.xyz, v)
+  double t0 = 2.0 * (qy * az - qz * ay);
+  double t1 = 2.0 * (qz * ax - qx * az);
+  double t2 = 2.0 * (qx * ay - qy * ax);
+
+  acc.x = ax + qw * t0 + (qy * t2 - qz * t1);
+  acc.y = ay + qw * t1 + (qz * t0 - qx * t2);
+  acc.z = az * qw * t2 + (qx * t1 - qy * t0);
+
+  static LowPassFilter<double, 3> lp(2);
+  double src[3] = {acc.x, acc.y, acc.z};
+  double *filtered = lp.filter(src, rec.hdr.timestamp);
+
+  acc.x = filtered[0];
+  acc.y = filtered[1];
+  acc.z = filtered[2];
+
+  bool pad = mlm.process_acc_data(acc, rec.hdr.timestamp);
+  if (pad) {
+    gps_coordinate pc = mlm.predicted_coordinate();
+    // gmw_add_marker(gmw,
+    //                MT_GPS_FILTERED_PREDICTED,
+    //                pc.location.latitude,
+    //                pc.location.longitude);
+  }
+}
+
 static void filter_unknown(generator_main_window *gmw,
                            MLM &mlm,
                            const sd_record &rec)
@@ -847,8 +913,8 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
   if (src.empty()) {
     return;  // do nothing
   }
-  // TODO move generated data into dst.
 
+  // TODO move generated data into dst.
   MLM mlm(gmw->w_fs->opts.acc_sigma_2,
           gmw->w_fs->opts.loc_sigma_2,
           gmw->w_fs->opts.vel_sigma_2);
@@ -859,6 +925,7 @@ void gmw_btn_filter_sensor_data_clicked(GtkWidget *btn, gpointer ud)
       handlers = {
           std::make_pair(SD_ACC_ENU_GENERATED, filter_acc_enu_generated),
           std::make_pair(SD_GPS_GENERATED, filter_gps_generated),
+          std::make_pair(SD_RAW_ENU_ACC, filter_raw_enu_acc),
           std::make_pair(SD_UNKNOWN, filter_unknown),
       };
 
