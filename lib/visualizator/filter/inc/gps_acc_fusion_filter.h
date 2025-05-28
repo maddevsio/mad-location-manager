@@ -21,10 +21,11 @@ struct FusionFilterState {
 
 //////////////////////////////////////////////////////////////
 
+// template <size_t state_dim, size_t measure_dim, size_t control_dim>
 // state dim = 4
 // measure dim = 4
 // control dim = 2
-class GPSAccFusionFilter : public KalmanFilter<4, 2, 2>
+class GPSAccFusionFilter : public KalmanFilter<4, 4, 2>
 {
  private:
   double m_last_predict_sec;

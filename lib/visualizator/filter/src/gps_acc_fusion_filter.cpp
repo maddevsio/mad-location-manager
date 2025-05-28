@@ -24,8 +24,8 @@ void GPSAccFusionFilter::reset(double x,  // longitude in meters
 {
   m_last_predict_sec = ts;
   Xk_k << x, y, x_vel, y_vel;
-  Pk_k = Eigen::Matrix<double, _state_dim, _state_dim>::Identity();
-  Pk_k *= pos_deviation;
+  Pk_k.setIdentity();
+  Pk_k.diagonal() << 1, 1, 10, 10;
   m_acc_sigma_2 = acc_deviation;
 };
 //////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ void GPSAccFusionFilter::predict(double xAcc, double yAcc, double time_sec)
   m_last_predict_sec = time_sec;
 
   // this copy is not necessary. it's supposed
-  // to provide current state on each step
+  // to provide current state on each step for debugging
   // will be updated during correct() step
   Xk_k = Xk_km1;
 }
@@ -59,7 +59,7 @@ void GPSAccFusionFilter::update(const FusionFilterState& state,
                                 double vel_deviation)
 {
   rebuild_R(pos_deviation, vel_deviation);
-  Zk << state.x, state.y;  //, state.x_vel, state.y_vel;
+  Zk << state.x, state.y, state.x_vel, state.y_vel;
   correct();
 }
 //////////////////////////////////////////////////////////////
@@ -96,8 +96,8 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 
 void GPSAccFusionFilter::rebuild_Q(double dt_sec)
 {
-  // The correct continuous-white-noise model (Brown & Hwang, Bar-Shalom, etc.) gives
-  // Q = σa² · [ dt³/3   dt²/2
+  // The correct continuous-white-noise model (Brown & Hwang, Bar-Shalom, etc.)
+  // gives Q = σa² · [ dt³/3   dt²/2
   //             dt²/2   dt   ]
   double dt = dt_sec;
   const double dt2 = dt * dt;
@@ -118,15 +118,11 @@ void GPSAccFusionFilter::rebuild_R(double pos_sigma, double vel_sigma)
 {
   // clang-format off
   /* vel_sigma = pos_sigma * 1.0e-01; */
-  /* R <<  */
-  /*   pos_sigma,  0.0,        0.0,        0.0,  */
-  /*   0.0,        pos_sigma,  0.0,        0.0,  */
-  /*   0.0,        0.0,        vel_sigma,  0.0,  */
-  /*   0.0,        0.0,        0.0,        vel_sigma; */
-
-  R << 
-    pos_sigma,  0.0,
-    0.0,        pos_sigma;
+   R <<  
+     pos_sigma,  0.0,        0.0,        0.0,  
+     0.0,        pos_sigma,  0.0,        0.0,  
+     0.0,        0.0,        vel_sigma,  0.0,  
+     0.0,        0.0,        0.0,        vel_sigma; 
   // clang-format on
 }
 //////////////////////////////////////////////////////////////

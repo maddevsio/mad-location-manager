@@ -4,7 +4,6 @@
 #include <gtk/gtk.h>
 
 /// filter_options stores different options for ideal/noised data generation
-/// @acceleration_time - how much time point has acceleration between two points
 struct filter_options {
   double acc_sigma_2;
   double loc_sigma_2;

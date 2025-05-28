@@ -156,8 +156,6 @@ static const sensor_data_record_type supported_hdrs[] = {SD_ACC_ENU_SET,
 std::string sdr_serialize_str(const sd_record &rec)
 {
   std::string res = sd_hdr_serialize_str(rec.hdr);
-  res.append(pf_serializers[rec.hdr.type](rec));
-
   for (int i = 0; supported_hdrs[i] != SD_UNKNOWN; ++i) {
     if (supported_hdrs[i] != rec.hdr.type)
       continue;

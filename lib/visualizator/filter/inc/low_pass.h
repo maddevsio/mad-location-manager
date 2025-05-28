@@ -1,7 +1,8 @@
 #ifndef LOW_PASS_H
 #define LOW_PASS_H
 
-#include <cmath>
+#include <math.h>
+
 #include <cstddef>
 #include <cstring>
 
