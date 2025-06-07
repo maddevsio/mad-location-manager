@@ -42,9 +42,8 @@ void GPSAccFusionFilter::predict(double x_acc, double y_acc, double ts_sec)
 
   m_last_predict_sec = ts_sec;
 
-  // this copy is not necessary. it's supposed
-  // to provide current state on each step for debugging
-  // will be updated during correct() step
+  // we do many predict steps and THEN update.
+  // to keep Xk and Pk actual - assign them at this step.
   Xk_k = Xk_km1;
   Pk_k = Pk_km1;
 }
