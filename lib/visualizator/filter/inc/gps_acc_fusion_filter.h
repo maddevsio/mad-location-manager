@@ -4,10 +4,10 @@
 #include "kalman.h"
 
 struct FusionFilterState {
-  double x;  // longitude in meters
-  double y;  // latitude in meters
-  double x_vel;
-  double y_vel;
+  double x;      // EAST -> longitude in meters
+  double y;      // NORTH -> latitude in meters
+  double x_vel;  // velocity pointing east
+  double y_vel;  // velocity pointing north
 
   FusionFilterState() : x(0.0), y(0.0), x_vel(0.0), y_vel(0.0) {}
   FusionFilterState(double x_, double y_, double x_vel_, double y_vel_)
@@ -30,29 +30,29 @@ class GPSAccFusionFilter : public KalmanFilter<4, 4, 2>
  private:
   double m_last_predict_sec;
   double m_acc_sigma_2;  // accelerometer sigma^2
+  double m_pos_sigma_2;  // gps position sigma^2
 
   void rebuild_F(double dt_sec);
   void rebuild_U(double xAcc, double yAcc);
   void rebuild_B(double dt_sec);
   void rebuild_Q(double dt_sec);
-  void rebuild_R(double pos_sigma, double vel_sigma);
+  void rebuild_R(double pos_sigma_2, double vel_sigma_2);
 
  public:
   GPSAccFusionFilter();
 
-  void reset(
-      double x,   // longitude in meters
-      double y,   // latitude in meters
-      double ts,  // last prediction time (need to set to first GPS coord)
-      double x_vel,
-      double y_vel,
-      double acc_deviation,
-      double pos_deviation);
+  void reset(double x,   // EAST - longitude in meters
+             double y,   // NORTH - latitude in meters
+             double ts,  // last update (GPS coordinate) time
+             double x_vel,
+             double y_vel,
+             double acc_sigma_2,
+             double pos_sigma_2);
 
-  void predict(double xAcc, double yAcc, double time_sec);
+  void predict(double x_acc, double y_acc, double ts_sec);
   void update(const FusionFilterState& state,
-              double pos_deviation,
-              double vel_deviation = 0.0);
+              double pos_sigma_2,
+              double vel_sigma_2 = 1e-6);
 
   const FusionFilterState current_state() const;
 };

@@ -8,7 +8,7 @@ struct filter_options {
   double acc_sigma_2;
   double loc_sigma_2;
   double vel_sigma_2;
-  filter_options() : acc_sigma_2(0.2), loc_sigma_2(3.0), vel_sigma_2(0.1) {};
+  filter_options() : acc_sigma_2(0.3), loc_sigma_2(8.0), vel_sigma_2(0.05) {};
 };
 //////////////////////////////////////////////////////////////
 

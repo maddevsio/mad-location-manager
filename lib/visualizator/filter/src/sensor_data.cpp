@@ -32,7 +32,7 @@ std::string sd_gps_serialize_str(const sd_record &rec)
   out << std::setprecision(PRECISION) << rec.data.gps.location.latitude << " "
       << rec.data.gps.location.longitude << " "
       << rec.data.gps.location.altitude << " " << rec.data.gps.location.error
-      << " " << rec.data.gps.speed.azimuth << " " << rec.data.gps.speed.value
+      << " " << rec.data.gps.speed.value << " " << rec.data.gps.speed.azimuth
       << " " << rec.data.gps.speed.error;
   return out.str();
 }
@@ -97,9 +97,8 @@ sdr_deserialize_error sd_acc_deserialize_str(const std::string &str,
 }
 //////////////////////////////////////////////////////////////
 
-sdr_deserialize_error sd_raw_enu_acc_deserialize_str(
-    const std::string &str,
-    sd_record &rec)
+sdr_deserialize_error sd_raw_enu_acc_deserialize_str(const std::string &str,
+                                                     sd_record &rec)
 {
   const char *fmt = "%lf %lf %lf %lf %lf %lf %lf";
   int matched = sscanf(str.c_str(),

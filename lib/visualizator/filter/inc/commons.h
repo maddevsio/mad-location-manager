@@ -10,9 +10,6 @@ double rad_to_degree(double rad);
 //////////////////////////////////////////////////////////////////////////
 
 double azimuth_to_cartezian_rad(double rad);
-double azimuth_to_cartezian_degrees(double degrees);
-
 double cartezian_to_azimuth_rad(double rad);
-double cartezian_to_azimuth_degrees(double degrees);
 
 #endif  // COMMONS_H

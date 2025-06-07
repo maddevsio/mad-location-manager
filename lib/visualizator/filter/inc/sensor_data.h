@@ -132,13 +132,13 @@ struct geopoint {
 /// @value - speed in m/s
 /// @error - the estimated speed error in meters per second of this
 struct gps_speed {
-  double azimuth;
   double value;
+  double azimuth;
   double error;
 
-  gps_speed() : azimuth(0.0), value(0.0), error(0.0) {}
-  gps_speed(double azimuth, double value, double error)
-      : azimuth(azimuth), value(value), error(error)
+  gps_speed() : value(0.0), azimuth(0.0), error(0.0) {}
+  gps_speed(double value, double azimuth, double error)
+      : value(value), azimuth(azimuth), error(error)
   {
   }
 };

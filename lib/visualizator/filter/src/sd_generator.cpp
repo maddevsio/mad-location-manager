@@ -51,7 +51,7 @@ gps_coordinate sd_gps_coordinate_in_interval(const gps_coordinate &start,
                res.location.longitude,
                res.location.altitude);
   // TODO check the error of speed
-  res.speed = gps_speed(v_az_degrees, v, 1e-6);
+  res.speed = gps_speed(v, v_az_degrees, 1e-6);
   return res;
 }
 //////////////////////////////////////////////////////////////

@@ -25,15 +25,17 @@ public class GPSSensor extends ISensor implements LocationListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasAccuracy()) {
             speedAccuracyMpS = loc.getSpeedAccuracyMetersPerSecond();
         }
-//       &rec.data.gps.location.latitude,
-//       &rec.data.gps.location.longitude,
-//       &rec.data.gps.location.altitude,
-//       &rec.data.gps.location.error,
-//       &rec.data.gps.speed.value,
-//       &rec.data.gps.speed.azimuth,
-//       &rec.data.gps.speed.error);
+        // &rec.data.gps.location.latitude
+        // &rec.data.gps.location.longitude
+        // &rec.data.gps.location.altitude
+        // &rec.data.gps.location.error
+        // &rec.data.gps.speed.value
+        // &rec.data.gps.speed.azimuth
+        // &rec.data.gps.speed.error
         double ts = android.os.SystemClock.elapsedRealtime() / 1000.;
-        String msg = String.format(java.util.Locale.US, "4 %f:::%f %f %f %f %f %f %f",
+        String fmt = "4 %f:::%f %f %f %f %f %f %f";
+        String msg = String.format(java.util.Locale.US,
+                fmt,
                 ts,
                 loc.getLatitude(), loc.getLongitude(), loc.getAltitude(), loc.getAccuracy(), // location
                 loc.getSpeed(), loc.getBearing(), speedAccuracyMpS); // speed

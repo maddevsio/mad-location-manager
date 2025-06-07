@@ -20,7 +20,7 @@ MLM::~MLM(void) {}
 bool MLM::process_acc_data(const enu_accelerometer &acc, double time_sec)
 {
   if (!m_got_start_point) {
-    return false;  // do nothing until first GPS coordinate
+    return false;  // do nothing until first GPS coordinate is processed
   }
   m_fk.predict(acc.x, acc.y, time_sec);
   return true;
@@ -32,19 +32,19 @@ void MLM::process_gps_data(const gps_coordinate &gps, double time_sec)
   double x, y, z;
   double az_rad = degree_to_rad(gps.speed.azimuth);
   az_rad = azimuth_to_cartezian_rad(az_rad);
-  double speed_x = gps.speed.value * cos(az_rad);
-  double speed_y = gps.speed.value * sin(az_rad);
+  double vel_x = gps.speed.value * cos(az_rad);
+  double vel_y = gps.speed.value * sin(az_rad);
 
   if (!m_got_start_point) {
     m_got_start_point = true;
     m_lc.Reset(gps.location.latitude, gps.location.longitude, 0.0);
     m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
-    m_fk.reset(x, y, time_sec, speed_x, speed_y, m_acc_sigma_2, m_loc_sigma_2);
+    m_fk.reset(x, y, time_sec, vel_x, vel_y, m_acc_sigma_2, m_loc_sigma_2);
     return;
   }
 
   m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
-  FusionFilterState st(x, y, speed_x, speed_y);
+  FusionFilterState st(x, y, vel_x, vel_y);
   m_fk.update(st, m_loc_sigma_2, m_vel_sigma_2);
 }
 //////////////////////////////////////////////////////////////

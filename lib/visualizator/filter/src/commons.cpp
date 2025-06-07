@@ -16,34 +16,17 @@ double rad_to_degree(double rad)
 
 double azimuth_to_cartezian_rad(double rad)
 {
-  double cartezian = M_PI_2 - rad;
-  if (cartezian < 0.) {
-    cartezian += M_PI * 2.;
-  }
-  return cartezian;
-}
-//////////////////////////////////////////////////////////////
-
-double azimuth_to_cartezian_degrees(double degrees)
-{
-  double cartezian = 90. - degrees;
-  if (cartezian < 0.) {
-    cartezian += 360.;
-  }
-  return cartezian;
+  const double two_pi = 2.0 * M_PI;
+  double theta = M_PI_2 - rad;
+  theta = std::fmod(theta + two_pi, two_pi);
+  return theta;
 }
 //////////////////////////////////////////////////////////////
 
 double cartezian_to_azimuth_rad(double rad)
 {
-  double az = fmod((M_PI / 2.) - rad + 2. * M_PI, 2. * M_PI);
-  return az;
-}
-//////////////////////////////////////////////////////////////
-
-double cartezian_to_azimuth_degrees(double degrees)
-{
-  double az = fmod((360. / 2.) - degrees + 360., 360.);
+  const double two_pi = 2.0 * M_PI;
+  double az = fmod(M_PI_2 - rad + two_pi, two_pi);
   return az;
 }
 //////////////////////////////////////////////////////////////

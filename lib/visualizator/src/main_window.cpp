@@ -5,7 +5,6 @@
 #include <shumate/shumate.h>
 
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -876,22 +875,23 @@ static void filter_raw_enu_acc(generator_main_window *gmw,
   acc.y = ay + qw * t1 + (qz * t0 - qx * t2);
   acc.z = az * qw * t2 + (qx * t1 - qy * t0);
 
-  static LowPassFilter<double, 3> lp(2);
-  double src[3] = {acc.x, acc.y, acc.z};
-  double *filtered = lp.filter(src, rec.hdr.timestamp);
-
-  acc.x = filtered[0];
-  acc.y = filtered[1];
-  acc.z = filtered[2];
+  // static LowPassFilter<double, 3> lp(5);
+  // double src[3] = {acc.x, acc.y, acc.z};
+  // double *filtered = lp.filter(src, rec.hdr.timestamp);
+  //
+  // acc.x = filtered[0];
+  // acc.y = filtered[1];
+  // acc.z = filtered[2];
 
   bool pad = mlm.process_acc_data(acc, rec.hdr.timestamp);
-  if (pad) {
-    gps_coordinate pc = mlm.predicted_coordinate();
-    // gmw_add_marker(gmw,
-    //                MT_GPS_FILTERED_PREDICTED,
-    //                pc.location.latitude,
-    //                pc.location.longitude);
-  }
+  if (!pad)
+    return;
+
+  gps_coordinate pc = mlm.predicted_coordinate();
+  // gmw_add_marker(gmw,
+  //                MT_GPS_FILTERED_PREDICTED,
+  //                pc.location.latitude,
+  //                pc.location.longitude);
 }
 
 static void filter_unknown(generator_main_window *gmw,
