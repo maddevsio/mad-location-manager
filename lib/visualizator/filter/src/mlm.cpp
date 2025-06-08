@@ -45,7 +45,9 @@ void MLM::process_gps_data(const gps_coordinate &gps, double time_sec)
 
   m_lc.Forward(gps.location.latitude, gps.location.longitude, 0.0, x, y, z);
   FusionFilterState st(x, y, vel_x, vel_y);
-  m_fk.update(st, m_loc_sigma_2, m_vel_sigma_2);
+  m_fk.update(st, gps.location.error, gps.speed.error);
+  // this one used during tests in visualizator
+  // m_fk.update(st, m_loc_sigma_2, m_vel_sigma_2);
 }
 //////////////////////////////////////////////////////////////
 

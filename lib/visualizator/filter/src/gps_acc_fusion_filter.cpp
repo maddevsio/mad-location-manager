@@ -43,7 +43,8 @@ void GPSAccFusionFilter::predict(double x_acc, double y_acc, double ts_sec)
   m_last_predict_sec = ts_sec;
 
   // we do many predict steps and THEN update.
-  // to keep Xk and Pk actual - assign them at this step.
+  // to keep Xk and Pk actual and accumulate error in Pk - assign them at this
+  // step.
   Xk_k = Xk_km1;
   Pk_k = Pk_km1;
 }
@@ -98,18 +99,12 @@ void GPSAccFusionFilter::rebuild_B(double dt_sec)
 void GPSAccFusionFilter::rebuild_Q(double dt_sec)
 {
   // The correct continuous-white-noise model (Brown & Hwang, Bar-Shalom, etc.)
-  // gives Q = σa² · [ dt³/3   dt²/2
-  //                   dt²/2   dt   ]
   double dt = dt_sec;
   const double dt2 = dt * dt;
   const double dt3 = dt2 * dt;
   const double dt4 = dt3 * dt;
 
   // clang-format off
-  // Q <<  dt3/3.0,   0,        dt2/2.0,   0,
-  //       0,         dt3/3.0,  0,         dt2/2.0,
-  //       dt2/2.0,   0,        dt,       0,
-  //       0,         dt2/2.0,  0,         dt;
   Q <<  dt4/4.0,   0,        dt3/2.0,   0,
         0,         dt4/4.0,  0,         dt3/2.0,
         dt3/2.0,   0,        dt2,       0,
