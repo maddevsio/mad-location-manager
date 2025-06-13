@@ -1,5 +1,7 @@
 [<img src="doc/MadLocationManagerlogo.svg">](https://gps.maddevs.io/)
 
+## New version with a lot of fixes is available [here](https://github.com/maddevsio/mad-location-manager-lib)
+
 This is library for GPS and Accelerometer data "fusion" with Kalman filter. All code is written in Java. It helps to increase position accuracy and GPS distance calculation on Android devices for the driver's and couriers' apps. And also, it may be used for precise tracking in on-demand services.
 
 Project consists of 2 parts: <br>
